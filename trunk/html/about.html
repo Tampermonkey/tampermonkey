@@ -1,0 +1,39 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Tampermonkey - GreaseMonkey for Chrome</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+    <script>
+        function getVer() {
+           var u = window.location.href.split('?');
+           if (!u.length) return;
+           for (var k in u) {
+               var va = u[k].split('=');
+               if (!va.length || va.length < 2) continue;
+               if (va[0] == 'version') {
+                   document.getElementById('title').innerHTML += " " + va[1];
+                   return;
+               }
+           }
+        }
+    </script>
+  </head>
+
+  <body onload="getVer()">
+    <h2 id="title">TamperMonkey</h2>
+
+    <p>
+      Tampermonkey is s small tools that provides Greasemonkey script support for Google Chrome and Chromium Browser (version 5.0.0.0 or greater). It's API is fully compatible to GreaseMonkey, including GM_registerMenuCommand and GM_xmlhttpRequest with cross domain support. Furthermore there is a small GUI to manage all installed scripts. This includes editing, enabling, disabling, debug, uninstalling and so on). By default a small script is preinstalled that allows installing userscripts directly from userscripts.org.
+    </p>
+    <p>
+    If you want to honor my work, just buy me a beer ;)
+    <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+      <input type="hidden" name="cmd" value="_s-xclick">
+      <input type="hidden" name="hosted_button_id" value="UZ3KHAQ5DKBA2">
+      <input type="image" src="https://www.paypal.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+      <img alt="" border="0" src="https://www.paypal.com/de_DE/i/scr/pixel.gif" width="1" height="1">
+    </form>
+    Thanks.
+    </p>
+  </body>
+</html>

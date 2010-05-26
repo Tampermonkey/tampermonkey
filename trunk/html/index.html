@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Tampermonkey - GreaseMonkey for Chrome</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+  </head>
+
+  <body>
+    <h2 id="title">TamperMonkey</h2>
+    <p>
+      Tampermonkey is s small tools that provides Greasemonkey script support for Google Chrome and Chromium Browser (version 5.0.0.0 or greater). It's API is fully compatible to GreaseMonkey, including GM_registerMenuCommand, GM_getResourceText, GM_getResourceURL and GM_xmlhttpRequest with cross domain support. Furthermore there is a small GUI to manage all installed scripts. This includes editing, enabling, disabling, debug, uninstalling and so on). By default a small script is preinstalled that allows installing userscripts directly from userscripts.org.
+    </p>
+    <p>
+    If you want to honor my work, just buy me a beer ;)
+    <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+      <input type="hidden" name="cmd" value="_s-xclick">
+      <input type="hidden" name="hosted_button_id" value="UZ3KHAQ5DKBA2">
+      <input type="image" src="https://www.paypal.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+      <img alt="" border="0" src="https://www.paypal.com/de_DE/i/scr/pixel.gif" width="1" height="1">
+    </form>
+    Thanks.
+    </p>
+
+    <h2>Download</h2>
+    <p>
+ 	you can download TamperMonkey <input href="#" type="button" onclick="document.location='https://chrome.google.com/extensions/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo'" value="here">
+    </p>
+    <h2>API</h2>
+    <p>
+        TamperMonkey supports the following functions:<br><br>
+
+        <table>
+        <tr>
+	    <td>function TM_addStyle(css) aka GM_addStyle(css)</td>
+	    <td>add the given style to the document</td>
+        </tr>
+        <tr>
+	    <td>function TM_deleteValue(name) aka GM_deleteValue(name)</td>
+	    <td>deletes 'name' from storage</td>
+        </tr>
+
+        <tr>
+	    <td>function TM_listValues() aka GM_listValues()</td>
+	    <td>list all names of the storage</td>
+        </tr>
+        <tr>
+	    <td>function TM_setValue(name, value) aka GM_setValue(name, value)</td>
+	    <td>set the value of 'name' to the storage</td>
+        </tr>
+        <tr>
+	    <td>function TM_getValue(name, defaultValue) aka GM_getValue(...)</td>
+	    <td>get the value of 'name' from storage</td>
+        </tr>
+        <tr>
+	    <td>function TM_log(message) aka GM_log(...)</td>
+	    <td>log a message to the console</td>
+        </tr>
+        <tr>
+	    <td>function TM_getResourceText(name) aka GM_getResourceText(name)</td>
+	    <td>get the content of a predefined @resource tag at the script header</td>
+        </tr>
+        <tr>
+	    <td>function TM_getResourceURL(name) aka GM_getResourceURL(name)</td>
+	    <td>get the base64 encoded URI of a predefined @resource tag at the script header</td>
+        </tr>
+        <tr>
+	    <td>function TM_registerMenuCommand(name, fn) aka GM_registerMenuCommand(...)</td>
+	    <td>register a menu to be displayed at the TamperMonkey menu at pages where this script runs</td>
+        </tr>
+        <tr>
+	    <td>function TM_openInTab(url) aka GM_openInTab(url)</td>
+	    <td>open a new tab with this url</td>
+        </tr>
+        <tr>
+	    <td>function TM_xmlhttpRequest(details) aka GM_xmlhttpRequest(details)</td>
+	    <td>make an xmlhttpRequest, supports cross domain requests too</td>
+        </tr>
+        <tr>
+	    <td>function TM_getTab(cb)</td>
+	    <td>get a object that is persistent as long as this tab is open</td>
+        </tr>
+        <tr>
+	    <td>function TM_saveTab(tab)</td>
+	    <td>save the tab object to reopen it after a page unload</td>
+        </tr>
+        <tr>
+	    <td>function TM_getTabs(cb)</td>
+	    <td>get all tab objects</td>
+        </tr>
+        <tr>
+	    <td>function TM_getVersion()</td>
+	    <td>returns the TamperMonkey version string</td>
+        </tr>
+        <tr>
+	    <td>function TM_installScript(script)</td>
+	    <td>install a userscript to TamperMonkey</td>
+        </tr>
+        <tr>
+	    <td>function TM_run(fn, parentid, arg)</td>
+	    <td>runs 'fn(arg)' and catches errors to print a stack trace<br>this function is part of TamperMonkeys debug scripts option</td>
+        </tr>
+        <tr>
+	    <td>function TM_addEventListener (event, fn)</td>
+	    <td>adds an event listener in the common way but wraps 'fn' with 'TM_run' to get stack traces<br>this function is part of TamperMonkeys debug scripts option</td>
+        </tr>
+        <tr>
+	    <td>function TM_setTimeout (fn, time)</td>
+	    <td>sets an timeout in the common way but wraps 'fn' with 'TM_run' to get stack traces<br>this function is part of TamperMonkeys debug scripts option</td>
+        </tr>
+        </table>
+    </p>
+  </body>
+</html>
