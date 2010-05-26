@@ -1,0 +1,24 @@
+{
+   "update_url":"http://clients2.google.com/service/update2/crx",
+   "content_scripts": [ {
+      "js": [ "content.js" ],
+      "matches": [ "http://*/*", "https://*/*" ],
+      "run_at": "document_start"
+   } ],
+   "browser_action": {
+      "default_icon": "images/icon.png",
+      "default_title": "Tampermonkey",
+      "popup": "action.html"
+   },
+   "icons": { "32": "images/icon.png",
+   	      "48": "images/icon48.png",
+       	     "128": "images/icon128.png" },
+   "name": "Tampermonkey",
+   "version": "1.0.0.1",
+   "description": "A small extension that provides Greasemonkey compatibility.",
+   "background_page": "background.html",
+   "options_page": "options.html",
+   "all_frames": false,
+   "permissions": [ "unlimited_storage", "tabs", "http://*/*", "https://*/*" ],
+   "minimum_chrome_version": "5.0.0.0"
+}
