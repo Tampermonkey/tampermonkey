@@ -557,11 +557,15 @@ var runtimeInit = function() {
         };
     };
 
+    this.validScheme = function(url) {
+        return (url && url.length > 4 && url.substr(0,4) == 'http');
+    };
+
     this.xmlhttpRequest = function(details, callback) {
         var xmlhttp = new XMLHttpRequest();
         var onload = function() {
             var responseState = {
-                responseXML: (xmlhttp.readyState==4 ? (xmlhttp.responseXML ? escape(xmlhttp.responseXML) : null) : ''),
+                responseXML: (xmlhttp.readyState == 4 ? (xmlhttp.responseXML ? escape(xmlhttp.responseXML) : null) : ''),
                 responseText: (xmlhttp.readyState == 4 ? xmlhttp.responseText : ''),
                 readyState: xmlhttp.readyState,
                 responseHeaders: (xmlhttp.readyState == 4 ? xmlhttp.getAllResponseHeaders() : ''),
@@ -575,8 +579,11 @@ var runtimeInit = function() {
         xmlhttp.onload = onload;
         xmlhttp.onerror = onload;
         try {
+            if (!this.validScheme(details.url))
+                throw new Error;
             xmlhttp.open(details.method, details.url);
         } catch(e) {
+            console.log(e);
             if(callback) {
                 var resp = { responseXML: '',
                              responseText: '',
