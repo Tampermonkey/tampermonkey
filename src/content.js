@@ -36,27 +36,4 @@ chrome.extension.onRequest.addListener(
 
 // send request when content script is loaded.. this happens just once ;)
 chrome.extension.sendRequest({ method: "onUpdate" }, function(response) {});
-
-if (true || !Array.prototype.filter) {
-  Array.prototype.filter = function(fun /*, thisp*/)
-  {
-    var len = this.length;
-    if (typeof fun != "function")
-      throw new TypeError();
-
-    var res = new Array();
-    var thisp = arguments[1];
-    for (var i = 0; i < len; i++)
-    {
-      if (i in this)
-      {
-        var val = this[i]; // in case fun mutates this
-        var re = new RegExp(fun);
-        if (val.match(fun))
-          res.push(val);
-      }
-    }
-
-    return res;
-  };
-}
+// window.addEventListener('load', function(evt) { chrome.extension.sendRequest({ method: "onLoad" }, function(response) {}); }, false);
