@@ -13,7 +13,7 @@
    	      "48": "images/icon48.png",
        	     "128": "images/icon128.png" },
    "name": "Tampermonkey",
-   "version": "1.0.0.1",
+   "version": "1.0.0.2",
    "description": "A small extension that provides Greasemonkey compatibility.",
    "background_page": "background.html",
    "options_page": "options.html",

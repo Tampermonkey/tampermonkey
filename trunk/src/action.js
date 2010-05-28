@@ -35,10 +35,11 @@ var createActionsMenu = function(items) {
             if (i.checkbox) {
                 var input = document.createElement('input');
                 input.type = "checkbox";
-                input.id = i.id;
+                input.name = i.name;
+                input.id = 'enabled';
                 input.checked = i.enabled;
                 var oc = function() {
-                    modifyScriptOptions(this.id, this.checked);
+                    modifyScriptOptions(this.name, this.id, this.checked);
                 }
                 input.addEventListener("click", oc);
                 var span = document.createElement('span');
@@ -110,17 +111,19 @@ var execMenuCmd = function(id) {
     }
 };
 
-var modifyScriptOptions = function(name, enable) {
+var modifyScriptOptions = function(name, id, value) {
     try {
-        chrome.extension.sendRequest({method: "modifyScriptOptions", name: name, enable: enable},
+        var s = { method: "modifyScriptOptions", name: name };
+        if (id && id != '') s[id] = value;
+        chrome.extension.sendRequest(s,
                                      function(response) {
                                          createActionsMenu(response.items);
                                      });
         document.getElementById('action').innerHTML = "Please wait...";
     } catch (e) {
-        alert(e);
+        alert("mSo: " + e);
     }
-};
+}
 
 chrome.extension.onRequest.addListener(
     function(request, sender, sendResponse) {
