@@ -36,4 +36,3 @@ chrome.extension.onRequest.addListener(
 
 // send request when content script is loaded.. this happens just once ;)
 chrome.extension.sendRequest({ method: "onUpdate" }, function(response) {});
-// window.addEventListener('load', function(evt) { chrome.extension.sendRequest({ method: "onLoad" }, function(response) {}); }, false);
