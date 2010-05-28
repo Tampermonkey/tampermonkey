@@ -27,7 +27,10 @@ var Script = function() {
     this.namespace = null;
     this.description = null;
     this.enabled = true;
-    this.compat = false;
+    this.compat_metadata = false;
+    this.compat_foreach = false;
+    this.compat_arrayleft = false;
+    this.compat_filterproto = false;
     this.requires = [];
     this.includes = [];
     this.excludes = [];
@@ -723,17 +726,44 @@ var runtimeInit = function() {
         emu += 'unsafeWindow = window;\n';
         emu += 'var uneval = function(arg) { try { return JSON.stringify(arg); } catch (e) { alert(e) } };\n';
 
+        var flt = function(fun /*, thisp*/) {
+
+            var len = this.length;
+            if (typeof fun != "function")
+                throw new TypeError();
+            
+            var res = new Array();
+            var thisp = arguments[1];
+            
+            for (var i = 0; i < len; i++) {
+                if (i in this) {
+                    var val = this[i]; // in case fun mutates this
+                    
+                    if (typeof fun.call != 'undefined') {
+                        if (fun.call(thisp, val, i, this)) res.push(this[i]);
+                    } else {
+                        var re = new RegExp(fun);
+                        if (val.match(fun)) res.push(this[i]);
+                    }
+                }
+            }
+            
+            return res;
+        };
+
+        var cmp = 'Array.prototype.filter = ' + flt + ';';
         var res = 'var TM_resources = ' + JSON.stringify(script.resource) + ';\n';
+
         ret = api + emu + res;
+        
+        if (script.compat_filterproto) {
+            ret += cmp;
+        }
 
         var secsrc = '';
         // secsrc += '(function(){';
         // secsrc += 'var chrome = {extension: {}, tabs: {}};';
-        if (script.compat) {
-            secsrc += compaMo.mkCompat(src);
-        } else {
-            secsrc += src;
-        }
+        secsrc += compaMo.mkCompat(src, script);
         // secsrc += ';})();';
 
         if (Config.values.debug) {
@@ -903,14 +933,17 @@ var addNewUserScript = function(tabid, src, ask) {
     }
 
     if (compaMo.mkCompat(src) != src) {
-        script.compat = true;
-        msg+= "\nNote: GreaseMonkey/FF compatibility mode      \n    is set to enabled for this script\n\n";
+        script.compat_metadata = true;
+        script.compat_foreach = true;
+        script.compat_arrayleft = true;
+        script.compat_filterproto = true;
+        msg+= "\nNote: A recheck of the GreaseMonkey/FF       \n    compatibility options may be \n    required in order to run this script.\n\n";
     }
 
     msg+= "\nDo you want to continue?";
 
     var doit = function() {
-        storeScript(script.name, script, script.compat);
+        storeScript(script.name, script);
         var allitems = createOptionItems();
         chrome.extension.sendRequest({ method: "updateOptions",
                                              items: allitems },
@@ -953,13 +986,8 @@ var validUrl = function(href, cond) {
     return run;
 };
 
-var storeScript = function(name, script, compat, enable) {
-    if (enable == undefined) enable = true;
-    if (compat == undefined) compat = false;
-    
+var storeScript = function(name, script) {
     if (script) {
-        script.enabled = enable;
-        script.compat = compat;
         TM_storage.setValue(name + condAppendix, { inc: script.includes , exc: script.excludes });
         TM_storage.setValue(name, script);
     } else {
@@ -1062,9 +1090,12 @@ var requestHandler = function(request, sender, sendResponse) {
         if (request.name) {
             var r = loadScriptByName(request.name);
             if (r.script && r.cond) {
-                var c = r.script.compat;
-                if (request.compat != undefined) c = request.compat;
-                storeScript(r.script.name, r.script, c, request.enable);
+                if (typeof request.compat_metadata !== 'undefined') r.script.compat_metadata = request.compat_metadata;
+                if (typeof request.compat_foreach !== 'undefined') r.script.compat_foreach = request.compat_foreach;
+                if (typeof request.compat_arrayleft !== 'undefined') r.script.compat_arrayleft = request.compat_arrayleft;
+                if (typeof request.compat_filterproto !== 'undefined') r.script.compat_filterproto = request.compat_filterproto;
+                if (typeof request.enabled !== 'undefined') r.script.enabled = request.enabled;
+                storeScript(r.script.name, r.script);
             }
         }
         var updateOptionsPage = function() {
@@ -1116,7 +1147,14 @@ var requestHandler = function(request, sender, sendResponse) {
         sendResponse({data: null});
     } else if (request.method == "onUpdate") {
         if (typeof sender.tab != 'undefined') {
-            onUpdateListener(sender.tab.id, {status: "complete"}, sender.tab);
+            updateListener(sender.tab.id, {status: "complete"}, sender.tab);
+        } else {
+            console.log("unable to run scripts on tab due to empty tabID");
+        }
+        sendResponse({});
+    } else if (request.method == "onLoad") {
+        if (typeof sender.tab != 'undefined') {
+            loadListener(sender.tab.id, {status: "complete"}, sender.tab);
         } else {
             console.log("unable to run scripts on tab due to empty tabID");
         }
@@ -1265,12 +1303,15 @@ var convertMgmtToMenuItems = function(url, options) {
                      image: img,
                      checkbox: !options,
                      enabled: script.enabled,
-                     compat: script.compat,
+                     compat_metadata: script.compat_metadata,
+                     compat_foreach: script.compat_foreach,
+                     compat_arrayleft: script.compat_arrayleft,
+                     compat_filterproto: script.compat_filterproto,
                      userscript: true };
         if (options) {
             item.code = script.textContent;
-            if (Config.values.showFixedSrc && script.compat) {
-                item.code = compaMo.mkCompat(script.textContent);
+            if (Config.values.showFixedSrc) {
+                item.code = compaMo.mkCompat(script.textContent, script);
             }
         }
         ret.push(item);
@@ -1282,8 +1323,15 @@ var convertMgmtToMenuItems = function(url, options) {
 
 var compaMoInit = function () {
 
-    this.mkCompat = function(src) {
-        return this.unArrayOnLeftSideify(this.unEachify(this.unMetaDataify(src)));
+    this.mkCompat = function(src, script) {
+        if (!script) {
+            return this.unArrayOnLeftSideify(this.unEachify(this.unMetaDataify(src)));
+        } else {
+            if (script.compat_metadata) src = this.unMetaDataify(src);
+            if (script.compat_foreach) src = this.unEachify(src);
+            if (script.compat_arrayleft) src = this.unArrayOnLeftSideify(src);
+        }
+        return src;
     };
 
     this.debugify = function(src) {
@@ -1375,6 +1423,10 @@ var compaMoInit = function () {
 
         for (var i = 1; i < arr.length; i++) {
             var a = arr[i];
+            if (a.substr(0,1) != "(") {
+                arr[i] = ' each' + arr[i];
+                continue;
+            }
             var f = getStringBetweenTags(a, t2, t3);
             var m = f.split(' ');
             var varname = null;
@@ -1391,7 +1443,10 @@ var compaMoInit = function () {
                     }
                 }
             }
-            if (!varname || !arrname) continue;
+            if (!varname || !arrname) {
+                arr[i] = ' each' + arr[i];
+                continue;
+            }
 
             var n = 'var __kk in ' + arrname;
             var b = '{\n' + '    var ' + varname + ' = ' + arrname + '[__kk];';    
@@ -1457,8 +1512,23 @@ var compaMoInit = function () {
 };
 
 /* ### Listener ### */
+    
+var loadListener = function(tabID, changeInfo, tab) {
+    if (changeInfo.status == 'complete') {
+        if (tab.url.search(/\.tamper\.js$/) != -1) {
+            var request = function(tob) {
+                chrome.tabs.sendRequest(tob.id,
+                                        { method: "getSrc" },
+                                        function(response) {
+                                            addNewUserScript(tab.id, response.src);
+                                        });
+            };
+            chrome.tabs.getSelected(null, request);
+        }
+    }
+};
 
-var onUpdateListener = function(tabID, changeInfo, tab) {
+var updateListener = function(tabID, changeInfo, tab) {
     if (changeInfo.status == 'complete') {
         if (tab.title.search(tab.url + " is not available") != -1) {
             var reload = function() {
@@ -1467,26 +1537,12 @@ var onUpdateListener = function(tabID, changeInfo, tab) {
             };
             window.setTimeout(reload, 20000);
         } else {
-            if (tab.url.search(/\.tamper\.js$/) != -1) {
-                var request = function(tob) {
-                    chrome.tabs.sendRequest(tab.id,
-                                            { method: "getSrc" },
-                                            function(response) {
-                                                addNewUserScript(tab.id, response.src);
-                                            });
-                };
-                chrome.tabs.getSelected(null, request);
-            } else {
-
-                var scripts = determineScriptsToRun(tab.url);
-
-                for (var k in scripts) {
-                    var script = scripts[k];
-
-                    if (!script.enabled) continue;
-
-                    Runtime.contentLoad(tab, script);
-                }
+            var scripts = determineScriptsToRun(tab.url);
+                
+            for (var k in scripts) {
+                var script = scripts[k];
+                if (!script.enabled) continue;
+                Runtime.contentLoad(tab, script);
             }
         }
     }
@@ -1498,4 +1554,4 @@ var compaMo = new compaMoInit();
 
 chrome.extension.onRequest.addListener(requestHandler);
 // the content script sends a request when it's loaded.. this happens just once ;)
-// chrome.tabs.onUpdated.addListener(onUpdateListener);
+chrome.tabs.onUpdated.addListener(loadListener);

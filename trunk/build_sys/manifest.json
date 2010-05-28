@@ -2,8 +2,7 @@
    "update_url":"http://clients2.google.com/service/update2/crx",
    "content_scripts": [ {
       "js": [ "content.js" ],
-      "matches": [ "http://*/*", "https://*/*" ],
-      "run_at": "document_start"
+      "matches": [ "file://*", "http://*/*", "https://*/*" ]
    } ],
    "browser_action": {
       "default_icon": "images/icon.png",

@@ -25,21 +25,14 @@ var itemsToMenu = function(items) {
             }
             var td2 = document.createElement('td');
             if (i.checkbox) {
-                var input = document.createElement('input');
-                input.type = "checkbox";
-                input.id = i.id;
-                input.checked = i.enabled;
                 var oc = function() {
                     enableScript(this.id, this.checked);
                 }
                 var oco = function() {
                     setOption(this.id, this.checked);
                 }
-                input.addEventListener("click", i.option ? oco : oc);
-                var span = document.createElement('span');
-                span.textContent = i.name + (i.desc ? " " + i.desc : '');
+                var input = createCheckbox(i.name + (i.desc ? " " + i.desc : ''), i, i.option ? oco : oc);
                 td2.appendChild(input);
-                td2.appendChild(span);
             } else if (i.url) {
                 var a = document.createElement('a');
                 a.href = '#';
@@ -63,7 +56,7 @@ var itemsToMenu = function(items) {
                 td2.appendChild(span);
             } else if (i.userscript) {
                 td2.setAttribute("colspan", "2");
-                td2.appendChild(createScriptItem(i.name, i.code, i.compat, i.enabled));
+                td2.appendChild(createScriptItem(i));
             } else  {
                 var span = document.createElement('span');
                 span.textContent = i.name;
@@ -102,21 +95,40 @@ var createImage = function(src) {
     return image;
 };
 
+var createCheckbox = function(name, i, oc) {
+    var s = document.createElement('span');
+    var input = document.createElement('input');
+    input.type = "checkbox";
+    input.name = i.name;
+    input.id = i.id;
+    input.oldvalue = i.enabled;
+    input.checked = i.enabled;
+    input.addEventListener("click", oc);
+    var span = document.createElement('span');
+    span.textContent = name;
 
-var createButton = function(value, oc, img) {
+    s.appendChild(input);
+    s.appendChild(span);
+    return s;
+};
+
+var createButton = function(name, id, value, text, oc, img) {
     var b = document.createElement('input');
+    b.name = name;
+    b.id = id;
     b.type = "button";
-    b.value = value;
+    b.oldvalue = value;
+    b.value = text;
     b.addEventListener("click", oc);
     return b;
 };
 
-var createScriptItem = function(name, code, compated, enabled) {
+var createScriptItem = function(i) {
     var outer = document.createElement('span');
-    var name_ = name.replace('/ /g', '_');
+    var name_ = i.name.replace('/ /g', '_');
     var id_ = 'span_' + name_; 
     var a = document.createElement('a');
-    a.textContent = name;
+    a.textContent = i.name;
     a.href = '#';
     var oc = function() {
         document.getElementById(id_).setAttribute('style', 'display:block');
@@ -127,22 +139,52 @@ var createScriptItem = function(name, code, compated, enabled) {
     sett.setAttribute('class', 'sett');
     sett.setAttribute('id', id_);
     sett.setAttribute('style', 'display:none')
-    
-    sett.appendChild(createButton(enabled ? 'Disable' : 'Enable', function() { modifyScriptOptions(name, compated, !enabled); }));
-    sett.appendChild(createButton('Delete', function() {
-                                      var c = confirm("Really delete this script?");
-                                      if (c) saveScript(name, null);
-                                  }));
-    sett.appendChild(document.createElement('br'));
-    sett.appendChild(createButton(compated ? 'Disable GM/FF Compatibility Mode' : 'Enable GM/FF Compatibility Mode', function() { modifyScriptOptions(name, !compated, enabled); }));
 
-    var closp = document.createElement('div');
-    var close = createButton('Close', function() { document.getElementById(id_).setAttribute('style', 'display:none') })
-    closp.setAttribute('class', "closp");
-    closp.appendChild(close);
-    sett.appendChild(closp);
+    var co = function() { modifyScriptOptions(this.name, this.id, !this.oldvalue); };
+
+    sett.appendChild(createButton(i.name, 'enabled', i.enabled, i.enabled ? 'Disable' : 'Enable', co));
+    sett.appendChild(createButton(null, null, null, 'Delete', function() {
+                                      var c = confirm("Really delete this script?");
+                                      if (c) saveScript(i.name, null);
+                                  }));
+    sett.appendChild(createButton(null, null, null, 'Close', function() {
+                                      document.getElementById(id_).setAttribute('style', 'display:none');
+                                  }));
+
+    sett.appendChild(document.createElement('br'));
+
+    var comp = document.createElement('span');
+    comp.innerText = 'GM/FF compatibility options:';
+
+
+    var i_md = createCheckbox('Convert CDATA sections into a chrome compatible format',
+                              { id: 'compat_metadata', name: i.name, enabled: i.compat_metadata},
+                              co);
+    var i_fe = createCheckbox('Replace "for each" statements',
+                              { id: 'compat_foreach', name: i.name, enabled: i.compat_foreach},
+                              co);
+    var i_al = createCheckbox('Convert [blub, bla] = s.split(":") statements',
+                              { id: 'compat_arrayleft', name: i.name, enabled: i.compat_arrayleft},
+                              co);
+    var i_fp = createCheckbox('Replace Array.filter function to handle regexps',
+                              { id: 'compat_filterproto', name: i.name, enabled: i.compat_filterproto},
+                              co);
+
+    sett.appendChild(document.createElement('br'));
+    sett.appendChild(comp);
+    sett.appendChild(document.createElement('br'));
+    sett.appendChild(i_md);
+    sett.appendChild(document.createElement('br'));
+    sett.appendChild(i_fe);
+    sett.appendChild(document.createElement('br'));
+    sett.appendChild(i_al);
+    sett.appendChild(document.createElement('br'));
+    sett.appendChild(i_fp);
+    sett.appendChild(document.createElement('br'));
+    sett.appendChild(document.createElement('br'));
+    
     var input = document.createElement('textarea');
-    input.textContent = code;
+    input.textContent = i.code;
     input.cols = 100;
     input.rows = 2000000000;
     input.setAttribute('wrap', 'off');
@@ -151,10 +193,10 @@ var createScriptItem = function(name, code, compated, enabled) {
     sett.appendChild(document.createElement('br'));
     sett.appendChild(document.createElement('br'));
     
-    sett.appendChild(createButton('Save', function() { saveScript(name, input.value); }));
-    sett.appendChild(createButton('Cancel', function() {
+    sett.appendChild(createButton(null, null, null, 'Save', function() { saveScript(i.name, input.value); }));
+    sett.appendChild(createButton(null, null, null, 'Cancel', function() {
                                       var c = confirm("Really reset all changes?");
-                                      if (c) input.textContent = code;
+                                      if (c) input.textContent = i.code;
                                   }));
     sett.appendChild(document.createElement('br'));
     sett.appendChild(document.createElement('br'));
@@ -178,7 +220,7 @@ var loadUrl = function(url, newtab) {
             chrome.tabs.getSelected(null, resp);
         }
     } catch (e) {
-        alert(e);
+        alert("lU: " + e);
     }
 };
 
@@ -190,7 +232,7 @@ var saveScript = function(name, code) {
                                      });
         document.getElementById('options').innerHTML = "Please wait...";
     } catch (e) {
-        alert(e);
+        alert("sS: " + e);
     }
 };
 
@@ -202,19 +244,21 @@ var setOption = function(name, value) {
                                      });
         document.getElementById('options').innerHTML = "Please wait...";
     } catch (e) {
-        alert(e);
+        alert("sO: " + e);
     }
 };
 
-var modifyScriptOptions = function(name, compat, enable) {
+var modifyScriptOptions = function(name, id, value) {
     try {
-        chrome.extension.sendRequest({method: "modifyScriptOptions", name: name, enable: enable, compat: compat},
+        var s = { method: "modifyScriptOptions", name: name };
+        if (id && id != '') s[id] = value;
+        chrome.extension.sendRequest(s,
                                      function(response) {
                                          createOptionsMenu(response.items);
                                      });
         document.getElementById('options').innerHTML = "Please wait...";
     } catch (e) {
-        alert(e);
+        alert("mSo: " + e);
     }
 };
 
