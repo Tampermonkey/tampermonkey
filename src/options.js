@@ -95,6 +95,25 @@ var createImage = function(src) {
     return image;
 };
 
+var createInput = function(name, i, oc) {
+    var s = document.createElement('span');
+    var input = document.createElement('input');
+    var n = name.split('##');
+    input.type = "text";
+    input.name = i.name;
+    input.id = i.id;
+    input.oldvalue = i.value;
+    input.value = i.value;
+    input.addEventListener("change", oc);
+    var span1 = document.createElement('span');
+    var span2 = document.createElement('span');
+    span1.textContent = n[0];
+    if (name.length > 1) span2.textContent = n[1];
+    s.appendChild(span1);
+    s.appendChild(input);
+    s.appendChild(span2);
+    return s;
+};
 var createCheckbox = function(name, i, oc) {
     var s = document.createElement('span');
     var input = document.createElement('input');
@@ -140,7 +159,13 @@ var createScriptItem = function(i) {
     sett.setAttribute('id', id_);
     sett.setAttribute('style', 'display:none')
 
-    var co = function() { modifyScriptOptions(this.name, this.id, !this.oldvalue); };
+    var co = function() {
+        if (this.type == 'checkbox') {
+            modifyScriptOptions(this.name, this.id, !this.oldvalue);
+        } else if (this.type == 'text') {
+            modifyScriptOptions(this.name, this.id, this.value);
+        }
+    };
 
     sett.appendChild(createButton(i.name, 'enabled', i.enabled, i.enabled ? 'Disable' : 'Enable', co));
     sett.appendChild(createButton(null, null, null, 'Delete', function() {
@@ -170,6 +195,18 @@ var createScriptItem = function(i) {
                               { id: 'compat_filterproto', name: i.name, enabled: i.compat_filterproto},
                               co);
 
+    var i_uw = createCheckbox('Poll unsafeWindow variables ',
+                              { id: 'poll_unsafewindow', name: i.name, enabled: i.poll_unsafewindow},
+                              co);
+
+    var i_av = createCheckbox('Poll all unsafeWindow variable (Attention: this might produce a lot of cpu load!)',
+                              { id: 'poll_unsafewindow_allvars', name: i.name, enabled: i.poll_unsafewindow_allvars},
+                              co);
+
+    var i_ui = createInput('every ## ms',
+                           { id: 'poll_unsafewindow_interval', name: i.name, value: i.poll_unsafewindow_interval},
+                           co);
+
     sett.appendChild(document.createElement('br'));
     sett.appendChild(comp);
     sett.appendChild(document.createElement('br'));
@@ -181,8 +218,14 @@ var createScriptItem = function(i) {
     sett.appendChild(document.createElement('br'));
     sett.appendChild(i_fp);
     sett.appendChild(document.createElement('br'));
+    sett.appendChild(document.createElement('hr'));
+    sett.appendChild(i_uw);
+    sett.appendChild(i_ui);
     sett.appendChild(document.createElement('br'));
-    
+    sett.appendChild(i_av);
+    sett.appendChild(document.createElement('br'));
+    sett.appendChild(document.createElement('br'));
+
     var input = document.createElement('textarea');
     input.textContent = i.code;
     input.cols = 100;

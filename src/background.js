@@ -10,6 +10,7 @@ var TM_storage = {};
 var TM_cmds = [];
 
 var condAppendix = '@re';
+var windowExcludes = [];
 
 var urlAll = '://*/*';
 var urlAllHttp = 'http' + urlAll;
@@ -27,6 +28,7 @@ var Script = function() {
     this.namespace = null;
     this.description = null;
     this.enabled = true;
+    
     this.compat_metadata = false;
     this.compat_foreach = false;
     this.compat_arrayleft = false;
@@ -34,7 +36,10 @@ var Script = function() {
     this.requires = [];
     this.includes = [];
     this.excludes = [];
-    this.resource = [];
+    this.resources = [];
+    this.poll_unsafewindow = false;
+    this.poll_unsafewindow_allvars = false;
+    this.poll_unsafewindow_interval = 10000;
 };
 
 /* ###### Helpers ####### */
@@ -48,6 +53,7 @@ var getStringBetweenTags = function(source, tag1, tag2) {
         return source.substr(b + tag1.length);
     }
     var e = source.substr(b + tag1.length).search(escapeForRegExp(tag2));
+    
     if (e == -1) {
         return "";
     }
@@ -230,6 +236,164 @@ TM_storage.setValue = function(name, value) {
     localStorage.setItem(name, value);
 };
 
+/* ###### unsafeWindow poller ######### */
+
+var unsafeWindowPollerInit = function() {
+
+    this.pollerExcludeNames = [];
+    this.pollerExcludeTypes = ['function'];
+    this.lastUpdate = 0;
+
+    this.determineUsedUnsafeWindowVars = function(script) {
+        var arr = script.textContent.split('unsafeWindow.');
+        var ret = [];
+        for (var i = 1; i < arr.length; i++) {
+            var a = arr[i];
+            // ignore first item
+            var p = a.search(/[ \t\n;:=\(\)\[\]\.\{\}]/);
+            if (p != -1) {
+                var excl = false;
+                var n = a.substr(0, p);
+                for (var k in windowExcludes) {
+                    if (windowExcludes[k] == n) {
+                        excl = true;
+                        break;
+                    }
+                }
+                if (excl) continue;
+                for (var k in ret) {
+                    if (ret[k] == n) {
+                        excl = true;
+                        break;
+                    }
+                }
+                if (!excl) {
+                    ret.push(n);
+                }
+            }
+        }
+        return ret;
+    };
+
+    this.getWindowExcludes = function() {
+        var a = [];
+        for (var k in window) {
+            a.push(k);
+        }
+        return a;
+    };
+
+    this.inject = function() {
+        var s = document.createElement('script');
+        var b = document.getElementsByTagName('body');
+        var src = this.pollerSrc.toString();
+        if (!b.length) return null;
+
+        src = src.replace(/##POLLEREXCLUDETYPES##/g, JSON.stringify(this.pollerExcludeTypes));
+        src = src.replace(/##POLLEREXCLUDENAMES##/g, JSON.stringify(this.pollerExcludeNames));
+        src = 'try { (' + src + ')(); } catch (e) { console.log(e); }\n'
+        s.textContent = src;
+        b[0].appendChild(s);
+
+        return true;
+    };
+
+    this.fillUnsafeWindow = function() {
+        var oobj = (typeof oobj === 'undefined') ? this : oobj;
+        var pollerInterval = Number('##INTERVAL##');
+        var d = document.getElementById('##POLLERDIVID##');
+        var ts = d.getAttribute('ts');
+        try {
+            if (ts && ts > oobj.lastUpdate) {
+                var j = JSON.parse(d.textContent);
+                for (var k in j) {
+                    try {
+                        // console.log("replace unsafeWindow elem " + k);
+                        unsafeWindow[k] = JSON.parse(j[k]);
+                    } catch (f) {
+                        console.log(f);
+                    }
+                }
+                this.lastUpdate = ts;
+            }
+        } catch (e) {
+            console.log(e);
+        }
+        
+        if (pollerInterval) window.setTimeout(function() { oobj.fillUnsafeWindow() }, pollerInterval);
+    };
+
+    this.pollerSrc = function() {
+        var pollerInterval = Number('##INTERVAL##');
+        var pollerIncludes = JSON.parse('##POLLERINCLUDES##');;
+        var pollerExcludeWindow = JSON.parse('##POLLEREXCLUDEWINDOW##');
+        var pollerExcludeTypes = JSON.parse('##POLLEREXCLUDETYPES##');
+        var pollerExcludeNames = JSON.parse('##POLLEREXCLUDENAMES##');
+        var pollerDivId = '##POLLERDIVID##';
+
+        var createDiv = function() {
+            var div = document.createElement('div');
+            div.setAttribute('id', pollerDivId);
+            div.setAttribute('style','display: none;');
+            var b = document.getElementsByTagName('body');
+            
+            if (!b.length) return null;
+
+            b[0].appendChild(div);
+            return div
+        };
+
+        var poll = function() {
+            // console.log('poll start');
+            fillPollerDiv();
+            if (pollerInterval) window.setTimeout(function() { poll(); }, pollerInterval);
+            // console.log('poll end');
+        };
+
+        var isIncluded = function(n) {
+            for (var i=0; i<pollerIncludes.length; i++) {
+                if (pollerIncludes[i] == n) return true;
+            }
+            return (pollerIncludes.length == 0);
+        };
+
+        var isExcluded = function(t, n) {
+            for (var i=0; i<pollerExcludeWindow.length; i++) {
+                if (pollerExcludeWindow[i] == n) return true;
+            }
+            for (var i=0; i<pollerExcludeNames.length; i++) {
+                if (pollerExcludeNames[i] == n) return true;
+            }
+            for (var i=0; i<pollerExcludeTypes.length; i++) {
+                if (pollerExcludeTypes[i] == t) return true;
+            }
+            return false;
+        };
+
+        var fillPollerDiv = function() {
+            var c = {};
+
+            for (var k in window) {
+                if (!isIncluded(k) || isExcluded(typeof window[k], k)) continue;
+                try {
+                    // console.log("stringify k " + k + ' ### ' + typeof window[k]);
+                    c[k] = JSON.stringify(window[k]);
+                    // console.log("END k " + k);
+                } catch (e) {
+                    console.log("error adding " + k + '(' + typeof window[k] + ') to poll array');
+                }
+            }
+
+            var d = document.getElementById(pollerDivId);
+            d.innerHTML = JSON.stringify(c);
+            var ts = ((new Date()).getTime().toString());
+            d.setAttribute('ts', ts);
+        };
+
+        createDiv();
+        poll();
+    };
+};
 
 /* ###### hehe ######### */
 
@@ -292,8 +456,12 @@ var defaultScripts = function() {
 var configInit = function() {
 
     var oobj = this;
-    this.defaults = { safeUrls: true, tryToFixUrl: true, debug: false, showFixedSrc: false, firstRun: true };
-
+    this.defaults = { safeUrls: true,
+                      tryToFixUrl: true,
+                      debug: false,
+                      showFixedSrc: false,
+                      firstRun: true};
+    
     this.load = function() {
         oobj.values = TM_storage.getValue("TM_config", oobj.defaults);
     };
@@ -579,8 +747,10 @@ var runtimeInit = function() {
         xmlhttp.onload = onload;
         xmlhttp.onerror = onload;
         try {
-            if (!this.validScheme(details.url))
+            if (!this.validScheme(details.url)) {
+                console.log("error loading url: " + details.url);
                 throw new Error;
+            }
             xmlhttp.open(details.method, details.url);
         } catch(e) {
             console.log(e);
@@ -642,7 +812,6 @@ var runtimeInit = function() {
                 if (h.length >= 2 &&
                     h[0].trim() == 'Content-Type' &&
                     h[1].search('image') != -1) {
-                    console.log("type:" + h[1]);
                     image = h[1].trim();
                 }
             }
@@ -658,8 +827,8 @@ var runtimeInit = function() {
             }
         };
 
-        for (var k in script.resource) {
-            var r = script.resource[k];
+        for (var k in script.resources) {
+            var r = script.resources[k];
             if (!r.loaded) {
 
                 var details = {
@@ -676,6 +845,37 @@ var runtimeInit = function() {
         return false;
     };
 
+    this.getRequires = function(script, cb) {
+
+        var oobj = this;
+
+        var fillRequire = function(req, res) {
+            res.loaded = true;
+            if (req.readyState == 4 && req.status == 200) {
+                res.textContent = req.responseText;
+            }
+        };
+
+        for (var k in script.requires) {
+            var r = script.requires[k];
+            if (!r.loaded && r.url) {
+                var details = {
+                    method: 'GET',
+                    url: r.url,
+                };
+
+                console.log("requires " + r.url);
+                this.xmlhttpRequest(details, function(req) {
+                                        fillRequire(req, r);
+                                        oobj.getRequires(script, cb);
+                                    });
+                return true;
+            }
+        }
+
+        cb();
+    };
+
     this.contentLoad = function(tab, main) {
 
         var oobj = this;
@@ -685,15 +885,16 @@ var runtimeInit = function() {
 
         this.currentTab = tab;
 
-        var scripts = [];
-        var requires = [];
+        var req_cb = function() {
+            var scripts = [];
+            scripts.push(main);
 
-        scripts.push(main);
-        main.requires = requires;
+            console.log("run script @ " + tab.url + " - " + main.name);
 
-        console.log("run script @ " + tab.url + " - " + main.name);
+            oobj.injectScript(scripts);
+        };
 
-        this.injectScript(scripts);
+        this.getRequires(main, req_cb);
     };
 
     this.getUrlContents = function(url) {
@@ -731,7 +932,8 @@ var runtimeInit = function() {
         }
 
         emu += 'unsafeWindow = window;\n';
-        emu += 'var uneval = function(arg) { try { return JSON.stringify(arg); } catch (e) { alert(e) } };\n';
+        emu += 'var uneval = function(arg) { try { return "\$1 = " + JSON.stringify(arg) + ";"; } catch (e) { alert(e) } };\n';
+        emu += 'var CDATA = function(arg) { this.src = arg; this.toString = function() { return this.src; }; this.toXMLString = this.toString; };'
 
         var flt = function(fun /*, thisp*/) {
 
@@ -759,11 +961,10 @@ var runtimeInit = function() {
         };
 
         var cmp = 'Array.prototype.filter = ' + flt + ';';
-        var res = 'var TM_resources = ' + JSON.stringify(script.resource) + ';\n';
+        var res = 'var TM_resources = ' + JSON.stringify(script.resources) + ';\n';
 
-        ret = api + emu + res;
-        
         if (script.compat_filterproto) {
+            console.log("env option: overwrite Array.filter");
             ret += cmp;
         }
 
@@ -774,10 +975,36 @@ var runtimeInit = function() {
         // secsrc += ';})();';
 
         if (Config.values.debug) {
+            console.log("env option: debug scripts");
             secsrc = compaMo.debugify(secsrc);
         }
 
-        ret = '(function(){' + ret + secsrc +';})();';
+        if (script.poll_unsafewindow) {
+            var poll = '';
+            poll += "var PollerInit = " + unsafeWindowPollerInit.toString() + ";\n";
+            poll += "var Poller = new PollerInit();\n";
+            poll += "Poller.inject();\n";
+            poll += "Poller.fillUnsafeWindow();\n";
+            poll = poll.replace(/##INTERVAL##/g, script.poll_unsafewindow_interval);
+            poll = poll.replace(/##POLLERDIVID##/g, 'tampermonkeyPollerDiv');
+
+            var incs = Poller.determineUsedUnsafeWindowVars(script);
+            if (script.poll_unsafewindow_allvars) {
+                // all vars should be transfered, exclude at least chrome window specific ones
+                poll = poll.replace(/##POLLEREXCLUDEWINDOW##/g, JSON.stringify(windowExcludes));
+                poll = poll.replace(/##POLLERINCLUDES##/g, JSON.stringify([]));
+                console.log("env option: poll all unsafeWindow vars");
+            } else if (incs.length) {
+                poll = poll.replace(/##POLLEREXCLUDEWINDOW##/g, JSON.stringify([]));
+                poll = poll.replace(/##POLLERINCLUDES##/g, JSON.stringify(incs));
+                console.log("env option: poll " + incs.length + " unsafeWindow vars");
+            }
+
+            if (script.poll_unsafewindow_allvars || incs.length != 0) emu += poll;
+        }
+
+        ret = api + emu + res;
+        ret = 'try { (function(){ ' + ret + secsrc +';})(); } catch (e) { console.log(e); }';
 
         return ret;
     };
@@ -786,17 +1013,13 @@ var runtimeInit = function() {
         var script;
 
         for (var i = 0; script = scripts[i]; i++) {
-
-            var contents = script.textContent;
             var requires = [];
-
             script.requires.forEach(function(req) {
                                         var contents = req.textContent;
                                         requires.push(contents);
                                     });
 
-            var scriptSrc = "\n" + requires.join("\n") + "\n" + contents + "\n";
-
+            var scriptSrc = "\n" + requires.join("\n") + "\n" + script.textContent + "\n";
             chrome.tabs.sendRequest(this.currentTab.id,
                                     { method: "executeScript", code: this.createEnv(scriptSrc, script)},
                                     function(response) {});
@@ -812,6 +1035,7 @@ var processHeader = function(header) {
     var script = new Script();
 
     var tags = ['name', 'namespace', 'version', 'author', 'description'];
+
     // security...
     header = header.replace(/\'/gi, '').replace(/\"/gi, '');
     // convinience ;)
@@ -828,21 +1052,27 @@ var processHeader = function(header) {
         var l = lines[i].replace(/^\/\//gi, '').replace(/^ /gi, '');
         if (l.search(/^@include/) != -1) {
             var c = l.replace(/^@include/gi, '').replace(/[ \b\r\n]/gi, '');
-            console.log("c " + c);
+            // console.log("c " + c);
             script.includes.push(c);
         }
         if (l.search(/^@exclude/) != -1) {
             var c = l.replace(/^@exclude/gi, '').replace(/[ \b\r\n]/gi, '');
-            console.log("c " + c);
+            // console.log("c " + c);
             script.excludes.push(c);
+        }
+        if (l.search(/^@require/) != -1) {
+            var c = l.replace(/^@require/gi, '').replace(/[ \b\r\n]/gi, '');
+            // console.log("c " + c);
+            var o = { url: c, loaded: false, textContent: ''};
+            script.requires.push(o);
         }
         if (l.search(/^@resource/) != -1) {
             var c = l.replace(/^@resource/gi, '').replace(/[\r\n]/gi, '');
             var s = c.trim().split(' ');
-            console.log("c " + c);
-            console.log("s " + s);
+            // console.log("c " + c);
+            // console.log("s " + s);
             if (s.length >= 2) {
-                script.resource.push({name: s[0], url: s[1], loaded: false});
+                script.resources.push({name: s[0], url: s[1], loaded: false});
             }
         }
     }
@@ -859,6 +1089,9 @@ var removeUserScript = function(name) {
 var addNewUserScript = function(tabid, src, ask) {
 
     if (ask == undefined) ask = true;
+
+    // save some space ;)
+    src = src.replace(/\r/g, '');
 
     var t1 = '==UserScript==';
     var t2 = '==/UserScript==';
@@ -939,11 +1172,23 @@ var addNewUserScript = function(tabid, src, ask) {
         }
     }
 
+    var compDe = false;
+    var unWiVaLe = Poller.determineUsedUnsafeWindowVars(script);
+
+    if (unWiVaLe) {
+        script.poll_unsafewindow = true;
+    }
+
     if (compaMo.mkCompat(src) != src) {
-        script.compat_metadata = true;
-        script.compat_foreach = true;
-        script.compat_arrayleft = true;
-        script.compat_filterproto = true;
+        compDe = true;
+        if (src != compaMo.unMetaDataify(src)) script.compat_metadata = true;
+        if (src != compaMo.unEachify(src)) script.compat_foreach = true;
+        if (src != compaMo.unArrayOnLeftSideify(src)) script.compat_arrayleft = true;
+        if (compaMo.checkFilterRegExp(src)) script.compat_filterproto = true;
+
+    }
+
+    if (unWiVaLe || compDe) {
         msg+= "\nNote: A recheck of the GreaseMonkey/FF       \n    compatibility options may be \n    required in order to run this script.\n\n";
     }
 
@@ -1101,6 +1346,9 @@ var requestHandler = function(request, sender, sendResponse) {
                 if (typeof request.compat_foreach !== 'undefined') r.script.compat_foreach = request.compat_foreach;
                 if (typeof request.compat_arrayleft !== 'undefined') r.script.compat_arrayleft = request.compat_arrayleft;
                 if (typeof request.compat_filterproto !== 'undefined') r.script.compat_filterproto = request.compat_filterproto;
+                if (typeof request.poll_unsafewindow !== 'undefined') r.script.poll_unsafewindow = request.poll_unsafewindow;
+                if (typeof request.poll_unsafewindow_allvars !== 'undefined') r.script.poll_unsafewindow_allvars = request.poll_unsafewindow_allvars;
+                if (typeof request.poll_unsafewindow_interval !== 'undefined') r.script.poll_unsafewindow_interval = request.poll_unsafewindow_interval;
                 if (typeof request.enabled !== 'undefined') r.script.enabled = request.enabled;
                 storeScript(r.script.name, r.script);
             }
@@ -1181,7 +1429,7 @@ var requestHandler = function(request, sender, sendResponse) {
     } else if (request.method == "execMenuCmd") {
         // cmd is unregistered just by getting
         var c = getRegisteredMenuCmd(request.id);
-        console.log("MC exec " + c.id);
+        // console.log("MC exec " + c.id);
         c.response({ run: true });
         sendResponse({});
     } else {
@@ -1213,7 +1461,7 @@ var getRegisteredMenuCmd = function(id) {
             ret = c;
         }
     }
-    console.log("MC remove " + c.id);
+    // console.log("MC remove " + c.id);
     return ret;
 };
 
@@ -1314,6 +1562,9 @@ var convertMgmtToMenuItems = function(url, options) {
                      compat_foreach: script.compat_foreach,
                      compat_arrayleft: script.compat_arrayleft,
                      compat_filterproto: script.compat_filterproto,
+                     poll_unsafewindow: script.poll_unsafewindow,
+                     poll_unsafewindow_allvars: script.poll_unsafewindow_allvars,
+                     poll_unsafewindow_interval: script.poll_unsafewindow_interval,
                      userscript: true };
         if (options) {
             item.code = script.textContent;
@@ -1349,6 +1600,10 @@ var compaMoInit = function () {
         var re = new RegExp('(\\n| |\\t|;)(setTimeout)\\(', 'g')
         src = src.replace(re, '$1TM_$2(');
         return src;
+    };
+
+    this.checkFilterRegExp = function(src) {
+        return (src.search(escapeForRegExp('.filter(/')) != -1);
     };
 
     /*
@@ -1456,7 +1711,10 @@ var compaMoInit = function () {
             }
 
             var n = 'var __kk in ' + arrname;
-            var b = '{\n' + '    var ' + varname + ' = ' + arrname + '[__kk];';    
+            var b = '';
+            // detect arrays and filter the Array.prototype.filter function :-/
+            b += '{\n' + '    if (typeof ' + arrname + '.length !== "undefined" && __kk == "filter") continue;';    
+            b += ' \n' + '    var ' + varname + ' = ' + arrname + '[__kk];';
 
             arr[i] = arr[i].replace(escapeForRegExp(f), n).replace('{', b);
         }
@@ -1506,9 +1764,11 @@ var compaMoInit = function () {
             if (c1 == -1 &&
                 c2 == -1) {
                 var z = getStringBetweenTags(s,t1, t2);
-                var x = z.replace(/\"/g, '\\"').replace(/\n/g, '\\n" + \n"');
+                var x;
+                x = z.replace(/\"/g, '\\"').replace(/\n/g, '\\n" + \n"');
+                x = x.replace(/^\n/g, '').replace(/\n$/g, '');
                 var g = t1+z+t2;
-                t = t.replace(g, '("' + x + '")');
+                t = t.replace(g, '(new CDATA("' + x + '"))');
             }
             s = s.substr(1, s.length-1);
             pos = s.search(escapeForRegExp(t1));
@@ -1554,6 +1814,10 @@ var updateListener = function(tabID, changeInfo, tab) {
         }
     }
 };
+
+var Poller = new unsafeWindowPollerInit();
+// determine excludable items like chrome, dcoument, getElementById and so on afap
+windowExcludes = Poller.getWindowExcludes();
 
 var Runtime = new runtimeInit();
 var Config = new configInit();

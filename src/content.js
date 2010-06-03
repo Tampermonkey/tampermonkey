@@ -6,15 +6,7 @@
 
 chrome.extension.onRequest.addListener(
     function(request, sender, sendResponse) {
-        if (request.method == "getSrc") {
-            var t = '';
-            var bodies = document.getElementsByTagName('body');
-            if (bodies.length >= 1) {
-                var body = bodies[0];
-                t = body.innerText;
-            }
-            sendResponse({src: t});
-        } else if (request.method == "confirm") {
+        if (request.method == "confirm") {
             var c = confirm(request.msg);
             sendResponse({confirm: c});
         } else if (request.method == "showMsg") {
@@ -34,5 +26,11 @@ chrome.extension.onRequest.addListener(
         }
     });
 
-// send request when content script is loaded.. this happens just once ;)
-chrome.extension.sendRequest({ method: "onUpdate" }, function(response) {});
+// send request when a node is inserted at the the document and remove the listener
+var domEvent = "DOMNodeInserted";
+var domEventListener = function() {
+    window.document.removeEventListener(domEvent, domEventListener, false);
+    window.setTimeout(function() { chrome.extension.sendRequest({ method: "onUpdate" }, function(response) {}); }, 500);
+};
+window.document.addEventListener(domEvent, domEventListener, false);
+                                      
