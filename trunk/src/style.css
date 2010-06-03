@@ -38,10 +38,6 @@ a {
   border-spacing: 3;j
 }
 
-input {  
-  z-index: 1000;
-}
-
 table {
   align: left;
 }
