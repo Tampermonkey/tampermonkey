@@ -103,7 +103,7 @@ var createInput = function(name, i, oc) {
     input.name = i.name;
     input.id = i.id;
     input.oldvalue = i.value;
-    input.value = i.value;
+    input.value = (i.value != undefined) ? i.value : '';
     input.addEventListener("change", oc);
     var span1 = document.createElement('span');
     var span2 = document.createElement('span');
@@ -142,6 +142,26 @@ var createButton = function(name, id, value, text, oc, img) {
     return b;
 };
 
+var createPosition = function(name, e, oc) {
+    var s = document.createElement('span');
+    var b = document.createElement('select');
+    for (var i=1; i<=e.posof; i++) {
+        var o = document.createElement('option');
+        o.textContent = i;
+        if (i == e.pos) o.selected = true;
+        b.appendChild(o);
+    }
+    b.id = e.id;
+    b.name = e.name;
+    b.addEventListener("change", oc);
+
+    var span = document.createElement('span');
+    span.textContent = name;
+    s.appendChild(span);
+    s.appendChild(b);
+    return s;
+};
+
 var createScriptItem = function(i) {
     var outer = document.createElement('span');
     var name_ = i.name.replace('/ /g', '_');
@@ -160,18 +180,23 @@ var createScriptItem = function(i) {
     sett.setAttribute('style', 'display:none')
 
     var co = function() {
-        if (this.type == 'checkbox') {
+        if (this.type == 'checkbox' || this.type == 'button') {
             modifyScriptOptions(this.name, this.id, !this.oldvalue);
-        } else if (this.type == 'text') {
+        } else if (this.type == 'text' || this.type == 'select-one') {
             modifyScriptOptions(this.name, this.id, this.value);
         }
     };
 
-    sett.appendChild(createButton(i.name, 'enabled', i.enabled, i.enabled ? 'Disable' : 'Enable', co));
-    sett.appendChild(createButton(null, null, null, 'Delete', function() {
-                                      var c = confirm("Really delete this script?");
-                                      if (c) saveScript(i.name, null);
-                                  }));
+    sett.appendChild(createPosition('Position: ',
+                                    { id: 'position', name: i.name, pos: i.position, posof: i.positionof }, co));
+
+    if (i.id != null) {
+        sett.appendChild(createButton(i.name, 'enabled', i.enabled, i.enabled ? 'Disable' : 'Enable', co));
+        sett.appendChild(createButton(null, null, null, 'Delete', function() {
+                                          var c = confirm("Really delete this script?");
+                                          if (c) saveScript(i.name, null);
+                                      }));
+    }
     sett.appendChild(createButton(null, null, null, 'Close', function() {
                                       document.getElementById(id_).setAttribute('style', 'display:none');
                                   }));

@@ -6,10 +6,11 @@
 
 var TM_tabs = {};
 var TM_storage = {};
-
+var TM_storageListener = [];
 var TM_cmds = [];
 
 var condAppendix = '@re';
+var storeAppendix = '@st';
 var windowExcludes = [];
 
 var urlAll = '://*/*';
@@ -28,7 +29,7 @@ var Script = function() {
     this.namespace = null;
     this.description = null;
     this.enabled = true;
-    
+
     this.compat_metadata = false;
     this.compat_foreach = false;
     this.compat_arrayleft = false;
@@ -37,6 +38,7 @@ var Script = function() {
     this.includes = [];
     this.excludes = [];
     this.resources = [];
+    this.position = 0;
     this.poll_unsafewindow = false;
     this.poll_unsafewindow_allvars = false;
     this.poll_unsafewindow_interval = 10000;
@@ -53,7 +55,7 @@ var getStringBetweenTags = function(source, tag1, tag2) {
         return source.substr(b + tag1.length);
     }
     var e = source.substr(b + tag1.length).search(escapeForRegExp(tag2));
-    
+
     if (e == -1) {
         return "";
     }
@@ -63,18 +65,19 @@ var getStringBetweenTags = function(source, tag1, tag2) {
 var versionCmp = function(v1, v2) {
     var a1 = v1.split('.');
     var a2 = v2.split('.');
-    var ret = false;
-    var len = a1.length > a2.length ? a1.length : a1.length;
+    var len = a1.length < a2.length ? a1.length : a2.length;
 
     for (var i=0; i<len; i++) {
         if (a1.length < len) a1[i] = 0;
         if (a2.length < len) a2[i] = 0;
-        if (Number(a2[i]) > Number(a1[i])) {
+        if (Number(a1[i]) > Number(a2[i])) {
             return true;
+        } else if (Number(a1[i]) < Number(a2[i])) {
+            return false;
         }
     }
 
-    return ret;
+    return null;
 };
 
 /* ###### URL Handling ####### */
@@ -125,7 +128,7 @@ chrome.extension.getVersion = function() {
 
         } catch (e) {
             console.log(e);
-            chrome.extension.version_ = 'unknown';
+            chrome.extension.version_ = '0.0.0.0';
             chrome.extension.updateurl_ = null;
         }
     }
@@ -139,46 +142,20 @@ chrome.extension.getID = function() {
     return (ida.length < 2) ? '' : ida[1];
 };
 
-chrome.extension.newVersion = function() {
+/* ###### version related data conversion ####### */
 
-    if (!chrome.extension.newversion_) {
+var convertData = function() {
 
-        chrome.extension.getVersion();
+    var newversion = chrome.extension.getVersion();
+    var version = TM_storage.getValue("TM_version", "0.0.0.0");
 
-        if (chrome.extension.updateurl_) {
-
-            try {
-                var xhr = new XMLHttpRequest();
-                xhr.open("GET", chrome.extension.updateurl_, false);
-                xhr.send();
-
-                var a1 = "<app appid='"+chrome.extension.getID()+"'>";
-                var a2 = "</app>";
-                var a = getStringBetweenTags(xhr.responseText, a1, a2);
-
-                var t1 = "codebase='";
-                var t2 = "'";
-                var t = getStringBetweenTags(a, t1, t2);
-
-                var v1 = "version='";
-                var v2 = "'";
-                var v = getStringBetweenTags(a, v1, v2);
-
-                chrome.extension.newversion_ = v;
-
-                if (versionCmp(chrome.extension.newversion_, chrome.extension.version_)) {
-                    console.log("My version: " + chrome.extension.version_ + " - Remote version:" + chrome.extension.newversion_ + "; trigger update!");
-                    chrome.tabs.create({ url: t});
-                 }
-
-            } catch (e) {
-                console.log(e);
-                chrome.extension.newversion_ = "unknown";
-            }
+    if (versionCmp(newversion, version)) {
+        if (versionCmp("1.0.0.4", version)) {
+            reorderScripts();
         }
     }
 
-    return chrome.extension.newversion_;
+    TM_storage.setValue("TM_version", newversion);
 };
 
 /* ###### Storage ####### */
@@ -240,9 +217,13 @@ TM_storage.setValue = function(name, value) {
 
 var unsafeWindowPollerInit = function() {
 
-    this.pollerExcludeNames = [];
-    this.pollerExcludeTypes = ['function'];
-    this.lastUpdate = 0;
+    this.getWindowExcludes = function() {
+        var a = [];
+        for (var k in window) {
+            a.push(k);
+        }
+        return a;
+    };
 
     this.determineUsedUnsafeWindowVars = function(script) {
         var arr = script.textContent.split('unsafeWindow.');
@@ -250,7 +231,7 @@ var unsafeWindowPollerInit = function() {
         for (var i = 1; i < arr.length; i++) {
             var a = arr[i];
             // ignore first item
-            var p = a.search(/[ \t\n;:=\(\)\[\]\.\{\}]/);
+            var p = a.search(/[ \t\n;:=\(\)\[\]\.\,\{\}]/);
             if (p != -1) {
                 var excl = false;
                 var n = a.substr(0, p);
@@ -274,125 +255,6 @@ var unsafeWindowPollerInit = function() {
         }
         return ret;
     };
-
-    this.getWindowExcludes = function() {
-        var a = [];
-        for (var k in window) {
-            a.push(k);
-        }
-        return a;
-    };
-
-    this.inject = function() {
-        var s = document.createElement('script');
-        var b = document.getElementsByTagName('body');
-        var src = this.pollerSrc.toString();
-        if (!b.length) return null;
-
-        src = src.replace(/##POLLEREXCLUDETYPES##/g, JSON.stringify(this.pollerExcludeTypes));
-        src = src.replace(/##POLLEREXCLUDENAMES##/g, JSON.stringify(this.pollerExcludeNames));
-        src = 'try { (' + src + ')(); } catch (e) { console.log(e); }\n'
-        s.textContent = src;
-        b[0].appendChild(s);
-
-        return true;
-    };
-
-    this.fillUnsafeWindow = function() {
-        var oobj = (typeof oobj === 'undefined') ? this : oobj;
-        var pollerInterval = Number('##INTERVAL##');
-        var d = document.getElementById('##POLLERDIVID##');
-        var ts = d.getAttribute('ts');
-        try {
-            if (ts && ts > oobj.lastUpdate) {
-                var j = JSON.parse(d.textContent);
-                for (var k in j) {
-                    try {
-                        // console.log("replace unsafeWindow elem " + k);
-                        unsafeWindow[k] = JSON.parse(j[k]);
-                    } catch (f) {
-                        console.log(f);
-                    }
-                }
-                this.lastUpdate = ts;
-            }
-        } catch (e) {
-            console.log(e);
-        }
-        
-        if (pollerInterval) window.setTimeout(function() { oobj.fillUnsafeWindow() }, pollerInterval);
-    };
-
-    this.pollerSrc = function() {
-        var pollerInterval = Number('##INTERVAL##');
-        var pollerIncludes = JSON.parse('##POLLERINCLUDES##');;
-        var pollerExcludeWindow = JSON.parse('##POLLEREXCLUDEWINDOW##');
-        var pollerExcludeTypes = JSON.parse('##POLLEREXCLUDETYPES##');
-        var pollerExcludeNames = JSON.parse('##POLLEREXCLUDENAMES##');
-        var pollerDivId = '##POLLERDIVID##';
-
-        var createDiv = function() {
-            var div = document.createElement('div');
-            div.setAttribute('id', pollerDivId);
-            div.setAttribute('style','display: none;');
-            var b = document.getElementsByTagName('body');
-            
-            if (!b.length) return null;
-
-            b[0].appendChild(div);
-            return div
-        };
-
-        var poll = function() {
-            // console.log('poll start');
-            fillPollerDiv();
-            if (pollerInterval) window.setTimeout(function() { poll(); }, pollerInterval);
-            // console.log('poll end');
-        };
-
-        var isIncluded = function(n) {
-            for (var i=0; i<pollerIncludes.length; i++) {
-                if (pollerIncludes[i] == n) return true;
-            }
-            return (pollerIncludes.length == 0);
-        };
-
-        var isExcluded = function(t, n) {
-            for (var i=0; i<pollerExcludeWindow.length; i++) {
-                if (pollerExcludeWindow[i] == n) return true;
-            }
-            for (var i=0; i<pollerExcludeNames.length; i++) {
-                if (pollerExcludeNames[i] == n) return true;
-            }
-            for (var i=0; i<pollerExcludeTypes.length; i++) {
-                if (pollerExcludeTypes[i] == t) return true;
-            }
-            return false;
-        };
-
-        var fillPollerDiv = function() {
-            var c = {};
-
-            for (var k in window) {
-                if (!isIncluded(k) || isExcluded(typeof window[k], k)) continue;
-                try {
-                    // console.log("stringify k " + k + ' ### ' + typeof window[k]);
-                    c[k] = JSON.stringify(window[k]);
-                    // console.log("END k " + k);
-                } catch (e) {
-                    console.log("error adding " + k + '(' + typeof window[k] + ') to poll array');
-                }
-            }
-
-            var d = document.getElementById(pollerDivId);
-            d.innerHTML = JSON.stringify(c);
-            var ts = ((new Date()).getTime().toString());
-            d.setAttribute('ts', ts);
-        };
-
-        createDiv();
-        poll();
-    };
 };
 
 /* ###### hehe ######### */
@@ -404,7 +266,7 @@ var defaultScripts = function() {
     userscripts_header += '// ==UserScript==\n';
     userscripts_header += '// @name       TamperScript\n';
     userscripts_header += '// @namespace  http://tampermonkey.biniok.net/\n';
-    userscripts_header += '// @version    1.0\n';
+    userscripts_header += '// @version    1.1\n';
     userscripts_header += '// @description  make UserScripts links one-click installable (links to *.user.js are caught by chrome)\n';
     userscripts_header += '// @include    http://*/*\n';
     userscripts_header += '// @copyright  2010+, Jan Biniok\n';
@@ -446,7 +308,7 @@ var defaultScripts = function() {
             }
         }
 
-        window.addEventListener("load", modifyUserScriptLinks, false);
+        modifyUserScriptLinks();
     }
 
     return [ userscripts_header + '(' + userscripts.toString() + ')();' ];
@@ -461,9 +323,14 @@ var configInit = function() {
                       debug: false,
                       showFixedSrc: false,
                       firstRun: true};
-    
+
     this.load = function() {
         oobj.values = TM_storage.getValue("TM_config", oobj.defaults);
+        var ds = defaultScripts();
+        for (var k in ds) {
+            var s = ds[k];
+            window.setTimeout(function() { addNewUserScript(null, s, false, true); }, 100 );
+        }
     };
 
     this.load();
@@ -473,14 +340,6 @@ var configInit = function() {
         var inst = c.firstRun;
         c.firstRun = false;
         TM_storage.setValue("TM_config", c);
-        var ds = defaultScripts();
-
-        if (inst) {
-            for (var k in ds) {
-                var s = ds[k];
-                window.setTimeout(function() { addNewUserScript(null, s, false); }, 100 );
-            }
-        }
     };
 
     if (this.values.firstRun) {
@@ -494,236 +353,6 @@ var configInit = function() {
 /* ###### Runtime ####### */
 
 var runtimeInit = function() {
-
-    this.gm_emu = function() {
-        this.GM_addStyle = function(css) {
-            return TM_addStyle(css);
-        };
-
-        this.GM_deleteValue = function(name) {
-            return TM_deleteValue(name);
-        };
-
-        this.GM_listValues = function() {
-            return TM_listValues();
-        };
-
-        this.GM_getValue = function(name, defaultValue) {
-            return TM_getValue(name, defaultValue)
-        };
-
-        this.GM_log = function(message) {
-            return TM_log(message);
-        };
-
-        this.GM_registerMenuCommand = function(name, funk) {
-            return TM_registerMenuCommand(name, funk);
-        };
-
-        this.GM_openInTab = function(url) {
-            return TM_openInTab(url);
-        };
-
-        this.GM_setValue = function(name, value) {
-            return TM_setValue(name, value);
-        };
-
-        this.GM_xmlhttpRequest = function(details) {
-            return TM_xmlhttpRequest(details);
-        };
-
-        this.GM_getResourceText = function(name) {
-            return TM_getResourceText(name);
-        };
-
-        this.GM_getResourceURL = function(name) {
-            return TM_getResourceURL(name);
-        };
-    };
-
-    this.tm_api = function() {
-
-        this.TM_context_id = "##SCRIPTID##";
-
-        this.TM_addStyle = function(css) {
-            var style = document.createElement('style');
-            style.textContent = css;
-            document.getElementsByTagName('head')[0].appendChild(style);
-        };
-
-        this.TM_deleteValue = function(name) {
-            localStorage.removeItem("##SCRIPTNAME##" + name);
-        };
-
-        this.TM_listValues = function() {
-            var ret = new Array();
-            for (var i=0; i<localStorage.length; i++) {
-                var n = localStorage.key(i);
-                var s = "##SCRIPTNAME##";
-                if (n.length > s.length && n.substr(0, s.length) == s) {
-                    ret.push(n);
-                }
-            }
-            return ret;
-        };
-
-        this.TM_getValue = function(name, defaultValue) {
-            var value = localStorage.getItem("##SCRIPTNAME##" + name);
-            if (!value)
-                return defaultValue;
-            var type = value[0];
-            value = value.substring(1);
-            switch (type) {
-              case 'b':
-                  return value == 'true';
-              case 'n':
-                  return Number(value);
-              case 'o':
-                  try {
-                      return JSON.parse(value);
-                  } catch (e) {
-                      console.log(e);
-                      return defaultValue;
-                  }
-              default:
-                  return value;
-            }
-        };
-
-        this.TM_log = function(message) {
-            console.log(message);
-        };
-
-        this.TM_getResourceText = function(name) {
-            for (var k in TM_resources) {
-                var r = TM_resources[k];
-                if (r.name == name) {
-                    return r.resText;
-                }
-            }
-            return null;
-        };
-
-        this.TM_getResourceURL = function(name) {
-            for (var k in TM_resources) {
-                var r = TM_resources[k];
-                if (r.name == name) {
-                    return r.resURL;
-                }
-            }
-            return null;
-        };
-
-        this.TM_registerMenuCommand = function(name, fn) {
-            var id = TM_context_id + '#' + name;
-            var onUnload = function() {
-                chrome.extension.sendRequest({method: "unRegisterMenuCmd", name: name, id: id}, function(response) {});
-            };
-            var resp = function(response) {
-                // response is send, command is unregisterd @ background page
-                window.removeEventListener('unload', onUnload, false);
-                if (response.run) {
-                    window.setTimeout(function () { fn(); }, 1);
-                    // re-register for next click
-                    TM_registerMenuCommand(name, fn);;
-                }
-            };
-            chrome.extension.sendRequest({method: "registerMenuCmd", name: name, id: id}, resp);
-            window.addEventListener('unload', onUnload, false);
-        };
-
-        this.TM_openInTab = function(url) {
-            chrome.extension.sendRequest({method: "openInTab", url: url}, function(response) {});
-        };
-
-        this.TM_setValue = function(name, value) {
-            var type = (typeof value)[0];
-            switch (type) {
-              case 'o':
-                  try {
-                      value = type + JSON.stringify(value);
-                  } catch (e) {
-                      alert(e);
-                      return;
-                  }
-                  break;
-              default:
-                  value = type + value;
-            }
-
-            localStorage.setItem("##SCRIPTNAME##" + name, value);
-        };
-
-        this.TM_xmlhttpRequest = function(details) {
-            chrome.extension.sendRequest({method: "xhr", details: details}, function(response) {
-                                             if (details["onload"]) {
-                                                 if (response.data.responseXML) response.data.responseXML = unescape(response.data.responseXML);
-                                                 details["onload"](response.data);
-                                             }
-                                         });
-        }
-
-        this.TM_getTab = function(cb) {
-            chrome.extension.sendRequest({method: "getTab"}, function(response) {
-                                             if (cb) {
-                                                 cb(response.data);
-                                             }
-                                         });
-        };
-
-        this.TM_saveTab = function(tab) {
-            chrome.extension.sendRequest({method: "saveTab", tab: tab});
-        };
-
-        this.TM_getTabs = function(cb) {
-            chrome.extension.sendRequest({method: "getTabs"}, function(response) {
-                                             if (cb) {
-                                                 cb(response.data);
-                                             }
-                                         });
-        };
-
-        this.TM_getVersion = function() {
-            // will be replaced later
-            return "##VERSION##";
-        };
-
-        this.TM_installScript = function(src) {
-            chrome.extension.sendRequest({method: "scriptClick", src: src}, function(response) {});
-        };
-
-        this.TM_run = function (fn, p, arg) {
-            try {
-                fn(arg);
-            } catch(e) {
-                try{
-                    var s = '';
-                    if (e.stack) s += 'Stack\n' + e.stack.replace(/\;/gi, ';\n\t').replace(/\{/gi, '{\n\t').replace(/\}/gi, '}\n\t').replace(/\;\\n\t/gi, ';'); + '\n';
-                    if (e.description) s += 'Description\n' + e.description + '\n';
-                    if (e.message) s += 'Message\n' + e.message + '\n';
-                    try{
-                        if (p) s+= "Request: " + p + '\n';
-                    } catch (ee) {}
-                    var c = fn.toString();
-                    if (c.length > 300) c = c.substr(0, 300);
-                    s += 'Fn: ' + c + '\n';
-                    TM_log(s);
-                } catch(ee) {
-                    TM_log(ee);
-                } finally {
-                    throw(e);
-                }
-            }
-        };
-
-        this.TM_addEventListener = function (event, fn) {
-            window.addEventListener(event, function (e) { TM_run(fn, 'Evt: ' + event, e) });
-        };
-        
-        this.TM_setTimeout = function (fn, time) {
-            window.setTimeout(function () { TM_run(fn, 'Timout: ' + time) }, time);
-        };
-    };
 
     this.validScheme = function(url) {
         return (url && url.length > 4 && url.substr(0,4) == 'http');
@@ -864,7 +493,7 @@ var runtimeInit = function() {
                     url: r.url,
                 };
 
-                console.log("requires " + r.url);
+                // console.log("requires " + r.url);
                 this.xmlhttpRequest(details, function(req) {
                                         fillRequire(req, r);
                                         oobj.getRequires(script, cb);
@@ -884,14 +513,15 @@ var runtimeInit = function() {
         }
 
         this.currentTab = tab;
-
+        if (typeof TM_tabs[tab.id] == 'undefined') TM_tabs[tab.id] = { storage: {} };
+        
         var req_cb = function() {
             var scripts = [];
             scripts.push(main);
 
             console.log("run script @ " + tab.url + " - " + main.name);
 
-            oobj.injectScript(scripts);
+            oobj.injectScript(scripts, tab);
         };
 
         this.getRequires(main, req_cb);
@@ -907,109 +537,19 @@ var runtimeInit = function() {
         return content;
     };
 
-    this.envReplacer = function(str, script) {
-        var re_ver = new RegExp( "##VERSION##", 'g');
-        var re_name = new RegExp( "##SCRIPTNAME##", 'g');
-        var re_id = new RegExp( "##SCRIPTID##", 'g');
-        str = str.replace(re_ver, chrome.extension.getVersion());
-        str = str.replace(re_name, script.name + "_");
-        str = str.replace(re_id, "((new Date()).getTime().toString()) + '-' + escape(document.location)");
-        return str
-    };
-
     this.createEnv = function(src, script) {
-        var ret = '';
-        var api = '';
-        var t = new this.tm_api();
-        for (var k in t) {
-            api += "var " + k + " = " + this.envReplacer(t[k].toString(), script) + ";\n";
-        }
 
-        var emu = '';
-        var e = new this.gm_emu();
-        for (var k in e) {
-            emu += "var " + k + " = " + this.envReplacer(e[k].toString(), script) + ";\n";
-        }
-
-        emu += 'unsafeWindow = window;\n';
-        emu += 'var uneval = function(arg) { try { return "\$1 = " + JSON.stringify(arg) + ";"; } catch (e) { alert(e) } };\n';
-        emu += 'var CDATA = function(arg) { this.src = arg; this.toString = function() { return this.src; }; this.toXMLString = this.toString; };'
-
-        var flt = function(fun /*, thisp*/) {
-
-            var len = this.length;
-            if (typeof fun != "function")
-                throw new TypeError();
-            
-            var res = new Array();
-            var thisp = arguments[1];
-            
-            for (var i = 0; i < len; i++) {
-                if (i in this) {
-                    var val = this[i]; // in case fun mutates this
-                    
-                    if (typeof fun.call != 'undefined') {
-                        if (fun.call(thisp, val, i, this)) res.push(this[i]);
-                    } else {
-                        var re = new RegExp(fun);
-                        if (val.match(fun)) res.push(this[i]);
-                    }
-                }
-            }
-            
-            return res;
-        };
-
-        var cmp = 'Array.prototype.filter = ' + flt + ';';
-        var res = 'var TM_resources = ' + JSON.stringify(script.resources) + ';\n';
-
-        if (script.compat_filterproto) {
-            console.log("env option: overwrite Array.filter");
-            ret += cmp;
-        }
-
-        var secsrc = '';
-        // secsrc += '(function(){';
-        // secsrc += 'var chrome = {extension: {}, tabs: {}};';
-        secsrc += compaMo.mkCompat(src, script);
-        // secsrc += ';})();';
+        src = compaMo.mkCompat(src, script);
 
         if (Config.values.debug) {
             console.log("env option: debug scripts");
-            secsrc = compaMo.debugify(secsrc);
+            src = compaMo.debugify(src);
         }
 
-        if (script.poll_unsafewindow) {
-            var poll = '';
-            poll += "var PollerInit = " + unsafeWindowPollerInit.toString() + ";\n";
-            poll += "var Poller = new PollerInit();\n";
-            poll += "Poller.inject();\n";
-            poll += "Poller.fillUnsafeWindow();\n";
-            poll = poll.replace(/##INTERVAL##/g, script.poll_unsafewindow_interval);
-            poll = poll.replace(/##POLLERDIVID##/g, 'tampermonkeyPollerDiv');
-
-            var incs = Poller.determineUsedUnsafeWindowVars(script);
-            if (script.poll_unsafewindow_allvars) {
-                // all vars should be transfered, exclude at least chrome window specific ones
-                poll = poll.replace(/##POLLEREXCLUDEWINDOW##/g, JSON.stringify(windowExcludes));
-                poll = poll.replace(/##POLLERINCLUDES##/g, JSON.stringify([]));
-                console.log("env option: poll all unsafeWindow vars");
-            } else if (incs.length) {
-                poll = poll.replace(/##POLLEREXCLUDEWINDOW##/g, JSON.stringify([]));
-                poll = poll.replace(/##POLLERINCLUDES##/g, JSON.stringify(incs));
-                console.log("env option: poll " + incs.length + " unsafeWindow vars");
-            }
-
-            if (script.poll_unsafewindow_allvars || incs.length != 0) emu += poll;
-        }
-
-        ret = api + emu + res;
-        ret = 'try { (function(){ ' + ret + secsrc +';})(); } catch (e) { console.log(e); }';
-
-        return ret;
+        return src;
     };
 
-    this.injectScript = function(scripts) {
+    this.injectScript = function(scripts, tab) {
         var script;
 
         for (var i = 0; script = scripts[i]; i++) {
@@ -1020,11 +560,26 @@ var runtimeInit = function() {
                                     });
 
             var scriptSrc = "\n" + requires.join("\n") + "\n" + script.textContent + "\n";
-            chrome.tabs.sendRequest(this.currentTab.id,
-                                    { method: "executeScript", code: this.createEnv(scriptSrc, script)},
-                                    function(response) {});
+            var storage = loadScriptStorage(script.name);
+            var dblscript = {};
 
-            // chrome.tabs.executeScript(this.currentTab.id, { code: this.createEnv(scriptSrc, script)});
+            for (var k in script) {
+                if (k == 'includes' || 
+                    k == 'requires' ||
+                    k == 'excludes' || 
+                    k == 'textContent') continue;
+                dblscript[k] = script[k];
+            }
+
+            chrome.tabs.sendRequest(this.currentTab.id,
+                                    { method: "executeScript",
+                                      code: this.createEnv(scriptSrc, script),
+                                      version: chrome.extension.getVersion(),
+                                      storage: storage,
+                                      script: dblscript,
+                                      windowExcludes: JSON.stringify(windowExcludes),
+                                      scriptIncludes: JSON.stringify(Poller.determineUsedUnsafeWindowVars(script))},
+                                    function(response) {});
         }
     };
 };
@@ -1041,7 +596,7 @@ var processHeader = function(header) {
     // convinience ;)
     header = header.replace(/\t/gi, '    ');
     header = header.replace(/\r/gi, '');
-    
+
     for (var t in tags) {
         script[tags[t]] = getStringBetweenTags(header, tags[t], '\n').trim();
     }
@@ -1084,9 +639,10 @@ var processHeader = function(header) {
 
 var removeUserScript = function(name) {
     storeScript(name, null);
+    storeScriptStorage(name, null);
 };
 
-var addNewUserScript = function(tabid, src, ask) {
+var addNewUserScript = function(tabid, src, ask, defaultscript) {
 
     if (ask == undefined) ask = true;
 
@@ -1101,12 +657,12 @@ var addNewUserScript = function(tabid, src, ask) {
     if (!header || header == '') return;
 
     var script = processHeader(header);
-
-    script.textContent = src;
-
     var oldscript = TM_storage.getValue(script.name, null);
     var jsonscript = JSON.stringify(script);
 
+    script.textContent = src;
+    script.position = oldscript ? oldscript.position : determineLastScriptPosition() + 1;
+    
     var msg = '';
 
     if (!script.name || script.name == '') {
@@ -1120,26 +676,31 @@ var addNewUserScript = function(tabid, src, ask) {
                                 function(response) {});
         return false;
     } else if (oldscript && script.version == oldscript.version) {
+        if (defaultscript) {
+            // stop here... we just want to update default scripts...
+            return false;
+        }
         // TODO: allow reinstall, doublecheck changed includes
         msg += 'You are about to reinstall a UserScript:     \n';
         msg += '\nName:\n';
         msg += '    ' + script.name + ((script.version != '') ? ' v' + script.version : '') +  '\n';
         msg += '\nInstalled Version:\n';
         msg += '    ' + 'v' + script.version +  '\n';
-    } else if (oldscript && versionCmp(script.version, oldscript.version)) {
+    } else if (oldscript && !versionCmp(script.version, oldscript.version)) {
         chrome.tabs.sendRequest(tabid,
                                 { method: "showMsg", msg: 'You can\'t downgrade ' + script.name + '\nfrom version ' + oldscript.version + ' to ' + script.version},
                                 function(response) {});
         return false;
     } else if (oldscript) {
         // TODO: allow reinstall, doublecheck changed includes
+        if (defaultscript) script.enabled = oldscript.enabled;
         msg += 'You are about to update a UserScript:     \n';
         msg += '\nName:\n';
         msg += '    ' + script.name + ((script.version != '') ? ' v' + script.version : '') +  '\n';
         msg += '\nInstalled Version:\n';
         msg += '    ' + 'v' + oldscript.version +  '\n';
-
-    } else {
+    }  else {
+        if (defaultscript) script.enabled = false; // user uninstalled the script :(
         msg += 'You are about to install a UserScript:     \n';
         msg += '\nName:\n';
         msg += '    ' + script.name + ((script.version != '') ? ' v' + script.version : '') +  '\n';
@@ -1175,7 +736,7 @@ var addNewUserScript = function(tabid, src, ask) {
     var compDe = false;
     var unWiVaLe = Poller.determineUsedUnsafeWindowVars(script);
 
-    if (unWiVaLe) {
+    if (unWiVaLe.length) {
         script.poll_unsafewindow = true;
     }
 
@@ -1188,7 +749,7 @@ var addNewUserScript = function(tabid, src, ask) {
 
     }
 
-    if (unWiVaLe || compDe) {
+    if (unWiVaLe.length || compDe) {
         msg+= "\nNote: A recheck of the GreaseMonkey/FF       \n    compatibility options may be \n    required in order to run this script.\n\n";
     }
 
@@ -1218,6 +779,23 @@ var addNewUserScript = function(tabid, src, ask) {
     return null;
 };
 
+var determineLastScriptPosition = function() {
+    var names = getAllScriptNames();
+    var pos = 0;
+    for (var k in names) {
+        var n = names[k];
+        var r = loadScriptByName(n);
+        if (!r.script || !r.cond) {
+            console.log("fatal error!!!");
+            continue;
+        }
+        if (r.position && r.position > pos) pos = r.position;
+    }
+    var s = new Script();
+    if (s.position > pos) pos = s.position;
+    return pos;
+};
+
 var validUrl = function(href, cond) {
     var run = false;
     for (var t in cond.inc) {
@@ -1238,6 +816,21 @@ var validUrl = function(href, cond) {
     return run;
 };
 
+var loadScriptStorage = function(name) {
+    var s = TM_storage.getValue(name + storeAppendix, { ts: 0, data: {}});
+    if (typeof s.ts === 'undefined') s.ts = 0;
+    if (typeof s.data === 'undefined') s.data = {};
+    return s;
+};
+
+var storeScriptStorage = function(name, storage) {
+    if (storage) {
+        TM_storage.setValue(name + storeAppendix, storage);
+    } else {
+        TM_storage.deleteValue(name + storeAppendix);
+    }
+};
+
 var storeScript = function(name, script) {
     if (script) {
         TM_storage.setValue(name + condAppendix, { inc: script.includes , exc: script.excludes });
@@ -1245,6 +838,26 @@ var storeScript = function(name, script) {
     } else {
         TM_storage.deleteValue(name + condAppendix);
         TM_storage.deleteValue(name);
+    }
+};
+
+var notifyStorageListeners = function(name) {
+    var old = TM_storageListener;
+    var listenerTimeout = 300 * 1000
+    var t = (new Date()).getTime() - listenerTimeout;
+    TM_storageListener = [];
+    for (var k in old) {
+        var c = old[k];
+        if (c.name == name) {
+            // console.log('storage notify ' + name);
+            c.response({ storage : loadScriptStorage(c.name) });
+        } else if (c.time > t) {
+            // trigger refresh in case the listener is still listening...
+            // console.log('storage refresh ' + name);
+            c.response({})
+        } else {
+            TM_storageListener.push(c);
+        }
     }
 };
 
@@ -1262,8 +875,33 @@ var getAllScriptNames = function() {
         ret.push(v.split('@')[0]);
     }
     return ret;
-
 };
+
+var reorderScripts = function(name, pos) {
+    var scripts = determineScriptsToRun();
+    // add position tag
+    for (var i=0;i<scripts.length;i++) {
+        var s = scripts[i];
+        if (s.name == name) {
+            var f = (s.position < pos) ? .5 : -.5;
+            s.position = (Number(pos) + f);
+        }
+    }
+    scripts = sortScripts(scripts);
+    p = 1;
+    for (var i=0;i<scripts.length;i++) {
+        var s = scripts[i];
+        s.position = p++;
+        storeScript(s.name, s);
+    }
+    
+};
+
+var sortScripts = function(results) {
+    var numComparisonAsc = function(a, b) { return a.position-b.position; };
+    results.sort(numComparisonAsc);
+    return results;
+}
 
 var determineScriptsToRun = function(href) {
     var names = getAllScriptNames();
@@ -1288,11 +926,11 @@ var determineScriptsToRun = function(href) {
         ret.push(r.script);
     }
 
-    return ret;
+    return sortScripts(ret);
 };
 
 var requestHandler = function(request, sender, sendResponse) {
-    console.log("back: request.method " + request.method);
+    // console.log("back: request.method " + request.method);
     if (request.method == "xhr") {
         var cb = function(req) { sendResponse({data: req});};
         Runtime.xmlhttpRequest(request.details, cb);
@@ -1301,7 +939,7 @@ var requestHandler = function(request, sender, sendResponse) {
         sendResponse({});
     } else if (request.method == "getTab") {
         if (typeof sender.tab != 'undefined') {
-            if (typeof TM_tabs[sender.tab.id] == 'undefined') TM_tabs[sender.tab.id] = { };
+            if (typeof TM_tabs[sender.tab.id] == 'undefined') TM_tabs[sender.tab.id] = { storage: {} };
             var tab = TM_tabs[sender.tab.id];
             sendResponse({data: tab});
         } else {
@@ -1319,6 +957,29 @@ var requestHandler = function(request, sender, sendResponse) {
             TM_tabs[sender.tab.id] = tab;
         } else {
             console.log("unable to save tab due to empty tabID");
+        }
+        sendResponse({});
+    } else if (request.method == "addStorageListener") {
+        if (typeof sender.tab != 'undefined') {
+            // console.log("storage add listener " + request.name);
+            TM_storageListener.push({name: request.name, time: (new Date()).getTime(), response: sendResponse});
+        } else {
+            console.log("unable to load storage due to empty tabID");
+            sendResponse({ error: true });
+        }
+    } else if (request.method == "saveStorage") {
+        if (typeof sender.tab != 'undefined') {
+            if (request.name) {
+                var s = loadScriptStorage(request.name);
+                if (request.storage.ts != undefined &&
+                    request.storage.ts > s.ts) {
+                    // console.log("storage store " + request.name);
+                    storeScriptStorage(request.name, request.storage);
+                    notifyStorageListeners(request.name);
+                }
+            }
+        } else {
+            console.log("unable to save storage due to empty tabID");
         }
         sendResponse({});
     } else if (request.method == "setOption") {
@@ -1351,6 +1012,9 @@ var requestHandler = function(request, sender, sendResponse) {
                 if (typeof request.poll_unsafewindow_interval !== 'undefined') r.script.poll_unsafewindow_interval = request.poll_unsafewindow_interval;
                 if (typeof request.enabled !== 'undefined') r.script.enabled = request.enabled;
                 storeScript(r.script.name, r.script);
+                if (typeof request.position !== 'undefined') {
+                    reorderScripts(request.name, request.position);
+                }
             }
         }
         var updateOptionsPage = function() {
@@ -1416,7 +1080,7 @@ var requestHandler = function(request, sender, sendResponse) {
         sendResponse({});
     } else if (request.method == "registerMenuCmd") {
         if (typeof sender.tab != 'undefined') {
-            console.log("MC add " + request.id);
+            // console.log("MC add " + request.id);
             TM_cmds.push({ url: sender.tab.url, name: request.name, id: request.id, response: sendResponse});
         } else {
             console.log("unable to run scripts on tab due to empty tabID");
@@ -1497,7 +1161,7 @@ var createOptionItems = function() {
                desc: '' });
     ret.push({ name: 'show fixed source', id: 'showFixedSrc', option: true, checkbox: true, enabled: Config.values.showFixedSrc,
                desc: '' });
-    
+
     ret.push(createDivider());
     ret.push({ name: 'Installed UserScripts',  heading: true});
 
@@ -1558,6 +1222,8 @@ var convertMgmtToMenuItems = function(url, options) {
                      image: img,
                      checkbox: !options,
                      enabled: script.enabled,
+                     position: script.position,
+                     positionof : scripts.length,
                      compat_metadata: script.compat_metadata,
                      compat_foreach: script.compat_foreach,
                      compat_arrayleft: script.compat_arrayleft,
@@ -1574,6 +1240,13 @@ var convertMgmtToMenuItems = function(url, options) {
         }
         ret.push(item);
     }
+
+    ret.push ({ name: 'Add a new userscript',
+                id: null,
+                image: chrome.extension.getURL('images/edit_add.png'),
+                code: '',
+                enabled: true,
+                userscript: true });
     return ret;
 };
 
@@ -1612,7 +1285,7 @@ var compaMoInit = function () {
      * replaces i.e
      *
      *  [, name, value] = line.match(/\/\/ @(\S+)\s*(.*)/);
-     * 
+     *
      * by
      *
      *  var __narf6439 = line.match(/\/\/ @(\S+)\s*(.*)/);;
@@ -1636,7 +1309,7 @@ var compaMoInit = function () {
                 // seems to be a valid array assignement like a[0] = 'blub';
                 if (ee != '') a1 = -1;
             }
-            
+
             if (a1 != -1 && a1 != a2) {
                 var nl = '';
                 // stupid hack detected!
@@ -1666,7 +1339,7 @@ var compaMoInit = function () {
      * replaces i.e
      *
      *  for each (mod in mods) {;
-     * 
+     *
      * by
      *
      *  for (var k in mods) {;
@@ -1676,7 +1349,7 @@ var compaMoInit = function () {
      */
     this.unEachify = function(src) {
         src = src.replace(/for each.*\(/gi, 'for each(');
-    
+
         var t1 = 'for each';
         var t2 = '(';
         var t3 = ')';
@@ -1712,8 +1385,8 @@ var compaMoInit = function () {
 
             var n = 'var __kk in ' + arrname;
             var b = '';
-            // detect arrays and filter the Array.prototype.filter function :-/
-            b += '{\n' + '    if (typeof ' + arrname + '.length !== "undefined" && __kk == "filter") continue;';    
+            // filter the Array.prototype.filter function :-/
+            b += '{\n' + '    if (!' + arrname + '.hasOwnProperty(__kk)) continue;';
             b += ' \n' + '    var ' + varname + ' = ' + arrname + '[__kk];';
 
             arr[i] = arr[i].replace(escapeForRegExp(f), n).replace('{', b);
@@ -1733,14 +1406,14 @@ var compaMoInit = function () {
      *   }
      *   ret = this._name;
      *   ]]></>.toString();
-     * 
+     *
      * by
      *
-     *   var code = ("\n" + 
-     *   "    if (this._name == null || refresh) {\n" + 
-     *   "      this._name = this.name();\n" + 
-     *   "    }\n" + 
-     *   "    ret = this._name;\n" + 
+     *   var code = ("\n" +
+     *   "    if (this._name == null || refresh) {\n" +
+     *   "      this._name = this.name();\n" +
+     *   "    }\n" +
+     *   "    ret = this._name;\n" +
      *   "").toString();
      *   ...
      *
@@ -1779,7 +1452,7 @@ var compaMoInit = function () {
 };
 
 /* ### Listener ### */
-    
+
 var loadListener = function(tabID, changeInfo, tab) {
     if (changeInfo.status == 'complete') {
         if (tab.url.search(/\.tamper\.js$/) != -1) {
@@ -1805,15 +1478,18 @@ var updateListener = function(tabID, changeInfo, tab) {
             window.setTimeout(reload, 20000);
         } else {
             var scripts = determineScriptsToRun(tab.url);
-                
+
             for (var k in scripts) {
                 var script = scripts[k];
                 if (!script.enabled) continue;
-                Runtime.contentLoad(tab, script);
+                var rt = new runtimeInit();
+                rt.contentLoad(tab, script);
             }
         }
     }
 };
+
+convertData();
 
 var Poller = new unsafeWindowPollerInit();
 // determine excludable items like chrome, dcoument, getElementById and so on afap
