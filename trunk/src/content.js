@@ -82,26 +82,6 @@ var TM_addStyle = function(css) {
     document.getElementsByTagName('head')[0].appendChild(style);
 };
 
-var TM_getResourceText = function(name) {
-    for (var k in TM_resources) {
-        var r = TM_resources[k];
-        if (r.name == name) {
-            return r.resText;
-        }
-    }
-    return null;
-};
-
-var TM_getResourceURL = function(name) {
-    for (var k in TM_resources) {
-        var r = TM_resources[k];
-        if (r.name == name) {
-            return r.resURL;
-        }
-    }
-    return null;
-};
-
 var TM_registerMenuCommand = function(name, fn) {
     var id = TM_context_id + '#' + name;
     var onUnload = function() {
@@ -125,12 +105,14 @@ var TM_openInTab = function(url) {
 };
 
 var TM_xmlhttpRequest = function(details) {
+    var forget = false;
     chrome.extension.sendRequest({method: "xhr", details: details}, function(response) {
                                      if (details["onload"]) {
                                          if (response.data.responseXML) response.data.responseXML = unescape(response.data.responseXML);
-                                         details["onload"](response.data);
+                                         if (!forget) details["onload"](response.data);
                                      }
                                  });
+    return { abort: function() { forget = true; } };
 }
     
     var TM_getTab = function(cb) {
@@ -158,8 +140,8 @@ var TM_getVersion = function() {
     return "##VERSION##";
 };
 
-var TM_installScript = function(src) {
-    chrome.extension.sendRequest({method: "scriptClick", src: src}, function(response) {});
+var TM_installScript = function(src, url) {
+    chrome.extension.sendRequest({method: "scriptClick", src: src, url: url}, function(response) {});
 };
 
 var TM_addEventListener = function (event, fn) {
@@ -318,7 +300,27 @@ var HTM_runMyScript = function(HTM_request) {
         TM_context_storage.data[name] = value;
         TM_saveStorage();
     };
-    
+
+    var TM_getResourceText = function(name) {
+        for (var k in HTM_script.resources) {
+            var r = HTM_script.resources[k];
+            if (r.name == name) {
+                return r.resText;
+            }
+        }
+        return null;
+    };
+
+    var TM_getResourceURL = function(name) {
+        for (var k in HTM_script.resources) {
+            var r = HTM_script.resources[k];
+            if (r.name == name) {
+                return r.resURL;
+            }
+        }
+        return null;
+    };
+
     (function() {
 
         var env = ''
@@ -338,7 +340,6 @@ var HTM_runMyScript = function(HTM_request) {
         unsafeWindow = window;
         var uneval = function(arg) { try { return "\$1 = " + JSON.stringify(arg) + ";"; } catch (e) { alert(e) } };
         var CDATA = function(arg) { this.src = arg; this.toString = function() { return this.src; }; this.toXMLString = this.toString; };
-        var TM_resources = HTM_script.resources;
 
         if (HTM_script.compat_filterproto) {
             console.log("env option: overwrite Array.filter");
@@ -368,6 +369,10 @@ var HTM_runMyScript = function(HTM_request) {
                 return res;
             };
         }
+
+        Object.prototype.toSource = function() {
+            return "JSON.parse(unescape('" + escape(JSON.stringify(this)) + "'));";
+        };
 
         if (HTM_script.poll_unsafewindow) {
 
@@ -748,13 +753,7 @@ var HTM_pollerInit = function(pusherInterval, pollerDivId, pusherDivId) {
 
 chrome.extension.onRequest.addListener(
     function(request, sender, sendResponse) {
-        if (request.method == "confirm") {
-            var c = confirm(request.msg);
-            sendResponse({confirm: c});
-        } else if (request.method == "showMsg") {
-            alert(request.msg);
-            sendResponse({});
-        } else if (request.method == "reload") {
+        if (request.method == "reload") {
             window.location = window.location;
             sendResponse({});
         } else if (request.method == "executeScript") {
@@ -772,7 +771,7 @@ chrome.extension.onRequest.addListener(
             window.location = request.url;
             sendResponse({});
         } else {
-            console.log("unknown method " + request.method);
+            console.log("c: unknown method " + request.method);
         }
     });
 

@@ -69,7 +69,18 @@ var createActionsMenu = function(items) {
                 a.textContent = i.name;
                 td2.setAttribute("colspan", "2");
                 td2.appendChild(a);
-            } else  {
+            } else if (i.runUpdate) {
+                var a = document.createElement('a');
+                a.href = '#';
+                a.id = i.id;
+                var oc = function() {
+                    runScriptUpdates(this.id);
+                }
+                a.addEventListener("click", oc);
+                a.textContent = i.name;
+                td2.setAttribute("colspan", "2");
+                td2.appendChild(a);
+            } else {
                 var span = document.createElement('span');
                 span.textContent = i.name;
                 td2.setAttribute("colspan", "2");
@@ -102,6 +113,13 @@ var loadUrl = function(url, newtab) {
     }
 };
 
+var runScriptUpdates = function() {
+    try {
+        chrome.extension.sendRequest({method: "runScriptUpdates"}, function(response) {});
+    } catch (e) {
+        alert(e);
+    }
+};
 
 var execMenuCmd = function(id) {
     try {
@@ -127,11 +145,12 @@ var modifyScriptOptions = function(name, id, value) {
 
 chrome.extension.onRequest.addListener(
     function(request, sender, sendResponse) {
+        // console.log("a: method " + request.method);
         // TODO: action page pops up, no need to update?
         if (false && request.method == "updateActions") {
             createActionsMenu(request.items);
             sendResponse({});
         } else {
-            console.log("unknown method " + request.method);
+            console.log("a: unknown method " + request.method);
         }
     });

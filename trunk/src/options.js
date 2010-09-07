@@ -108,11 +108,11 @@ var createInput = function(name, i, oc) {
     var span1 = document.createElement('span');
     var span2 = document.createElement('span');
     span1.textContent = n[0];
-    if (name.length > 1) span2.textContent = n[1];
+    if (n.length > 1) span2.textContent = n[1];
     s.appendChild(span1);
     s.appendChild(input);
     s.appendChild(span2);
-    return s;
+    return { elem: s, input: input };
 };
 var createCheckbox = function(name, i, oc) {
     var s = document.createElement('span');
@@ -192,9 +192,9 @@ var createScriptItem = function(i) {
 
     if (i.id != null) {
         sett.appendChild(createButton(i.name, 'enabled', i.enabled, i.enabled ? 'Disable' : 'Enable', co));
-        sett.appendChild(createButton(null, null, null, 'Delete', function() {
+        if (!i.system) sett.appendChild(createButton(null, null, null, 'Delete', function() {
                                           var c = confirm("Really delete this script?");
-                                          if (c) saveScript(i.name, null);
+                                          if (c) saveScript(i.name, null, null);
                                       }));
     }
     sett.appendChild(createButton(null, null, null, 'Close', function() {
@@ -213,6 +213,10 @@ var createScriptItem = function(i) {
     var i_fe = createCheckbox('Replace "for each" statements',
                               { id: 'compat_foreach', name: i.name, enabled: i.compat_foreach},
                               co);
+    var i_wo = createCheckbox('Remove "wrappedJSObject" statements',
+                              { id: 'compat_wrappedobj', name: i.name, enabled: i.compat_wrappedobj},
+                              co);
+
     var i_al = createCheckbox('Convert [blub, bla] = s.split(":") statements',
                               { id: 'compat_arrayleft', name: i.name, enabled: i.compat_arrayleft},
                               co);
@@ -231,6 +235,10 @@ var createScriptItem = function(i) {
     var i_ui = createInput('every ## ms',
                            { id: 'poll_unsafewindow_interval', name: i.name, value: i.poll_unsafewindow_interval},
                            co);
+    
+    var i_uu = createInput(' Update URL:',
+                           { id: 'update_url', name: i.name, value: i.update_url});
+    
 
     sett.appendChild(document.createElement('br'));
     sett.appendChild(comp);
@@ -239,15 +247,19 @@ var createScriptItem = function(i) {
     sett.appendChild(document.createElement('br'));
     sett.appendChild(i_fe);
     sett.appendChild(document.createElement('br'));
+    sett.appendChild(i_wo);
+    sett.appendChild(document.createElement('br'));
     sett.appendChild(i_al);
     sett.appendChild(document.createElement('br'));
     sett.appendChild(i_fp);
     sett.appendChild(document.createElement('br'));
     sett.appendChild(document.createElement('hr'));
     sett.appendChild(i_uw);
-    sett.appendChild(i_ui);
+    sett.appendChild(i_ui.elem);
     sett.appendChild(document.createElement('br'));
     sett.appendChild(i_av);
+    sett.appendChild(document.createElement('br'));
+    sett.appendChild(i_uu.elem);
     sett.appendChild(document.createElement('br'));
     sett.appendChild(document.createElement('br'));
 
@@ -261,13 +273,15 @@ var createScriptItem = function(i) {
     sett.appendChild(document.createElement('br'));
     sett.appendChild(document.createElement('br'));
     
-    sett.appendChild(createButton(null, null, null, 'Save', function() { saveScript(i.name, input.value); }));
-    sett.appendChild(createButton(null, null, null, 'Cancel', function() {
+    if (!i.system) {
+        sett.appendChild(createButton(null, null, null, 'Save', function() { saveScript(i.name, input.value, i_uu.input.value); }));
+        sett.appendChild(createButton(null, null, null, 'Cancel', function() {
                                       var c = confirm("Really reset all changes?");
                                       if (c) input.textContent = i.code;
                                   }));
     sett.appendChild(document.createElement('br'));
     sett.appendChild(document.createElement('br'));
+    }
 
     outer.appendChild(a);
     outer.appendChild(sett);
@@ -292,9 +306,9 @@ var loadUrl = function(url, newtab) {
     }
 };
 
-var saveScript = function(name, code) {
+var saveScript = function(name, code, update_url) {
     try {
-        chrome.extension.sendRequest({method: "saveScript", name: name, code: code},
+        chrome.extension.sendRequest({method: "saveScript", name: name, code: code, update_url: update_url},
                                      function(response) {
                                          createOptionsMenu(response.items);
                                      });
@@ -332,6 +346,7 @@ var modifyScriptOptions = function(name, id, value) {
 
 chrome.extension.onRequest.addListener(
     function(request, sender, sendResponse) {
+        // console.log("o: method " + request.method);
         if (request.method == "updateOptions") {
             createOptionsMenu(request.items);
             sendResponse({});
@@ -342,6 +357,6 @@ chrome.extension.onRequest.addListener(
             alert(request.msg);
             sendResponse({});
         } else {
-            console.log("unknown method " + request.method);
+            console.log("o: unknown method " + request.method);
         }
     });
