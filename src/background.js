@@ -21,6 +21,15 @@ var urlSecurityIssue = '.*/';
 var urlTld = '.tld/';
 var urlAllTlds = '(museum|travel|aero|arpa|coop|info|jobs|name|nvus|biz|com|edu|gov|int|mil|net|org|pro|xxx|ac|ad|ae|af|ag|ai|ak|al|al|am|an|ao|aq|ar|ar|as|at|au|aw|ax|az|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bm|bn|bo|br|bs|bt|bv|bw|by|bz|ca|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|co|cr|cs|ct|cu|cv|cx|cy|cz|dc|de|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|eu|fi|fj|fk|fl|fm|fo|fr|ga|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gu|gu|gw|gy|hi|hk|hm|hn|hr|ht|hu|ia|id|id|ie|il|il|im|in|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|ks|kw|ky|ky|kz|la|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|ma|mc|md|md|me|mg|mh|mi|mk|ml|mm|mn|mn|mo|mo|mp|mq|mr|ms|ms|mt|mt|mu|mv|mw|mx|my|mz|na|nc|nc|nd|ne|ne|nf|ng|nh|ni|nj|nl|nm|no|np|nr|nu|ny|nz|oh|ok|om|or|pa|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|pr|ps|pt|pw|py|qa|re|ri|ro|ru|rw|sa|sb|sc|sc|sd|sd|se|sg|sh|si|sj|sk|sl|sm|sn|so|sr|st|su|sv|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|tn|to|tp|tr|tt|tv|tw|tx|tz|ua|ug|uk|um|us|ut|uy|uz|va|va|vc|ve|vg|vi|vi|vn|vt|vu|wa|wf|wi|ws|wv|wy|ye|yt|yu|za|zm|zw)';
 
+var scriptOptions = ['compat_metadata',
+                     'compat_foreach',
+                     'compat_arrayleft',
+                     'compat_wrappedobj',
+                     'compat_filterproto',
+                     'poll_unsafewindow',
+                     'poll_unsafewindow_allvars',
+                     'poll_unsafewindow_interval'];
+
 var Script = function() {
     this.observers = [];
     this.icon = '';
@@ -28,20 +37,23 @@ var Script = function() {
     this.name = null;
     this.namespace = null;
     this.description = null;
+    this.system = false;
     this.enabled = true;
-
-    this.compat_metadata = false;
-    this.compat_foreach = false;
-    this.compat_arrayleft = false;
-    this.compat_filterproto = false;
+    this.position = 0;
     this.requires = [];
     this.includes = [];
     this.excludes = [];
     this.resources = [];
-    this.position = 0;
-    this.poll_unsafewindow = false;
-    this.poll_unsafewindow_allvars = false;
-    this.poll_unsafewindow_interval = 10000;
+    this.options = {
+        compat_metadata : false,
+        compat_foreach : false,
+        compat_arrayleft : false,
+        compat_wrappedobj : false,
+        compat_filterproto : false,
+        poll_unsafewindow : false,
+        poll_unsafewindow_allvars : false,
+        poll_unsafewindow_interval : 10000,
+    };
 };
 
 /* ###### Helpers ####### */
@@ -152,6 +164,26 @@ var convertData = function() {
     if (versionCmp(newversion, version)) {
         if (versionCmp("1.0.0.4", version)) {
             reorderScripts();
+        }
+        if (versionCmp("1.0.0.5", version)) {
+            var names = getAllScriptNames();
+            for (var k in names) {
+                var n = names[k];
+                var r = loadScriptByName(n);
+                if (!r.script || !r.cond) {
+                    console.log("fatal error!!!");
+                    continue;
+                }
+                if (r.script.options == undefined) {
+                    var d = new Script();
+                    r.script.options = d.options;
+                    for (var i=0; i<scriptOptions.length;i++) {
+                        r.script.options[scriptOptions[i]] = r.script[scriptOptions[i]];
+                        delete r.script[scriptOptions[i]];
+                    }
+                    storeScript(r.script.name, r.script);
+                }
+            }
         }
     }
 
@@ -266,7 +298,7 @@ var defaultScripts = function() {
     userscripts_header += '// ==UserScript==\n';
     userscripts_header += '// @name       TamperScript\n';
     userscripts_header += '// @namespace  http://tampermonkey.biniok.net/\n';
-    userscripts_header += '// @version    1.1\n';
+    userscripts_header += '// @version    1.2\n';
     userscripts_header += '// @description  make UserScripts links one-click installable (links to *.user.js are caught by chrome)\n';
     userscripts_header += '// @include    http://*/*\n';
     userscripts_header += '// @copyright  2010+, Jan Biniok\n';
@@ -279,7 +311,7 @@ var defaultScripts = function() {
         var tamperScriptClickHandler = function(url) {
             var cb = function (req) {
                 if (req.readyState == 4 && req.status == 200) {
-                    TM_installScript(req.responseText);
+                    TM_installScript(req.responseText, url);
                 }
             };
 
@@ -303,7 +335,7 @@ var defaultScripts = function() {
                 if (a.href && a.href.search(userscript) != -1) {
                     a.addEventListener('click', function () { tamperScriptClickHandler(this.tamper)});
                     a.tamper = a.href;
-                    a.href = '#';
+                    a.href = 'javascript://nop/';
                 }
             }
         }
@@ -329,7 +361,7 @@ var configInit = function() {
         var ds = defaultScripts();
         for (var k in ds) {
             var s = ds[k];
-            window.setTimeout(function() { addNewUserScript(null, s, false, true); }, 100 );
+            window.setTimeout(function() { addNewUserScript(null, null, s, false, true); }, 100 );
         }
     };
 
@@ -377,10 +409,19 @@ var runtimeInit = function() {
         xmlhttp.onerror = onload;
         try {
             if (!this.validScheme(details.url)) {
-                console.log("error loading url: " + details.url);
-                throw new Error;
+                throw new Error("Invalid scheme of url: " + details.url);
             }
             xmlhttp.open(details.method, details.url);
+            if (details.headers) {
+                for (var prop in details.headers) {
+                    xmlhttp.setRequestHeader(prop, details.headers[prop]);
+                }
+            }
+            if (typeof(details.data) !== 'undefined') {
+                xmlhttp.send(details.data);
+            } else {
+                xmlhttp.send();
+            }
         } catch(e) {
             console.log(e);
             if(callback) {
@@ -394,17 +435,6 @@ var runtimeInit = function() {
             }
             return;
         }
-        if (details.headers) {
-            for (var prop in details.headers) {
-                xmlhttp.setRequestHeader(prop, details.headers[prop]);
-            }
-        }
-        if (typeof(details.data) !== 'undefined') {
-            xmlhttp.send(details.data);
-        } else {
-            xmlhttp.send();
-        }
-
     };
 
     this.encode64 = function(data){
@@ -466,7 +496,7 @@ var runtimeInit = function() {
                 };
 
                 console.log("request " + r.url);
-                this.xmlhttpRequest(details, function(req) { storeResource(req, r); } );
+                Runtime.xmlhttpRequest(details, function(req) { storeResource(req, r); }, true);
                 return true;
             }
         }
@@ -493,7 +523,7 @@ var runtimeInit = function() {
                     url: r.url,
                 };
 
-                // console.log("requires " + r.url);
+                console.log("requires " + r.url);
                 this.xmlhttpRequest(details, function(req) {
                                         fillRequire(req, r);
                                         oobj.getRequires(script, cb);
@@ -554,7 +584,9 @@ var runtimeInit = function() {
 
         for (var i = 0; script = scripts[i]; i++) {
             var requires = [];
+
             script.requires.forEach(function(req) {
+                                        // TODO: option to use compaMo.mkCompat here !?!
                                         var contents = req.textContent;
                                         requires.push(contents);
                                     });
@@ -604,7 +636,7 @@ var processHeader = function(header) {
     var lines = header.split('\n');
 
     for (var i in lines) {
-        var l = lines[i].replace(/^\/\//gi, '').replace(/^ /gi, '');
+        var l = lines[i].replace(/^\/\//gi, '').replace(/^ /gi, '').replace(/  /gi, ' ');
         if (l.search(/^@include/) != -1) {
             var c = l.replace(/^@include/gi, '').replace(/[ \b\r\n]/gi, '');
             // console.log("c " + c);
@@ -642,9 +674,11 @@ var removeUserScript = function(name) {
     storeScriptStorage(name, null);
 };
 
-var addNewUserScript = function(tabid, src, ask, defaultscript) {
+var addNewUserScript = function(tabid, url, src, ask, defaultscript, noreinstall) {
 
+    if (defaultscript == undefined) defaultscript = false;
     if (ask == undefined) ask = true;
+    if (url == undefined || url == null) url = "";
 
     // save some space ;)
     src = src.replace(/\r/g, '');
@@ -654,15 +688,16 @@ var addNewUserScript = function(tabid, src, ask, defaultscript) {
 
     var header = getStringBetweenTags(src, t1, t2);
 
-    if (!header || header == '') return;
+    if (!header || header == '') return false;
 
     var script = processHeader(header);
     var oldscript = TM_storage.getValue(script.name, null);
     var jsonscript = JSON.stringify(script);
 
     script.textContent = src;
+    script.system = defaultscript;
+    script.fileURL = url;
     script.position = oldscript ? oldscript.position : determineLastScriptPosition() + 1;
-    
     var msg = '';
 
     if (!script.name || script.name == '') {
@@ -676,9 +711,9 @@ var addNewUserScript = function(tabid, src, ask, defaultscript) {
                                 function(response) {});
         return false;
     } else if (oldscript && script.version == oldscript.version) {
-        if (defaultscript) {
-            // stop here... we just want to update default scripts...
-            return false;
+        if (defaultscript || noreinstall) {
+            // stop here... we just want to update (system) scripts...
+            return null;
         }
         // TODO: allow reinstall, doublecheck changed includes
         msg += 'You are about to reinstall a UserScript:     \n';
@@ -700,7 +735,6 @@ var addNewUserScript = function(tabid, src, ask, defaultscript) {
         msg += '\nInstalled Version:\n';
         msg += '    ' + 'v' + oldscript.version +  '\n';
     }  else {
-        if (defaultscript) script.enabled = false; // user uninstalled the script :(
         msg += 'You are about to install a UserScript:     \n';
         msg += '\nName:\n';
         msg += '    ' + script.name + ((script.version != '') ? ' v' + script.version : '') +  '\n';
@@ -711,6 +745,14 @@ var addNewUserScript = function(tabid, src, ask, defaultscript) {
         msg += '    ' + 'This script does not provide any @include information.\n';
         msg += '    ' + 'TamperMonkey assumes "' + urlAllHttp + '" in order to continue!    \n';
         script.includes.push(urlAllHttp);
+    }
+
+    if (oldscript && oldscript.fileURL != script.fileURL) {
+        msg += '\nNote: \n';
+        msg += '    ' + 'The update url has changed from:\n';
+        msg += '    "' + oldscript.fileURL + '"\n';
+        msg += '    ' + 'to:\n';
+        msg += '    "' + script.fileURL + '"\n';
     }
 
     var g = script.excludes.length + script.includes.length;
@@ -742,11 +784,11 @@ var addNewUserScript = function(tabid, src, ask, defaultscript) {
 
     if (compaMo.mkCompat(src) != src) {
         compDe = true;
-        if (src != compaMo.unMetaDataify(src)) script.compat_metadata = true;
-        if (src != compaMo.unEachify(src)) script.compat_foreach = true;
-        if (src != compaMo.unArrayOnLeftSideify(src)) script.compat_arrayleft = true;
-        if (compaMo.checkFilterRegExp(src)) script.compat_filterproto = true;
-
+        if (src != compaMo.unMetaDataify(src)) script.options.compat_metadata = true;
+        if (src != compaMo.unEachify(src)) script.options.compat_foreach = true;
+        if (src != compaMo.unArrayOnLeftSideify(src)) script.options.compat_arrayleft = true;
+        if (src != compaMo.unWrappedObjectify(src)) script.options.compat_wrappedobj = true;
+        if (compaMo.checkFilterRegExp(src)) script.options.compat_filterproto = true;
     }
 
     if (unWiVaLe.length || compDe) {
@@ -769,14 +811,65 @@ var addNewUserScript = function(tabid, src, ask, defaultscript) {
                                 function(response) {
                                     if (response.confirm) {
                                         doit();
-                                        return true;
                                     }
                                 });
     } else {
         doit();
-        return true;
     }
-    return null;
+    return true;
+};
+
+var updateUserscripts = function(tabid) {
+    var names = getAllScriptNames();
+    var pos = 0;
+    var runing = 1;
+    var updated = 0;
+    for (var k in names) {
+        var n = names[k];
+        var r = loadScriptByName(n);
+        if (!r.script || !r.cond) {
+            console.log("fatal error!!!");
+            continue;
+        }
+        if (r.script.fileURL && r.script.fileURL != "") {
+            var details = {
+                method: 'GET',
+                url: r.script.fileURL,
+            };
+
+            runing++;
+            var obj = { tabid: tabid, r: r};
+            var cb = function(req) {
+                runing--;
+                if (req.readyState == 4 && req.status == 200) {
+                    console.log(obj.r.script.fileURL);
+                    var ret = addNewUserScript(obj.tabid, obj.r.script.fileURL, req.responseText, true, false, true);
+                    // confirm installation of new scripts but don't reinstall equal versions!
+                    if (ret == null) {
+                        // same version found
+                    } else if (ret == false) {
+                        console.log("UpdateCheck of '" + obj.r.script.name + "' (url: " + obj.r.script.fileURL + ") failed!");
+                        console.log(" got strange source code: " + escape(req.responseText));
+                    } else {
+                        // installed or used asked for
+                        console.log("Update found for '" + obj.r.script.name + "'");
+                        updated++;
+                    }
+                } else {
+                    console.log("UpdateCheck of '" + obj.r.script.name + "' (url: " + obj.r.script.fileURL + ") failed!");
+                }
+                if (runing == 0 && updated == 0) {
+                    chrome.tabs.sendRequest(tabid,
+                                            { method: "showMsg", msg: 'No update found, sry!'},
+                                            function(response) {});
+                }
+            };
+
+            Runtime.xmlhttpRequest(details, cb);
+        }
+    }
+    runing--;
+    // remove initialy assigned 1
 };
 
 var determineLastScriptPosition = function() {
@@ -814,51 +907,6 @@ var validUrl = function(href, cond) {
         }
     }
     return run;
-};
-
-var loadScriptStorage = function(name) {
-    var s = TM_storage.getValue(name + storeAppendix, { ts: 0, data: {}});
-    if (typeof s.ts === 'undefined') s.ts = 0;
-    if (typeof s.data === 'undefined') s.data = {};
-    return s;
-};
-
-var storeScriptStorage = function(name, storage) {
-    if (storage) {
-        TM_storage.setValue(name + storeAppendix, storage);
-    } else {
-        TM_storage.deleteValue(name + storeAppendix);
-    }
-};
-
-var storeScript = function(name, script) {
-    if (script) {
-        TM_storage.setValue(name + condAppendix, { inc: script.includes , exc: script.excludes });
-        TM_storage.setValue(name, script);
-    } else {
-        TM_storage.deleteValue(name + condAppendix);
-        TM_storage.deleteValue(name);
-    }
-};
-
-var notifyStorageListeners = function(name) {
-    var old = TM_storageListener;
-    var listenerTimeout = 300 * 1000
-    var t = (new Date()).getTime() - listenerTimeout;
-    TM_storageListener = [];
-    for (var k in old) {
-        var c = old[k];
-        if (c.name == name) {
-            // console.log('storage notify ' + name);
-            c.response({ storage : loadScriptStorage(c.name) });
-        } else if (c.time > t) {
-            // trigger refresh in case the listener is still listening...
-            // console.log('storage refresh ' + name);
-            c.response({})
-        } else {
-            TM_storageListener.push(c);
-        }
-    }
 };
 
 var loadScriptByName = function(name) {
@@ -928,6 +976,55 @@ var determineScriptsToRun = function(href) {
 
     return sortScripts(ret);
 };
+
+/* ###### Storage ####### */
+
+var loadScriptStorage = function(name) {
+    var s = TM_storage.getValue(name + storeAppendix, { ts: 0, data: {}});
+    if (typeof s.ts === 'undefined') s.ts = 0;
+    if (typeof s.data === 'undefined') s.data = {};
+    return s;
+};
+
+var storeScriptStorage = function(name, storage) {
+    if (storage) {
+        TM_storage.setValue(name + storeAppendix, storage);
+    } else {
+        TM_storage.deleteValue(name + storeAppendix);
+    }
+};
+
+var storeScript = function(name, script) {
+    if (script) {
+        TM_storage.setValue(name + condAppendix, { inc: script.includes , exc: script.excludes });
+        TM_storage.setValue(name, script);
+    } else {
+        TM_storage.deleteValue(name + condAppendix);
+        TM_storage.deleteValue(name);
+    }
+};
+
+var notifyStorageListeners = function(name) {
+    var old = TM_storageListener;
+    var listenerTimeout = 300 * 1000
+    var t = (new Date()).getTime() - listenerTimeout;
+    TM_storageListener = [];
+    for (var k in old) {
+        var c = old[k];
+        if (c.name == name) {
+            // console.log('storage notify ' + name);
+            c.response({ storage : loadScriptStorage(c.name) });
+        } else if (c.time > t) {
+            // trigger refresh in case the listener is still listening...
+            // console.log('storage refresh ' + name);
+            c.response({})
+        } else {
+            TM_storageListener.push(c);
+        }
+    }
+};
+
+/* ###### Request Handler ####### */
 
 var requestHandler = function(request, sender, sendResponse) {
     // console.log("back: request.method " + request.method);
@@ -1003,13 +1100,10 @@ var requestHandler = function(request, sender, sendResponse) {
         if (request.name) {
             var r = loadScriptByName(request.name);
             if (r.script && r.cond) {
-                if (typeof request.compat_metadata !== 'undefined') r.script.compat_metadata = request.compat_metadata;
-                if (typeof request.compat_foreach !== 'undefined') r.script.compat_foreach = request.compat_foreach;
-                if (typeof request.compat_arrayleft !== 'undefined') r.script.compat_arrayleft = request.compat_arrayleft;
-                if (typeof request.compat_filterproto !== 'undefined') r.script.compat_filterproto = request.compat_filterproto;
-                if (typeof request.poll_unsafewindow !== 'undefined') r.script.poll_unsafewindow = request.poll_unsafewindow;
-                if (typeof request.poll_unsafewindow_allvars !== 'undefined') r.script.poll_unsafewindow_allvars = request.poll_unsafewindow_allvars;
-                if (typeof request.poll_unsafewindow_interval !== 'undefined') r.script.poll_unsafewindow_interval = request.poll_unsafewindow_interval;
+                for (var i=0; i<scriptOptions.length;i++) {
+                    if (typeof request[scriptOptions[i]] !== 'undefined') r.script.options[scriptOptions[i]] = request[scriptOptions[i]];
+                }
+
                 if (typeof request.enabled !== 'undefined') r.script.enabled = request.enabled;
                 storeScript(r.script.name, r.script);
                 if (typeof request.position !== 'undefined') {
@@ -1043,7 +1137,7 @@ var requestHandler = function(request, sender, sendResponse) {
 
         // TODO: check renaming and remove old one
         if (request.code) {
-            addNewUserScript(sender.tab.id, request.code);
+            addNewUserScript(sender.tab.id, request.update_url, request.code);
         } else {
             removeUserScript(request.name);
         }
@@ -1059,7 +1153,7 @@ var requestHandler = function(request, sender, sendResponse) {
         chrome.tabs.getSelected(null, resp);
     } else if (request.method == "scriptClick") {
         if (typeof sender.tab != 'undefined') {
-            addNewUserScript(sender.tab.id, request.src);
+            addNewUserScript(sender.tab.id, request.url, request.src);
         } else {
             console.log("unable to install script tab due to empty tabID");
         }
@@ -1096,11 +1190,16 @@ var requestHandler = function(request, sender, sendResponse) {
         // console.log("MC exec " + c.id);
         c.response({ run: true });
         sendResponse({});
+    } else if (request.method == "runScriptUpdates") {
+        var request = function(tob) {
+            updateUserscripts(tob.id);
+        };
+        chrome.tabs.getSelected(null, request);
+        sendResponse({});
     } else {
-        console.log("unknown method " + request.method);
+        console.log("b: unknown method " + request.method);
     }
 };
-
 
 /* #### Action Menu && Options Page ### */
 
@@ -1135,13 +1234,16 @@ var createActionMenuItems = function(url) {
     var s = convertMgmtToMenuItems(url);
     if (!s.length) {
         s.push({ name: 'No script is running', image: chrome.extension.getURL('images/info.png')});
-        s.push({ name: 'Get some scripts...', image: chrome.extension.getURL('images/edit_add.png'), url: 'http://userscript.org', newtab: true});
     }
+    s.push({ name: 'Get new scripts...', image: chrome.extension.getURL('images/edit_add.png'), url: 'http://userscripts.org', newtab: true});
     ret = ret.concat(s);
     ret.push(createDivider());
 
     var c = convertMenuCmdsToMenuItems(url);
     if (c.length) c.push(createDivider());
+    c.push({ name: 'Check for Userscripts Updates', image: chrome.extension.getURL('images/update.png'), runUpdate: true});
+    
+    c.push(createDivider());
     c.push(createAboutItem());
 
     ret = ret.concat(c);
@@ -1168,8 +1270,16 @@ var createOptionItems = function() {
     var s = convertMgmtToMenuItems(null, true);
     if (!s.length) {
         s.push({ name: 'No script is installed', image: chrome.extension.getURL('images/info.png')});
-        s.push({ name: 'Get some scripts...', image: chrome.extension.getURL('images/edit_add.png'), url: 'http://userscript.org', newtab: true});
+        s.push({ name: 'Get some scripts...', image: chrome.extension.getURL('images/edit_add.png'), url: 'http://userscripts.org', newtab: true});
     }
+
+    ret.push ({ name: 'Add a new userscript',
+                id: null,
+                image: chrome.extension.getURL('images/edit_add.png'),
+                code: '',
+                enabled: true,
+                userscript: true });
+
     ret = ret.concat(s);
     ret.push(createDivider());
 
@@ -1220,18 +1330,18 @@ var convertMgmtToMenuItems = function(url, options) {
         var item = { name: script.name,
                      id: script.name,
                      image: img,
+                     system: script.system,
+                     update_url: script.fileURL,
                      checkbox: !options,
                      enabled: script.enabled,
                      position: script.position,
                      positionof : scripts.length,
-                     compat_metadata: script.compat_metadata,
-                     compat_foreach: script.compat_foreach,
-                     compat_arrayleft: script.compat_arrayleft,
-                     compat_filterproto: script.compat_filterproto,
-                     poll_unsafewindow: script.poll_unsafewindow,
-                     poll_unsafewindow_allvars: script.poll_unsafewindow_allvars,
-                     poll_unsafewindow_interval: script.poll_unsafewindow_interval,
                      userscript: true };
+
+        for (var i=0; i<scriptOptions.length;i++) {
+            item[scriptOptions[i]] = script.options[scriptOptions[i]];
+        }
+
         if (options) {
             item.code = script.textContent;
             if (Config.values.showFixedSrc) {
@@ -1241,12 +1351,6 @@ var convertMgmtToMenuItems = function(url, options) {
         ret.push(item);
     }
 
-    ret.push ({ name: 'Add a new userscript',
-                id: null,
-                image: chrome.extension.getURL('images/edit_add.png'),
-                code: '',
-                enabled: true,
-                userscript: true });
     return ret;
 };
 
@@ -1256,11 +1360,12 @@ var compaMoInit = function () {
 
     this.mkCompat = function(src, script) {
         if (!script) {
-            return this.unArrayOnLeftSideify(this.unEachify(this.unMetaDataify(src)));
+            return this.unArrayOnLeftSideify(this.unWrappedObjectify(this.unEachify(this.unMetaDataify(src))));
         } else {
-            if (script.compat_metadata) src = this.unMetaDataify(src);
-            if (script.compat_foreach) src = this.unEachify(src);
-            if (script.compat_arrayleft) src = this.unArrayOnLeftSideify(src);
+            if (script.options.compat_metadata) src = this.unMetaDataify(src);
+            if (script.options.compat_foreach) src = this.unEachify(src);
+            if (script.options.compat_wrappedobj) src = this.unWrappedObjectify(src);
+            if (script.options.compat_arrayleft) src = this.unArrayOnLeftSideify(src);
         }
         return src;
     };
@@ -1449,21 +1554,57 @@ var compaMoInit = function () {
 
         return t;
     };
+
+    /*
+     * unWrappedObjectify(src)
+     *
+     * replaces i.e
+     *
+     *   obj.wrappedJSObj.blubber()
+     *
+     * by
+     *   obj.blubber();
+     *
+     */
+    this.unWrappedObjectify = function(src) {
+        var lines = src.split('\n');
+
+        for (var k in lines) {
+            var line = lines[k];
+            var cpos = line.search('//');
+            var spos = line.search('.wrappedJSObject');
+            if (spos == -1 ||
+                (cpos != -1 && cpos < spos)) {
+                continue;
+            }
+            lines[k] = line.replace('.wrappedJSObject', '');
+        }
+
+        return lines.join('\n');
+    };
 };
 
 /* ### Listener ### */
+var loadListenerTimout = null;
 
 var loadListener = function(tabID, changeInfo, tab) {
-    if (changeInfo.status == 'complete') {
-        if (tab.url.search(/\.tamper\.js$/) != -1) {
-            var request = function(tob) {
-                chrome.tabs.sendRequest(tob.id,
-                                        { method: "getSrc" },
-                                        function(response) {
-                                            addNewUserScript(tab.id, response.src);
-                                        });
-            };
-            chrome.tabs.getSelected(null, request);
+    var sere = function() {
+        loadListenerTimout = null;
+        chrome.tabs.sendRequest(tabID,
+                                { method: "getSrc" },
+                                function(response) {
+                                    addNewUserScript(tab.id, tab.url, response.src);
+                                });
+    };
+    if (tab.url.search(/\.tamper\.js$/) != -1) {
+        if (changeInfo.status == 'complete') {
+            if (loadListenerTimout != null) {
+                window.clearTimeout(loadListenerTimout);
+                loadListenerTimout = null;
+            }
+            sere();
+        } else {
+            loadListenerTimout = window.setTimeout(sere, 5000);
         }
     }
 };
