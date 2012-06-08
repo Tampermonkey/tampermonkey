@@ -3138,7 +3138,7 @@ var requestHandler = function(request, sender, sendResponse) {
             sendResponse({});
         }
     } else if (request.method == "prepare") {
-        if (typeof sender.tab != 'undefined') {
+        if (typeof sender.tab != 'undefined' && sender.tab.index >= 0) { // index of -1 is used by google search for omnibox
             if (request.topframe || !allURLs[sender.tab.id] /* i.e. tamperfire page */) {
                 resetTabInfo(sender.tab.id);
                 setIcon(sender.tab.id);
@@ -3185,7 +3185,6 @@ var requestHandler = function(request, sender, sendResponse) {
                 sendResponse({});
             }
         } else {
-            console.log(chrome.i18n.getMessage("Unable_to_run_scripts_due_to_empty_tabID_"));
             sendResponse({});
         }
     } else if (request.method == "startFireUpdate") {
@@ -4353,9 +4352,14 @@ var loadListener = function(tabID, changeInfo, tab) {
 };
 
 var onCommitedListener = function(details) {
-    // for i.e. facebook message
-    setIcon(details.tabId);
-    setBadge(details.tabId);
+    var resp = function(tab) {
+        if (details.tabId != tab.id) return;
+        // for i.e. facebook message
+        setIcon(tab.id);
+        setBadge(tab.id);
+    };
+    // determine selected tab, cause an new tab is created when the omnibox is selected :-/
+    chrome.tabs.getSelected(null, resp);
 };
 
 var resetTabInfo = function(tabId) {
