@@ -1,0 +1,5 @@
+日本語訳について議論、誤りを報告、改善に参加するにはこちらをご覧ください:
+http://forum.tampermonkey.net/viewtopic.php?t=235
+
+To discuss, report an error, participate and help improve the Japanese translation, Please visit:
+http://forum.tampermonkey.net/viewtopic.php?t=235

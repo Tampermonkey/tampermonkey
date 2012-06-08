@@ -1,0 +1,683 @@
+{
+  "fatal_error": {
+    "message": "Schwerer Fehler"
+  },
+  "Please_consider_a_donation": {
+    "message": "Bitte spende einen kleinen Betrag"
+  },
+  "Invalid_scheme_of_url": {
+    "message": "Ungültige URL"
+  },
+  "run_script_0url0___0name0": {
+    "message": "Starte Script $name$ @ $url$",
+    "placeholders": {
+      "url": {
+         "content": "$1"
+      },
+      "name": {
+         "content": "$2"
+      }
+    }
+  },
+  "env_option__debug_scripts": {
+    "message": "Env option: debugge Scripts"
+  },
+  "Invalid_UserScript__Sry_": {
+    "message": "Ungültiges Userscript. Sry!"
+  },
+  "Invalid_UserScript_name__Sry_": {
+    "message": "Ungültiger Userscript-Name. Sry!"
+  },
+  "Unable_to_get_UserScript__Sry_": {
+    "message": "Kann das Script nicht laden!"
+  },
+  "Do_you_want_to_install_this_userscript_in_Tampermonkey_or_Chrome": {
+    "message": "Soll das Script in Tampermonkey (Ok) oder \nnativ in Chrome (Cancel) installiert werden?"
+  },
+  "Name_": {
+    "message": "Name:"
+  },
+  "Note_": {
+    "message": "Achtung:"
+  },
+  "Installed_Version_": {
+    "message": "Installierte Version:"
+  },
+  "You_are_about_to_reinstall_a_UserScript_": {
+    "message": "Neu-Installation des Userscripts:"
+  },
+  "You_are_about_to_downgrade_a_UserScript": {
+    "message": "Achtung! Downgrade des Userscripts:"
+  },
+  "You_are_about_to_modify_a_UserScript_": {
+    "message": "Modifikation des Userscripts:"
+  },
+  "You_are_about_to_update_a_UserScript_": {
+    "message": "Aktualisierung des Userscripts:"
+  },
+  "You_are_about_to_install_a_UserScript_": {
+    "message": "Installation des Userscripts:"
+  },
+  "This_script_does_not_provide_any__include_information_": {
+    "message": "Dieses Script beinhaltet keine @include Informationen."
+  },
+  "All_script_settings_will_be_reset_": {
+    "message": "Alle Script-Einstellungen werden zurückgesetzt!"
+  },
+  "Tampermonkey_assumes_0urlAllHttp0_in_order_to_continue_": {
+    "message": "Tampermonkey verwendet '$urlAllHttp$' um fortzufahren!",
+    "placeholders": {
+      "urlAllHttp": {
+         "content": "$1"
+      }
+    }
+  },
+  "The_update_url_has_changed_from_0oldurl0_to__0newurl0": {
+    "message": "Die Update-URL hat sich von:\n    '$oldurl$'\n    zu:\n    '$newurl$'\n verändert.\n",
+    "placeholders": {
+      "oldurl": {
+         "content": "$1"
+      },
+      "newurl": {
+         "content": "$2"
+      }
+    }
+  },
+  "Attention_Can_not_display_all_includes_": {
+    "message": "Achtung: Es werden nicht alle Seiten angezeigt!\nBitte manuell prüfen."
+  },
+  "Attention_Can_not_display_all_excludes_": {
+    "message": "Achtung: Es werden nicht alle Seiten angezeigt!\nBitte manuell prüfen."
+  },
+  "Include_s__": {
+    "message": "Include(s):"
+  },
+  "Exclude_s__": {
+    "message": "Exclude(s):"
+  },
+  "Note__A_recheck_of_the_GreaseMonkey_FF_compatibility_options_may_be_required_in_order_to_run_this_script_": {
+    "message": "Achtung: Bitte überprüfen sie die GreaseMonkey/FF       \n    Kompatibilitäts-Optionen um\n    Fehler im Script zu vermeiden."
+  },
+  "Do_you_want_to_continue_": {
+    "message": "Möchten Sie fortfahren?"
+  },
+  "Got_strange_source_code_": {
+    "message": "Fehler im Quellcode:"
+  },
+  "Update_found_for_0name0_": {
+    "message": "Ein Update für $name$ wurde gefunden.",
+    "placeholders": {
+      "name": {
+         "content": "$1"
+      }
+    }
+  },
+  "UpdateCheck_of_0name0_Url_0url0_failed_": {
+    "message": "Update-Prüfung von '$name$' (Url: $url$) fehlgeschlagen!",
+    "placeholders": {
+      "name": {
+         "content": "$1"
+      },
+      "url": {
+         "content": "$2"
+      }
+    }
+  },
+  "No_update_found__sry_": {
+    "message": "Keine Updates gefunden!"
+  },
+  "Unable_to_save_tab_due_to_empty_tabID_": {
+    "message": "Das Tab Objekt konnte wegen fehlender tabID nicht gespeichert werden!"
+  },
+  "Unable_to_load_storage_due_to_empty_tabID_": {
+    "message": "Der Script-Speicher konnte wegen fehlender tabID nicht geladen werden!"
+  },
+  "Unable_to_save_storage_due_to_empty_tabID_": {
+    "message": "Der Script-Speicher konnte wegen fehlender tabID nicht gesichert werden!"
+  },
+  "Unable_to_install_script_due_to_empty_tabID_": {
+    "message": "Das Script konnte wegen fehlender tabID nicht installiert werden!"
+  },
+  "Unable_to_run_scripts_due_to_empty_tabID_": {
+    "message": "Die Scripte konnte wegen fehlender tabID nicht gestartet werden!"
+  },
+  "Unknown_method_0name0": {
+    "message": "Unbekannte Methode $name$",
+    "placeholders": {
+      "name": {
+         "content": "$1"
+      }
+    }
+  },
+  "No_script_is_running": {
+    "message": "Kein Script gestartet"
+  },
+  "Add_new_script___": {
+    "message": "Neues Script bearbeiten"
+  },
+  "Get_new_scripts___": {
+    "message": "Neue Scripte installieren"
+  },
+  "Check_for_userscripts_updates": {
+    "message": "Scripte auf Updates prüfen"
+  },
+  "Settings": {
+    "message": "Einstellungen"
+  },
+  "Make_includes_more_safe": {
+    "message": "Includes absichern"
+  },
+  "Includes_more_safe_example": {
+    "message": "(Wenn aktiviert wird z.B. 'http://*google.*/*' als 'http://*google.tld/*' interpretiert um das Starten auf 'http://www.google.myevilpage.com/' zu verhindern.)"
+  },
+  "Fix_includes": {
+    "message": "Berichtige Includes"
+  },
+  "Fix_includes_example": {
+    "message": "(Diese Option interpretiert '*' als 'http://*/*')"
+  },
+  "Debug_scripts": {
+    "message": "Aktiviere Script-Debugger"
+  },
+  "Show_fixed_source": {
+    "message": "Zeige 'fehlerbereinigten' Sourcecode"
+  },
+
+  "Installed_userscripts": {
+    "message": "Installierte Userscripte"
+  },
+  "No_script_is_installed": {
+    "message": "Es ist kein Script installiert"
+  },
+  "Get_some_scripts___": {
+    "message": "Suche neue Scripte"
+  },
+  "New_userscript": {
+    "message": "<Neues Script>"
+  },
+  "Registered_menu_cmds": {
+    "message": "Registrierte Menü-Kommandos"
+  },
+  "About_Tampermonkey": {
+    "message": "Über Tampermonkey"
+  },
+  "Tampermonkey_Options": {
+    "message": "Tampermonkey"
+  },
+  "Position_": {
+    "message": "Position:"
+  },
+  "Close": {
+    "message": "Schließen"
+  },
+  "GM_compat_options_": {
+    "message": "GM/FF Kompatibilitäts-Optionen:"
+  },
+  "Convert_CDATA_sections_into_a_chrome_compatible_format": {
+    "message": "Konvertiere CDATA Sektionen in ein Chrome-kompatibles Format"
+  },
+  "Fix_for_var_in_statements": {
+    "message": "Fixe 'for (var j in x)' Ausdrücke"
+  },
+  "Replace_for_each_statements": {
+    "message": "Ersetze 'for each' Ausdrücke"
+  },
+  "Convert_Array_Assignements": {
+    "message": "Konvertiere Array-Zuweisungen wie [blub, bla] = s.split(':')"
+  },
+  "Add_toSource_function_to_Object_Prototype": {
+    "message": "Füge dem Object und Array Kompatibilitätsfunktionen hinzu"
+  },
+  "Poll_unsafeWindow_variables": {
+    "message": "Lese unsafeWindow-Variablen"
+  },
+  "Poll_all_unsafeWindow_variables": {
+    "message": "Lese alle unsafeWindow-Variablen (Achtung: u.U. hohe CPU-Last!)"
+  },
+  "every_x_ms": {
+    "message": "aller ## ms"
+  },
+  "Run_at": {
+    "message": "Starte wenn:"
+  },
+  "Update_URL_": {
+    "message": "Update URL:"
+  },
+  "Save": {
+    "message": "Speichern"
+  },
+  "Cancel": {
+    "message": "Abbrechen"
+  },
+  "Reset": {
+    "message": "Zurücksetzen"
+  },
+  "There_are_unsaved_changed_" : {
+    "message": "Die Änderungen wurden nicht gespeichert.\nMöchten sie den Dialog wirklich schließen?"
+  },
+  "Do_you_really_want_to_store_fixed_code_": {
+    "message": "Die Option '$option$' ist aktiviert!\n\nMöchten sie wirklich den von TM modifizierten Quellcode speichern?",
+    "placeholders": {
+      "option": {
+         "content": "$1"
+      }
+    }
+  },
+  "Really_reset_all_changes_": {
+    "message": "Wirklich alle Änderungen zurücksetzen?"
+  },
+  "Please_wait___": {
+    "message": "Bitte warten..."
+  },
+  "Edit": {
+    "message": "Bearbeiten"
+  },
+  "Sites": {
+    "message": "Webseiten"
+  },
+  "Sort": {
+    "message": "Sortieren"
+  },
+  "Delete": {
+    "message": "Löschen"
+  },
+  "Features": {
+    "message": "Funktionen"
+  },
+  "This_script_stores_data": {
+    "message": "Dieses Script speichert Daten via Tampermonkey."
+  },
+  "This_script_has_access_to_https_pages": {
+    "message": "Dieses Script hat Zugriff auf verschlüsselte Seiten."
+  },
+  "One_or_more_compatibility_options_are_set": {
+    "message": "Eine oder mehrere Kompatibilitätsoptionen sind aktiviert."
+  },
+  "This_script_has_full_web_access": {
+    "message": "Dieses Script hat vollen Internet-Zugang."
+  },
+  "This_is_a_system_script": {
+    "message": "Ich bin ein System-Script. ;)"
+  },
+  "This_is_a_chrome_extension": {
+    "message": "Ich bin eine Chrome Erweiterung. ;)"
+  },
+  "This_script_runs_in_Chrome_mode": {
+    "message": "Diese Script läuft im Chrome-Modus"
+  },
+  "Really_delete_this_script__": {
+    "message": "Soll dieses Script wirklich gelöscht werden?"
+  },
+  "Really_delete_this_extension__": {
+    "message": "Soll diese Chrome Erweiterung wirklich gelöscht werden?"
+  },
+  "Edit_this_script": {
+    "message": "Script bearbeiten"
+  },
+  "This_script_has_access_to_webpage_scripts": {
+    "message": "Dieses Script hat vollen Zugriff auf die Web-Seite."
+  },
+  "Utilities": {
+    "message": "Hilfsmittel"
+  },
+  "Script_modified_in_background": {
+    "message": "Das Script wurde im Hintergrund (z.B. durch eine erneute\nInstallation verändert. Bitte beachte, dass diese Änderungen\nbeim Speichern überschrieben werden!"
+  },
+  "This_script_uses_uW_gm_api_": {
+    "message": "Dieses Script nutzt einen Teil der Greasemonkey 10 API (unsafeWindow.gmonkey)\nder weder von Tampermonkey, noch von irgendeinem anderen alternativen Script-Manager unterstützt wird."
+  },
+  "Enabled": {
+    "message": "Aktiviert"
+  },
+  "Disabled": {
+    "message": "Deaktiviert"
+  },
+  "Unable_to_parse_this_": {
+    "message": "Falsche syntax! :("
+  },
+  "An_error_occured_during_import_": {
+    "message": "Ein Fehler ist aufgetreten, mehr Informationen sind in der Konsole zu finden! (Strg-Shift+J)"
+  },
+  "Import_from_Textarea": {
+    "message": "Import von Textarea"
+  },
+  "Import_from_SandboxFS": {
+    "message": "Import von SandboxFS"
+  },
+  "Export_to_Textarea": {
+    "message": "Export zu Textarea"
+  },
+  "Export_to_file": {
+    "message": "Export in eine Datei"
+  },
+  "Export_to_SandboxFS": {
+    "message": "Export zu SandboxFS"
+  },
+  "There_is_an_update_for_0name0_avaiable_": {
+    "message": "Es ist ein Update von '$name$' verfügbar. :)",
+    "placeholders": {
+      "name": {
+         "content": "$1"
+      }
+    }
+  },
+  "Just_another_service_provided_by_your_friendly_script_updater_": {
+    "message": "Script-Updater:"
+  },
+  "Welcome_": {
+    "message": "Willkommen!"
+  },
+  "Have_fun_with_Tampermonkey": {
+    "message": "Viel Spaß mit Tampermonkey $version$! :)",
+    "placeholders": {
+      "version": {
+         "content": "$1"
+      }
+    }
+  },
+  "General": {
+    "message": "Allgemein"
+  },
+  "Script_Update": {
+    "message": "Script Update"
+  },
+  "Check_interval": {
+    "message": "Check Interval"
+  },
+  "Never": {
+    "message": "Nie"
+  },
+  "Every_Hour": {
+    "message": "Jede Stunde"
+  },
+  "Every_6_Hours": {
+    "message": "Alle 6 Stunden"
+  },
+  "Every_12_Hour": {
+    "message": "Alle 12 Stunden"
+  },
+  "Every_Day": {
+    "message": "Jeden Tag"
+  },
+  "Every_Week": {
+    "message": "Jede Woche"
+  },
+  "Every_2_Weeks": {
+    "message": "Alle 2 Wochen"
+  },
+  "Every_Month": {
+    "message": "Jeden Monat"
+  },
+  "Update_interval": {
+    "message": "Aktualisierungsinterval"
+   },
+  "Editor": {
+    "message": "Editor"
+  },
+  "Indentation_Width": {
+    "message": "Einrückungsbreite"
+  },
+  "Indent_with": {
+    "message": "Einrückung mit"
+  },
+  "Tabs": {
+    "message": "Tabs"
+  },
+  "Spaces": {
+    "message": "Leerzeichen"
+  },
+  "TabMode": {
+    "message": "TabMode"
+  },
+  "Classic": {
+    "message": "Classic"
+  },
+  "Shift": {
+    "message": "Shift"
+  },
+  "Indent": {
+    "message": "Indent"
+  },
+  "Smart": {
+    "message": "Smart"
+  },
+  "EnterMode": {
+    "message": "EnterMode"
+  },
+  "Indent_new_lines": {
+    "message": "Rücke neue Zeilen ein"
+  },
+  "Indent_as_previous": {
+    "message": "Einrückung wie vorherige Zeile"
+  },
+  "No_Indentation": {
+    "message": "Keine Einrückung"
+  },
+  "Reindent_on_typing": {
+    "message": "Einrückung beim Schreiben"
+  },
+  "Show_Line_Numbers": {
+    "message": "Zeige Zeilennummern"
+  },
+  "Auto_reload_on_script_enabled": {
+    "message": "Automatisches Seiten-Neu-Laden"
+  },
+  "Auto_reload_on_script_enabled_desc": {
+    "message": "Lade betroffene Seiten neu, wenn ein Script an- oder ausgeschalten wurde."
+  },
+  "Dont_ask_me_for_simple_script_updates": {
+    "message": "Installiere bei einfachen Script-Updates automatisch"
+  },
+  "Hide_notification_after": {
+    "message": "Verstecke Update Benachrichtigung nach"
+  },
+  "15_Seconds": {
+    "message": "15 Sekunden"
+  },
+  "30_Seconds": {
+    "message": "30 Sekunden"
+  },
+  "1_Minute": {
+    "message": "1 Minute"
+  },
+  "5_Minutes": {
+    "message": "5 Minuten"
+  },
+  "1_Hour": {
+    "message": "1 Stunde"
+  },
+  "Enable_Editor": {
+    "message": "Aktiviere erweiterten Editor"
+  },
+  "Appearance": {
+    "message": "Aussehen"
+  },
+  "3D_Icon_Set": {
+    "message": "3D Icon"
+  },
+  "Security": {
+    "message": "Sicherheit"
+  },
+  "Forbidden_Pages": {
+    "message": "Verbotene Seiten"
+  },
+  "This_page_is_blacklisted_at_the_security_settings": {
+    "message": "Durch Sicherheitsoptionen geblockt"
+  },
+  "Update_Notification": {
+    "message": "Zeige Aktualisierungs-Benachrichtigung"
+  },
+  "Unable_to_load_script_from_url_0url0": {
+    "message": "Script kann nicht geladen werden: \n $url$",
+    "placeholders": {
+      "url": {
+         "content": "$1"
+      }
+    }
+  },
+  "Click_here_to_install_it_": {
+    "message": "Klicke hier, um es zu installieren."
+  },
+  "Check_disabled_scripts": {
+    "message": "Aktualisiere deaktivierte Scripte"
+  },
+  "TamperFire": {
+    "message": "TamperFire"
+  },
+  "Enable_TamperFire": {
+    "message": "Aktiviere TamperFire"
+  },
+  "Restart_to_apply": {
+    "message": "TM muss neu gestartet werden um diese Einstellung zu übernehmen."
+  },
+  "TamperFire_update_started": {
+    "message": "TamperFire Update gestartet"
+  },
+  "TamperFire_update_failed___": {
+    "message": "TamperFire Update fehlgeschlagen :("
+  },
+  "TamperFire_import_started": {
+    "message": "TamperFire Script-Import gestartet"
+  },
+  "TamperFire_is_up_to_date": {
+    "message": "TamperFire wurde aktualisiert :)"
+  },
+  "_0_scripts_found": {
+    "message": "? Script gefunden"
+  },
+  "Available_Userscripts": {
+    "message": "Gefundene Userscripts"
+  },
+  "Rank": {
+    "message": "Rang"
+  },
+  "Installs": {
+    "message": "Installationen"
+  },
+  "Rating": {
+    "message": "Bewertung"
+  },
+  "Fans": {
+    "message": "Fans"
+  },
+  "Homepage": {
+    "message": "Homepage"
+  },
+  "Last_Updated": {
+    "message": "Letzte Aktualisierung"
+  },
+  "Last_Changed": {
+    "message": "Letzte Änderung"
+  },
+  "Name": {
+    "message": "Name"
+  },
+  "Version": {
+    "message": "Version"
+  },
+  "Update_needed": {
+    "message": "Update notwendig"
+  },
+  "Update_in_progress": {
+    "message": "Update läuft"
+  },
+  "Downloading": {
+    "message": "Downloading"
+  },
+  "Processing_scripts": {
+    "message": "Verarbeite Scripts"
+  },
+  "Writing_scripts": {
+    "message": "Speichere Scripts"
+  },
+  "Check_for_Updates": {
+    "message": "Suche Updates"
+  },
+  "Force_Update": {
+    "message": "Aktualisiere jetzt"
+  },
+  "TamperFire_is_up_to_date_": {
+    "message": "TamperFire ist aktuell!"
+  },
+  "Current_Index_": {
+    "message": "Aktuelle DB Details:"
+  },
+  "Date_": {
+    "message": "Datum:"
+  },
+  "Entries_": {
+    "message": "Einträge:"
+  },
+  "overwritten_by_user": {
+    "message": "Überschrieben vom nutzer"
+  },
+  "Overwrite_includes": {
+    "message": "Überschreibe Includes"
+  },
+  "Overwrite_excludes": {
+    "message": "Überschreibe Excludes"
+  },
+  "Report_a_bug": {
+    "message": "Problem melden"
+  },
+  "Install": {
+    "message": "Installieren"
+  },
+  "A_reload_is_required": {
+    "message": "Der Tab muss neu geladen werden: \nAlle ungespeicherten Änderungen gehen verloren!"
+  },
+  "Enable_Sort_Cache": {
+    "message": "Aktiviere den Sortierungs-Cache (Hoher Speicherverbrauch)"
+  },
+  "Editor_reset": {
+    "message": "Editor Zurücksetzen"
+  },
+  "Full_reset": {
+    "message": "Script Zurücksetzen"
+  },
+  "Do_you_really_want_to_factory_reset_this_script_": {
+    "message": "Soll das Script wirklick komplett zurückgesetzt werden?"
+  },
+  "Options": {
+    "message": "Optionen"
+  },
+  "Userscripts": {
+    "message": "Userscripte"
+  },
+  "New_script_template_": {
+    "message": "Maske für neue Userscripte"
+  },
+  "Icon_badge_info": {
+    "message": "Erweiterte Icon Info"
+  },
+  "Off": {
+    "message": "Aus"
+  },
+  "Running_scripts": {
+    "message": "Aktive Script-Instanzen"
+  },
+  "Unique_running_scripts": {
+    "message": "Aktive Scripte"
+  },
+  "Disabled_scripts": {
+    "message": "Inaktive Scripte"
+  },
+  "Config_Mode": {
+    "message": "Konfigurations-Modus"
+  },
+  "Novice": {
+    "message": "Anfänger"
+  },
+  "Beginner": {
+    "message": "Fortgeschritten"
+  },
+  "Advanced": {
+    "message": "Experte"
+  },
+  "Changes_the_number_of_visible_config_options": {
+    "message": "Ändert die Anzahl der einstellbaren Optionen"
+  },
+  "EOF": {
+    "message": "EOF"
+  }
+}

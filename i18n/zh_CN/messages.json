@@ -1,0 +1,654 @@
+{
+  "fatal_error": {
+    "message": "致命错误"
+  },
+  "Please_consider_a_donation": {
+    "message": "欢迎捐助"
+  },
+  "Invalid_scheme_of_url": {
+    "message": "无效的url地址"
+  },
+  "run_script_0url0___0name0": {
+    "message": "运行脚本 $name$ @ $url$",
+    "placeholders": {
+      "url": {
+         "content": "$1"
+      },
+      "name": {
+         "content": "$2"
+      }
+    }
+  },
+  "env_option__debug_scripts": {
+    "message": "环境选项: 调试脚本"
+  },
+  "Invalid_UserScript__Sry_": {
+    "message": "无效的 UserScript脚本!"
+  },
+  "Invalid_UserScript_name__Sry_": {
+    "message": "无效的 UserScript 脚本名称!"
+  },
+  "Unable_to_get_UserScript__Sry_": {
+    "message": "无法加载 UserScript!"
+  },
+  "Name_": {
+    "message": "名称:"
+  },
+  "Note_": {
+    "message": "说明:"
+  },
+  "Installed_Version_": {
+    "message": "已安装版本:"
+  },
+  "You_are_about_to_reinstall_a_UserScript_": {
+    "message": "UserScript 脚本重装:"
+  },
+  "You_are_about_to_downgrade_a_UserScript": {
+    "message": "注意! Userscript 脚本降级:"
+  },
+  "You_are_about_to_modify_a_UserScript_": {
+    "message": "UserScript 脚本修改:"
+  },
+  "You_are_about_to_update_a_UserScript_": {
+    "message": "UserScript 脚本更新:"
+  },
+  "You_are_about_to_install_a_UserScript_": {
+    "message": "UserScript 脚本安装:"
+  },
+  "This_script_does_not_provide_any__include_information_": {
+    "message": "此脚本没有提供任何 @include 信息."
+  },
+  "All_script_settings_will_be_reset_": {
+    "message": "全部的脚本设置将会初始化!"
+  },
+  "Tampermonkey_assumes_0urlAllHttp0_in_order_to_continue_": {
+    "message": "Tampermonkey 采用 '$urlAllHttp$' 以继续执行!",
+    "placeholders": {
+      "urlAllHttp": {
+         "content": "$1"
+      }
+    }
+  },
+  "The_update_url_has_changed_from_0oldurl0_to__0newurl0": {
+    "message": "更新 url 从 '$oldurl$' 变更为 '$newurl$'.",
+    "placeholders": {
+      "oldurl": {
+         "content": "$1"
+      },
+      "newurl": {
+         "content": "$2"
+      }
+    }
+  },
+  "Attention_Can_not_display_all_includes_": {
+    "message": "注意: 启用URL(s)列表变化.请手动检查!"
+  },
+  "Attention_Can_not_display_all_excludes_": {
+    "message": "注意: 排除URL(s)列表变化.请手动检查!"
+  },
+  "Include_s__": {
+    "message": "启用URL(s):"
+  },
+  "Exclude_s__": {
+    "message": "排除URL(s):"
+  },
+  "Note__A_recheck_of_the_GreaseMonkey_FF_compatibility_options_may_be_required_in_order_to_run_this_script_": {
+    "message": "说明: 为了运行当前脚本需要开启 GreaseMonkey/FF 兼容性选项."
+  },
+  "Do_you_want_to_continue_": {
+    "message": "是否继续?"
+  },
+  "Got_strange_source_code_": {
+    "message": "获取到囧源码:"
+  },
+  "Update_found_for_0name0_": {
+    "message": "'$name$' 发现可用更新.",
+    "placeholders": {
+      "name": {
+         "content": "$1"
+      }
+    }
+  },
+  "UpdateCheck_of_0name0_Url_0url0_failed_": {
+    "message": "'$name$' (Url: $url$) 更新检查失败!",
+    "placeholders": {
+      "name": {
+         "content": "$1"
+      },
+      "url": {
+         "content": "$2"
+      }
+    }
+  },
+  "No_update_found__sry_": {
+    "message": "没有发现更新~"
+  },
+  "Unable_to_save_tab_due_to_empty_tabID_": {
+    "message": "tabID为空导致无法保存!"
+  },
+  "Unable_to_load_storage_due_to_empty_tabID_": {
+    "message": "tabID为空导致无法读取文件!"
+  },
+  "Unable_to_save_storage_due_to_empty_tabID_": {
+    "message": "tabID为空导致无法写入文件!"
+  },
+  "Unable_to_install_script_due_to_empty_tabID_": {
+    "message": "tabID为空导致无法安装脚本!"
+  },
+  "Unable_to_run_scripts_due_to_empty_tabID_": {
+    "message": "tabID为空导致无法运行脚本!"
+  },
+  "Unknown_method_0name0": {
+    "message": "未知方法: $name$",
+    "placeholders": {
+      "name": {
+         "content": "$1"
+      }
+    }
+  },
+  "No_script_is_running": {
+    "message": "没有在运行的脚本"
+  },
+  "Add_new_script___": {
+    "message": "新建脚本..."
+  },
+  "Get_new_scripts___": {
+    "message": "获取脚本..."
+  },
+  "Check_for_userscripts_updates": {
+    "message": "检查用户脚本更新"
+  },
+  "Settings": {
+    "message": "设置"
+  },
+  "Make_includes_more_safe": {
+    "message": "确保启用的URLs的安全"
+  },
+  "Includes_more_safe_example": {
+    "message": "(如果开启, 'http://*google.*/*' 类似的配置将会解析为 'http://*google.tld/*' 来阻止脚本在 'http://www.google.myevilpage.com/' 的运行)"
+  },
+  "Fix_includes": {
+    "message": "改善URL地址"
+  },
+  "Fix_includes_example": {
+    "message": "(此选项将 '*' 转换为 'http://*/*')"
+  },
+  "Debug_scripts": {
+    "message": "调试脚本"
+  },
+  "Show_fixed_source": {
+    "message": "显示规格化的源码"
+  },
+
+  "Installed_userscripts": {
+    "message": "已安装脚本"
+  },
+  "No_script_is_installed": {
+    "message": "没有安装任何脚本"
+  },
+  "Get_some_scripts___": {
+    "message": "获取脚本..."
+  },
+  "New_userscript": {
+    "message": "<新建用户脚本>"
+  },
+  "Registered_menu_cmds": {
+    "message": "注册菜单命令"
+  },
+  "About_Tampermonkey": {
+    "message": "关于 Tampermonkey"
+  },
+  "Tampermonkey_Options": {
+    "message": "Tampermonkey"
+  },
+  "Position_": {
+    "message": "加载排位:"
+  },
+  "Close": {
+    "message": "关闭"
+  },
+  "GM_compat_options_": {
+    "message": "GM/FF 兼容选项:"
+  },
+  "Convert_CDATA_sections_into_a_chrome_compatible_format": {
+    "message": "转换 CDATA 部分为 chrome 支持的格式"
+  },
+  "Fix_for_var_in_statements": {
+    "message": "修复 'for (var j in x)' 方法"
+  },
+  "Replace_for_each_statements": {
+    "message": "替换 'for each' 方法"
+  },
+  "Convert_Array_Assignements": {
+    "message": "替换 [blub, bla] = s.split(':') 变换"
+  },
+  "Add_toSource_function_to_Object_Prototype": {
+    "message": "为对象和数组增加兼容性函数"
+  },
+  "Poll_unsafeWindow_variables": {
+    "message": "轮询 unsafeWindow 变量"
+  },
+  "Poll_all_unsafeWindow_variables": {
+    "message": "轮询全部 unsafeWindow 变量 (注意: 这会导致大量的cpu运算!)"
+  },
+  "every_x_ms": {
+    "message": "每 ## 毫秒"
+  },
+  "Run_at": {
+    "message": "加载位置: "
+  },
+  "Update_URL_": {
+    "message": "更新URL:"
+  },
+  "Save": {
+    "message": "保存"
+  },
+  "Cancel": {
+    "message": "取消"
+  },
+  "Reset": {
+    "message": "重置"
+  },
+  "There_are_unsaved_changed_" : {
+    "message": "有未保存改动! \n 确定关闭编辑器?"
+  },
+  "Do_you_really_want_to_store_fixed_code_": {
+    "message": "选项 '$option$' 已启用! \n 是否确定保存修复后的源码?",
+    "placeholders": {
+      "option": {
+         "content": "$1"
+      }
+    }
+  },
+  "Really_reset_all_changes_": {
+    "message": "确定重置这些改动?"
+  },
+  "Please_wait___": {
+    "message": "请稍候..."
+  },
+  "Edit": {
+    "message": "编辑"
+  },
+  "Sites": {
+    "message": "站点"
+  },
+  "Sort": {
+    "message": "排序"
+  },
+  "Delete": {
+    "message": "删除"
+  },
+  "Features": {
+    "message": "特性"
+  },
+  "This_script_stores_data": {
+    "message": "此脚本在 Tampermonkey 存储了数据."
+  },
+  "This_script_has_access_to_https_pages": {
+    "message": "此脚本能访问https页面."
+  },
+  "One_or_more_compatibility_options_are_set": {
+    "message": "此脚本开启了一个或多个chrome兼容选项. 您可以(应当)检查详细配置."
+  },
+  "This_script_has_full_web_access": {
+    "message": "此脚本有完整的网络访问权限."
+  },
+  "This_is_a_system_script": {
+    "message": "此脚本为系统级脚本."
+  },
+  "Really_delete_this_script__": {
+    "message": "确定删除此脚本?"
+  },
+  "Edit_this_script": {
+    "message": "编辑此脚本"
+  },
+  "This_script_has_access_to_webpage_scripts": {
+    "message": "此脚本拥有访问网页的权限."
+  },
+  "Utilities": {
+    "message": "实用程序"
+  },
+  "Script_modified_in_background": {
+    "message": "此脚本的内容或者选项可以在其他的操作中修改 (例如一次重装操作). 请注意点击'保存'按钮会覆盖其他操作引发的修改."
+  },
+  "This_script_uses_uW_gm_api_": {
+    "message": "此脚本使用了部分不被 Tampermonkey 或者其他任何脚本处理插件支持的 Greasemonkey 10 API (unsafeWindow.gmonkey)."
+  },
+  "Enabled": {
+    "message": "启用"
+  },
+  "Disabled": {
+    "message": "禁用"
+  },
+  "Unable_to_parse_this_": {
+    "message": "无法解析! >-<"
+  },
+  "An_error_occured_during_import_": {
+    "message": "导入出现错误. 检查控制台以获得更多信息! (CTRL+SHIFT+J)"
+  },
+  "Import_from_Textarea": {
+    "message": "从 Textarea 导入"
+  },
+  "Import_from_SandboxFS": {
+    "message": "从 SandboxFS 导入"
+  },
+  "Export_to_Textarea": {
+    "message": "导出到 Textarea"
+  },
+  "Export_to_file": {
+    "message": "导出到 File"
+  },
+  "Export_to_SandboxFS": {
+    "message": "导出到 SandboxFS"
+  },
+  "There_is_an_update_for_0name0_avaiable_": {
+    "message": "'$name$' 有可用更新. :)",
+    "placeholders": {
+      "name": {
+         "content": "$1"
+      }
+    }
+  },
+  "Just_another_service_provided_by_your_friendly_script_updater_": {
+    "message": "您脚本中有单独的升级服务:"
+  },
+  "Welcome_": {
+    "message": "欢迎使用!"
+  },
+  "Have_fun_with_Tampermonkey": {
+    "message": "Tampermonkey $version$ \n 祝您使用愉快! )",
+    "placeholders": {
+      "version": {
+         "content": "$1"
+      }
+    }
+  },
+  "General": {
+    "message": "通用"
+  },
+  "Script_Update": {
+    "message": "更新脚本"
+  },
+  "Check_interval": {
+    "message": "更新检查周期"
+  },
+  "Never": {
+    "message": "从不"
+  },
+  "Every_Hour": {
+    "message": "每小时"
+  },
+  "Every_6_Hours": {
+    "message": "每 6 小时"
+  },
+  "Every_12_Hour": {
+    "message": "每半天"
+  },
+  "Every_Day": {
+    "message": "每天"
+  },
+  "Every_Week": {
+    "message": "每周"
+  },
+  "Every_2_Weeks": {
+    "message": "每 2 周"
+  },
+  "Every_Month": {
+    "message": "每月"
+   },
+  "Update_interval": {
+    "message": "更新检查周期"
+   },
+  "Editor": {
+    "message": "编辑器"
+  },
+  "Indentation_Width": {
+    "message": "缩进宽度"
+  },
+  "1": {
+    "message": "1"
+  },
+  "2": {
+    "message": "2"
+  },
+  "3": {
+    "message": "3"
+  },
+  "4": {
+    "message": "4"
+  },
+  "5": {
+    "message": "5"
+  },
+  "6": {
+    "message": "6"
+  },
+  "7": {
+    "message": "7"
+  },
+  "8": {
+    "message": "8"
+  },
+  "9": {
+    "message": "9"
+  },
+  "10": {
+    "message": "10"
+  },
+  "11": {
+    "message": "11"
+  },
+  "Indent_with": {
+    "message": "缩进宽度"
+  },
+  "Tabs": {
+    "message": "标签"
+  },
+  "Spaces": {
+    "message": "空格"
+  },
+  "TabMode": {
+    "message": "标签模式"
+  },
+  "Classic": {
+    "message": "传统模式"
+  },
+  "Shift": {
+    "message": "全大写模式"
+  },
+  "Indent": {
+    "message": "缩进模式"
+  },
+  "Smart": {
+    "message": "Smart"
+  },
+  "Browser_Default": {
+    "message": "浏览器默认"
+  },
+  "EnterMode": {
+    "message": "输入模式"
+  },
+  "Indent_new_lines": {
+    "message": "缩进新行"
+  },
+  "Indent_as_previous": {
+    "message": "按照历史状态缩进"
+  },
+  "No_Indentation": {
+    "message": "不缩进"
+  },
+  "Reindent_on_typing": {
+    "message": "输入时重新缩进"
+  },
+  "Show_Line_Numbers": {
+    "message": "显示行号"
+  },
+  "Auto_reload_on_script_enabled": {
+    "message": "自动刷新页面"
+  },
+  "Auto_reload_on_script_enabled_desc": {
+    "message": "在脚本启用/禁用后刷新相关页面"
+  },
+  "Hide_notification_after": {
+    "message": "在多少时间后隐藏提醒"
+  },
+  "15_Seconds": {
+    "message": "15 秒"
+  },
+  "30_Seconds": {
+    "message": "30 秒"
+  },
+  "1_Minute": {
+    "message": "1 分钟"
+  },
+  "5_Minutes": {
+    "message": "5 分钟"
+  },
+  "1_Hour": {
+    "message": "1 小时"
+  },
+  "Enable_Editor": {
+    "message": "启用加强版编辑器"
+  },
+  "Appearance": {
+    "message": "外观"
+  },
+  "3D_Icon_Set": {
+    "message": "3D 图标"
+  },
+  "Security": {
+    "message": "安全"
+  },
+  "Forbidden_Pages": {
+    "message": "禁用脚本的页面"
+  },
+  "This_page_is_blacklisted_at_the_security_settings": {
+    "message": "安全设置下的禁用列表"
+  },
+  "Update_Notification": {
+    "message": "显示 TM 升级提醒"
+  },
+  "Click_here_to_install_it_": {
+    "message": "点此安装."
+  },
+  "Check_disabled_scripts": {
+    "message": "更新禁用的脚本"
+  },
+  "TamperFire": {
+    "message": "TamperFire"
+  },
+  "Enable_TamperFire": {
+    "message": "启用 TamperFire"
+  },
+  "Restart_to_apply": {
+    "message": "重启以应用 TM 新设置."
+  },
+  "TamperFire_update_started": {
+    "message": "TamperFire 更新开始"
+  },
+  "TamperFire_update_failed___": {
+    "message": "TamperFire 升级失败 >-<"
+  },
+  "TamperFire_import_started": {
+    "message": "TamperFire 脚本导入开始"
+  },
+  "TamperFire_is_up_to_date": {
+    "message": "TamperFire 已是最新 :)"
+  },
+  "_0_scripts_found": {
+    "message": "? 个可用脚本"
+  },
+  "Available_Userscripts": {
+    "message": "可用的用户脚本"
+  },
+  "Rank": {
+    "message": "评分"
+  },
+  "Installs": {
+    "message": "已安装"
+  },
+  "Rating": {
+    "message": "得分"
+  },
+  "Fans": {
+    "message": "Fans"
+  },
+  "Homepage": {
+    "message": "主页"
+  },
+  "Last_Updated": {
+    "message": "最后改动"
+  },
+  "Name": {
+    "message": "名称"
+  },
+  "Update_needed": {
+    "message": "需要更新"
+  },
+  "Update_in_progress": {
+    "message": "正在更新"
+  },
+  "Downloading": {
+    "message": "正在下载"
+  },
+  "Processing_scripts": {
+    "message": "正在处理脚本"
+  },
+  "Writing_scripts": {
+    "message": "正在写入脚本"
+  },
+  "Check_for_Updates": {
+    "message": "检查更新"
+  },
+  "Force_Update": {
+    "message": "强制更新"
+  },
+  "TamperFire_is_up_to_date_": {
+    "message": "TamperFire 已是最新!"
+  },
+  "Current_Index_": {
+    "message": "当前索引细节 :"
+  },
+  "Date_": {
+    "message": "日期:"
+  },
+  "Entries_": {
+    "message": "条目Entries:"
+  },
+  "overwritten_by_user": {
+    "message": "被用户设置覆盖"
+  },
+  "Overwrite_includes": {
+    "message": "覆盖包含网址"
+  },
+  "Overwrite_excludes": {
+    "message": "覆盖列外网址"
+  },
+  "Report_a_bug": {
+    "message": "提交 Bug"
+  },
+  "Install": {
+    "message": "安装"
+  },
+  "A_reload_is_required": {
+    "message": "需要刷新: 将会丢失未保存数据!"
+  },
+  "Enable_Sort_Cache": {
+    "message": "开启排序缓存 (高内存占用)"
+  },
+  "Editor_reset": {
+    "message": "重置编辑"
+  },
+  "Full_reset": {
+    "message": "初始化"
+  },
+  "Do_you_really_want_to_factory_reset_this_script_": {
+    "message": "您确实想要初始化当前脚本?"
+  },
+  "Options": {
+    "message": "选项"
+  },
+  "EOF": {
+    "message": "EOF"
+  }
+}
