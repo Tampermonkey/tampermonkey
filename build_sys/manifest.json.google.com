@@ -16,7 +16,7 @@
    	      "48": "images/icon48.png",
        	     "128": "images/icon128.png" },
    "name": "Tampermonkey",
-   "version": "2.4.0",
+   "version": "2.5.0",
    "description": "Greasemonkey compatible script manager for Chrome.",
    "default_locale": "en",
    "background_page": "background.html",
