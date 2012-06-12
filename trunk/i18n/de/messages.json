@@ -612,10 +612,13 @@
     "message": "Überschrieben vom nutzer"
   },
   "Overwrite_includes": {
-    "message": "Überschreibe Includes"
+    "message": "Überschreibe @include Tags"
+  },
+  "Overwrite_matches": {
+    "message": "Überschreibe @match Tags"
   },
   "Overwrite_excludes": {
-    "message": "Überschreibe Excludes"
+    "message": "Überschreibe @exclude Tags"
   },
   "Report_a_bug": {
     "message": "Problem melden"
