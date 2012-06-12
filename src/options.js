@@ -1234,7 +1234,7 @@ var createCludesEditor = function(name, type) {
     var changed = false;
 
     var enabled = i.options && i.options.override && i.options.override[type.id];
-    var value = (i.options && i.options.override) ? i.options.override['use_' + type.id] : [];
+    var value = (i.options && i.options.override && i.options.override['use_' + type.id]) ? i.options.override['use_' + type.id] : [];
 
     var s = crc('div', 'checkbox cludes', name, id, 'cb1');
     var input = cr('input', i.name, id, 'cb');
@@ -1485,6 +1485,8 @@ var createScriptSettingsTab = function(i, tabd) {
                               co);
     var e_oi = createCludesEditor(chrome.i18n.getMessage('Overwrite_includes'),
                                   { id: 'includes', item: i});
+    var e_om = createCludesEditor(chrome.i18n.getMessage('Overwrite_matches'),
+                                  { id: 'matches', item: i});
     var e_oe = createCludesEditor(chrome.i18n.getMessage('Overwrite_excludes'),
                                   { id: 'excludes', item: i});
 
@@ -1525,6 +1527,7 @@ var createScriptSettingsTab = function(i, tabd) {
     section_opt_content.appendChild(i_pos);
     section_opt_content.appendChild(i_ra);
     section_opt_content.appendChild(e_oi.elem);
+    section_opt_content.appendChild(e_om.elem);
     section_opt_content.appendChild(e_oe.elem);
 
     for (var u=0; u<i_compats.length; u++) {
@@ -1554,6 +1557,7 @@ var createScriptSettingsTab = function(i, tabd) {
     var beforeClose = function() {
         var leafmealone = false;
         if (e_oi.beforeClose) leafmealone |= e_oi.beforeClose();
+        if (e_om.beforeClose) leafmealone |= e_om.beforeClose();
         if (e_oe.beforeClose) leafmealone |= e_oe.beforeClose();
         return leafmealone;
     }

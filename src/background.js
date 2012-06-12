@@ -166,7 +166,7 @@ var escapeForRegExp = function(str, more) {
     return escapeForRegExpURL(str, ['*']);
 };
 
-var getRegExpFromUrl = function(url, safe) {
+var getRegExpFromUrl = function(url, safe, match) {
     var u;
     if ((Config.values.tryToFixUrl || safe) && url == urlAllInvalid) {
         u = urlAllHttp;
@@ -176,10 +176,18 @@ var getRegExpFromUrl = function(url, safe) {
         u = url;
     }
 
+    if (match) {
+        // @match *.biniok.net should match at "foo.biniok.net" and "biniok.net" but not evil.de#biniok.net
+        // TODO: is this allowed to work on foo.*.net too?
+        // TODO: is there a better way then using °?
+        u = u.replace(/\*\.([a-z0-9A-Z\.%].*\/)/gi, "°$1");
+    }
+
     u = '^' + escapeForRegExpURL(u);
     u = u.replace(/\*/gi, '.*');
     u = u.replace(escapeForRegExpURL(urlTld), '.' + urlAllTlds + '\/');
     u = u.replace(/(\^|:\/\/)\.\*/, '$1([^\?#])*');
+    u = u.replace('°', '([^\/#\?]*\\.)?');
 
     return '(' + u + ')';
 };
@@ -1964,6 +1972,7 @@ var runtimeInit = function() {
 
             for (var k in script) {
                 if (k == 'includes' ||
+                    k == 'matches' ||
                     k == 'requires' ||
                     k == 'excludes' ||
                     k == 'textContent') continue;
@@ -2075,6 +2084,7 @@ var addNewUserScript = function(o) {
     // back up *cludes to be able to restore them if override *clude is disabled
     script.options.override.orig_includes = script.includes;
     script.options.override.orig_excludes = script.excludes;
+    script.options.override.orig_matches = script.matches;
 
     if (script.name.search('@') != -1) {
         chrome.tabs.sendRequest(o.tabid,
@@ -2118,7 +2128,7 @@ var addNewUserScript = function(o) {
         msg += '    ' + script.name + ((script.version != '') ? ' v' + script.version : '') +  '\n';
     }
 
-    if (!script.includes.length) {
+    if (!script.includes.length && !script.matches.length) {
         msg += '\n' + chrome.i18n.getMessage('Note_') + '\n';
         msg += '    ' + chrome.i18n.getMessage('This_script_does_not_provide_any__include_information_') + '\n';
         msg += '    ' + chrome.i18n.getMessage('Tampermonkey_assumes_0urlAllHttp0_in_order_to_continue_', urlAllHttp) + '    \n';
@@ -2149,6 +2159,9 @@ var addNewUserScript = function(o) {
         if (script.options.override.includes) {
             script.includes = script.options.override.use_includes;
         }
+        if (script.options.override.matches) {
+            script.matches = script.options.override.use_matches;
+        }
         if (script.options.override.excludes) {
             script.excludes = script.options.override.use_excludes;
         }
@@ -2167,22 +2180,32 @@ var addNewUserScript = function(o) {
         script.options.run_at = 'document-end';
     }
 
-    var g = script.excludes.length + script.includes.length;
+    var g = script.excludes.length + script.includes.length + script.matches.lenght;
     var c = 0;
     var m = 4;
 
     var incls = '';
     incls += '\n' + chrome.i18n.getMessage('Include_s__');
-    if (script.options.override.includes) {
+    if (script.options.override.includes || script.options.override.matches) {
         incls += ' (' + chrome.i18n.getMessage('overwritten_by_user') + ')';
     }
     incls += '\n';
-
-    for (var k=0;k<script.includes.length;k++) {
+    var k=0, q=0;
+    
+    for (k=0;k<script.includes.length;k++,q++) {
         incls += '    ' + script.includes[k];
         incls += (g < 15) ? '\n' : (c < m) ? ';' : '\n';
         if (c++ >= m) c = 0;
-        if (k > 13) {
+        if (q > 13) {
+            incls += "\n" + chrome.i18n.getMessage('Attention_Can_not_display_all_includes_') + "\n";
+            break;
+        }
+    }
+    for (k=0;k<script.matches.length;k++,q++) {
+        incls += '    ' + script.matches[k];
+        incls += (g < 15) ? '\n' : (c < m) ? ';' : '\n';
+        if (c++ >= m) c = 0;
+        if (q > 13) {
             incls += "\n" + chrome.i18n.getMessage('Attention_Can_not_display_all_includes_') + "\n";
             break;
         }
@@ -2600,15 +2623,12 @@ var matchUrl = function(href, reg, match) {
     };
     var r;
 
-    if (reg.length > 1 &&
+    if (!match &&
+        reg.length > 1 &&
         reg.substr(0, 1) == '/') {
-        r = new RegExp(reg.replace(/^\//g, '').replace(/\/$/g, ''), 'i');
+        r = new RegExp('.*' + reg.replace(/^\//g, '').replace(/\/$/g, '') + '.*', 'i');
     } else {
-        var re = getRegExpFromUrl(reg);
-        if (match) {
-            // @match *.biniok.net should match at "foo.biniok.net" and "biniok.net" but not evil.de#biniok.net
-            re = re.replace(/\*\.([a-z0-9A-Z\.%].*\/)/gi, "([^\/#\?]*\\.)?$1");
-        }
+        var re = getRegExpFromUrl(reg, false, match);
         r = new RegExp(re);
     }
     return href.replace(r, '') == '';
@@ -2624,11 +2644,13 @@ var validUrl = function(href, cond, n) {
                 break;
             }
         }
-        for (t in cond.match) {
-            if (matchUrl(href, cond.match[t], true)) {
-                if (D) console.log("bg: @match '" + cond.match[t] + "' matched" + (n ? " (" + n + ")" : ""));
-                run = true;
-                break;
+        if (cond.match) {
+            for (t in cond.match) {
+                if (matchUrl(href, cond.match[t], true)) {
+                    if (D) console.log("bg: @match '" + cond.match[t] + "' matched" + (n ? " (" + n + ")" : ""));
+                    run = true;
+                    break;
+                }
             }
         }
         if (!run) return run;
@@ -2998,6 +3020,13 @@ var requestHandler = function(request, sender, sendResponse) {
                 }
 
                 if (typeof request.enabled !== 'undefined') r.script.enabled = request.enabled;
+                if (typeof request.matches !== 'undefined') {
+                    r.script.options.override.matches = request.matches;
+                    r.script.options.override.use_matches = request.use_matches;
+                    r.script.matches = r.script.options.override.matches
+                        ? r.script.options.override.use_matches
+                        : r.script.options.override.orig_matches;
+                }
                 if (typeof request.includes !== 'undefined') {
                     r.script.options.override.includes = request.includes;
                     r.script.options.override.use_includes = request.use_includes;

@@ -645,10 +645,13 @@
     "message": "overwritten by user setting"
   },
   "Overwrite_includes": {
-    "message": "Overwrite Includes"
+    "message": "Overwrite @include tags"
+  },
+  "Overwrite_matches": {
+    "message": "Overwrite @match tags"
   },
   "Overwrite_excludes": {
-    "message": "Overwrite Excludes"
+    "message": "Overwrite @exclude tags"
   },
   "Report_a_bug": {
     "message": "Report a bug"
