@@ -179,15 +179,15 @@ var getRegExpFromUrl = function(url, safe, match) {
     if (match) {
         // @match *.biniok.net should match at "foo.biniok.net" and "biniok.net" but not evil.de#biniok.net
         // TODO: is this allowed to work on foo.*.net too?
-        // TODO: is there a better way then using °?
-        u = u.replace(/\*\.([a-z0-9A-Z\.%].*\/)/gi, "°$1");
+        // TODO: is there a better way then using <>?
+        u = u.replace(/\*\.([a-z0-9A-Z\.%].*\/)/gi, "<>$1");
     }
 
     u = '^' + escapeForRegExpURL(u);
     u = u.replace(/\*/gi, '.*');
     u = u.replace(escapeForRegExpURL(urlTld), '.' + urlAllTlds + '\/');
     u = u.replace(/(\^|:\/\/)\.\*/, '$1([^\?#])*');
-    u = u.replace('°', '([^\/#\?]*\\.)?');
+    u = u.replace("<>", '([^\/#\?]*\\.)?');
 
     return '(' + u + ')';
 };
