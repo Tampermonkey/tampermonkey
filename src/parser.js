@@ -42,6 +42,7 @@ var Script = function() {
     this.position = 0;
     this.requires = [];
     this.includes = [];
+    this.matches = [];
     this.excludes = [];
     this.resources = [];
     this.lastUpdated = 0;
@@ -168,23 +169,23 @@ window.scriptParser = window.scriptParser || {
             if (c) continue;
 
             if (l.search(/^@include/) != -1) {
-                var c = l.replace(/^@include/gi, '').replace(/[ \b\r\n]/gi, '');
+                var c = l.replace(/^@include/gi, '').trim().replace(/ /gi, '%20').replace(/[\b\r\n]/gi, '');
                 if (V) console.log("c " + c);
                 if (c.trim() != "") script.includes.push(c);
             }
             if (l.search(/^@match/) != -1) {
-                var c = l.replace(/^@match/gi, '').replace(/[ \b\r\n]/gi, '');
+                var c = l.replace(/^@match/gi, '').trim().replace(/ /gi, '%20').replace(/[ \b\r\n]/gi, '');
                 if (V) console.log("c " + c);
-                if (c.trim() != "") script.includes.push(c);
+                if (c.trim() != "") script.matches.push(c);
                 script.options.awareOfChrome = true;
             }
             if (l.search(/^@exclude/) != -1) {
-                var c = l.replace(/^@exclude/gi, '').replace(/[ \b\r\n]/gi, '');
+                var c = l.replace(/^@exclude/gi, '').trim().replace(/ /gi, '%20').replace(/[ \b\r\n]/gi, '');
                 if (V) console.log("c " + c);
                 if (c.trim() != "") script.excludes.push(c);
             }
             if (l.search(/^@require/) != -1) {
-                var c = l.replace(/^@require/gi, '').replace(/[ \b\r\n]/gi, '');
+                var c = l.replace(/^@require/gi, '').trim().replace(/ /gi, '%20').replace(/[ \b\r\n]/gi, '');
                 if (V) console.log("c " + c);
                 var o = { url: c, loaded: false, textContent: ''};
                 if (c.trim() != "") script.requires.push(o);

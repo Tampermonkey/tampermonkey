@@ -2594,29 +2594,39 @@ var determineLastScriptPosition = function() {
     return pos;
 };
 
-var matchUrl = function(href, reg) {
+var matchUrl = function(href, reg, match) {
     var clean = function(url) {
         return url.replace(/\/$/, '');
     };
-    var c = reg;
     var r;
 
     if (reg.length > 1 &&
         reg.substr(0, 1) == '/') {
         r = new RegExp(reg.replace(/^\//g, '').replace(/\/$/g, ''), 'i');
     } else {
-        var re = getRegExpFromUrl(c);
+        var re = getRegExpFromUrl(reg);
+        if (match) {
+            // @match *.biniok.net should match at "foo.biniok.net" and "biniok.net" but not evil.de#biniok.net
+            re = re.replace(/\*\.([a-z0-9A-Z\.%].*\/)/gi, "([^\/#\?]*\\.)?$1");
+        }
         r = new RegExp(re);
     }
     return href.replace(r, '') == '';
 };
 
 var validUrl = function(href, cond, n) {
-    var run = false;
-    if (cond.inc) {
-        for (var t in cond.inc) {
+    var t, run = false;
+    if (cond.inc || cond.match) {
+        for (t in cond.inc) {
             if (matchUrl(href, cond.inc[t])) {
                 if (D) console.log("bg: @include '" + cond.inc[t] + "' matched" + (n ? " (" + n + ")" : ""));
+                run = true;
+                break;
+            }
+        }
+        for (t in cond.match) {
+            if (matchUrl(href, cond.match[t], true)) {
+                if (D) console.log("bg: @match '" + cond.match[t] + "' matched" + (n ? " (" + n + ")" : ""));
                 run = true;
                 break;
             }
@@ -2625,7 +2635,7 @@ var validUrl = function(href, cond, n) {
     } else {
         run = true;
     }
-    for (var t in cond.exc) {
+    for (t in cond.exc) {
         if (matchUrl(href, cond.exc[t])) {
             if (D) console.log("bg: @exclude '" + cond.exc[t] + "' matched" + (n ? " (" + n + ")" : ""));
             run = false;
@@ -2736,7 +2746,7 @@ var loadScriptByName = function(name) {
 
 var storeScript = function(name, script) {
     if (script) {
-        TM_storage.setValue(name + condAppendix, { inc: script.includes , exc: script.excludes });
+        TM_storage.setValue(name + condAppendix, { inc: script.includes, match: script.matches, exc: script.excludes });
         TM_storage.setValue(name + scriptAppendix, script.textContent);
         var s = script;
         s.textContent = null;
