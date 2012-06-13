@@ -473,8 +473,25 @@ var localFile = {
         var post = function() {
             var d = JSON.stringify({ id: localFile.id });
             localFile.callbacks[localFile.id] = { cb: cb, ts: (new Date()).getTime(), iframe: i };
+            
+            var wrap = function() {
+                var cbi = localFile.id;
+                var notfound = function() {
+                    if (localFile.callbacks[cbi]) {
+                        localFile.listener(null, JSON.stringify({ id: cbi, content: null }));
+                    }
+                };
+
+                // timeout 3000s, this should be enough for local resources
+                window.setTimeout(notfound, 3000);
+            }
+
+            wrap();
             localFile.id++;
-            i.contentWindow.postMessage(d, i.src);
+            try {
+                i.contentWindow.postMessage(d, i.src);
+            } catch (e) {}
+
         };
 
         window.setTimeout(post, 10);
@@ -1843,19 +1860,25 @@ var runtimeInit = function() {
 
                 if (t) {
                     storeResource( { readyState: 4, status: 200, responseText: t.content, responseHeaders: t.headers }, r );
-                    return true;
                 } else {
-                    var details = {
-                        method: 'GET',
-                        url: r.url,
-                        retries: _retries,
-                        overrideMimeType: 'text/plain; charset=x-user-defined'
-                    };
+                    if (r.url.search('^file://') == 0) {
+                        var c = function(s) {
+                            storeResource({readyState: 4, status: s ? 0 : 404, responseText: s}, r);
+                        };
+                        localFile.getSource(r.url, c);
+                    } else {
+                        var details = {
+                            method: 'GET',
+                            url: r.url,
+                            retries: _retries,
+                            overrideMimeType: 'text/plain; charset=x-user-defined'
+                        };
 
-                    if (V) console.log("request " + r.url);
-                    xmlhttpRequest(details, function(req) { storeResource(req, r); });
-                    return true;
+                        if (V) console.log("request " + r.url);
+                        xmlhttpRequest(details, function(req) { storeResource(req, r); });
+                    }
                 }
+                return true;
             }
         }
 
@@ -1888,7 +1911,7 @@ var runtimeInit = function() {
                     
                     if (r.url.search('^file://') == 0) {
                         var c = function(s) {
-                            onResp({readyState: 4, status: 0, responseText: s});
+                            onResp({readyState: 4, status: s ? 0 : 404, responseText: s});
                         };
                         localFile.getSource(r.url, c);
                     } else { 
