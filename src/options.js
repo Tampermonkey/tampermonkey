@@ -1247,10 +1247,10 @@ var createCludesEditor = function(name, type, other_name) {
     var values = (i.options && i.options.override && i.options.override[key]) ? i.options.override[key] : [];
     var sel = crc('select', 'cludes', key, i.id, 'sel1');
 	sel.setAttribute('size', '6');
-	for(var n=0; n<values.length; n++){
-		var op = document.createElement('option');
-		op.value = op.text = values[n];
-		sel.appendChild(op);
+	for (var n=0; n<values.length; n++) {
+            var op = document.createElement('option');
+            op.value = op.text = values[n];
+            sel.appendChild(op);
 	}
 
     s.appendChild(span);
@@ -1260,8 +1260,8 @@ var createCludesEditor = function(name, type, other_name) {
         var uid = selId('use_' + (type.id == 'excludes' ? 'includes' : 'excludes'));
         var other_sel = document.getElementById(uid);
         var op = sel.options[sel.selectedIndex];
-	
-        if (!other_sel.querySelector('option[value="'+op.value+'"]')){
+
+        if (op && !other_sel.querySelector('option[value="'+op.value+'"]')){
             other_sel.appendChild(op.cloneNode(true));
             saveChanges();
         }
@@ -1281,7 +1281,7 @@ var createCludesEditor = function(name, type, other_name) {
         var op = sel.options[sel.selectedIndex];
         if (!op) return;
         var rule = prompt(chrome.i18n.getMessage('Enter_the_new_rule'), op.value);
-        if(rule) {
+        if (rule) {
             op.value = op.text = rule.trim();
             saveChanges();
         }
@@ -1314,7 +1314,7 @@ var createCludesEditor = function(name, type, other_name) {
         return true;
     };
 
-    if (other_name){
+    if (other_name) {
         //this is the original (in/ex)clude list; items can be added to the user (ex/in)clude list
         var btn = cr('button', i.name, id, 'btn1');
         btn.innerHTML = chrome.i18n.getMessage('Add_as') + ' ' + other_name;
