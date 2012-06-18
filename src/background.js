@@ -2059,6 +2059,43 @@ var getMetaData = function(o, callback) {
     callback(o);
 };
 
+//merge original and user-defined *cludes and matches
+var mergeCludes = function(script){
+	var cludes = script.options.override;
+	
+	//clone the original cludes as a starting point
+	script.includes = cludes.orig_includes.slice();
+	script.excludes = cludes.orig_excludes.slice();
+	script.matches = cludes.orig_matches ? cludes.orig_matches.slice() : [];
+
+	//add user includes (and remove them from original excludes if they exist)
+	for(var n=0; n<cludes.use_includes.length; n++){
+		var idx = script.excludes.indexOf(cludes.use_includes[n]);
+		if(idx >= 0){
+			script.excludes.splice(idx, 1);
+		}
+		script.includes.push(cludes.use_includes[n]);
+	}
+
+	//who uses matches anyway?
+	if(typeof cludes.use_matches !== 'undefined'){
+		for(n=0; n<cludes.use_matches.length; n++){
+			idx = script.excludes.indexOf(cludes.use_matches[n]);
+			if(idx >= 0){
+				script.excludes.splice(idx, 1);
+			}
+			script.matches.push(cludes.use_matches[n]);
+		}
+	}
+
+	//add user excludes (overrides includes anyway)
+	for(n=0; n<cludes.use_excludes.length; n++){
+		script.excludes.push(cludes.use_excludes[n]);
+	}
+	
+	return script;
+}
+
 var addNewUserScript = function(o) {
     // { tabid: tabid, url: url, src: src, ask: ask, defaultscript:defaultscript, noreinstall : noreinstall, save : save, cb : cb }
     var reset = false;
@@ -2105,9 +2142,13 @@ var addNewUserScript = function(o) {
     script.fileURL = o.url;
     script.position = oldscript ? oldscript.position : determineLastScriptPosition() + 1;
     // back up *cludes to be able to restore them if override *clude is disabled
+	if(oldscript){
+		script.options.override = oldscript.options.override;
+	}
     script.options.override.orig_includes = script.includes;
     script.options.override.orig_excludes = script.excludes;
     script.options.override.orig_matches = script.matches;
+	script = mergeCludes(script);
 
     if (script.name.search('@') != -1) {
         chrome.tabs.sendRequest(o.tabid,
@@ -2159,10 +2200,6 @@ var addNewUserScript = function(o) {
     }
 
     if (!reset && !o.clean && oldscript) {
-        if (oldscript.options.override) {
-            script.options.override = oldscript.options.override;
-        }
-
         // don't change some settings in case it's a system script or an update
         script.enabled = oldscript.enabled;
 
@@ -2179,15 +2216,6 @@ var addNewUserScript = function(o) {
         }
 
         // TODO: check includes to allow/disallow silent update
-        if (script.options.override.includes) {
-            script.includes = script.options.override.use_includes;
-        }
-        if (script.options.override.matches) {
-            script.matches = script.options.override.use_matches;
-        }
-        if (script.options.override.excludes) {
-            script.excludes = script.options.override.use_excludes;
-        }
     }
 
     if (!script.options.awareOfChrome) {
@@ -3044,40 +3072,11 @@ var requestHandler = function(request, sender, sendResponse) {
 
                 if (typeof request.enabled !== 'undefined') r.script.enabled = request.enabled;
                 if (typeof request.includes !== 'undefined') {
-					//merge original and user *cludes
-                    r.script.options.override.use_includes = request.includes;
-                    r.script.options.override.use_excludes = request.excludes;
-
-					r.script.includes = r.script.options.override.orig_includes.slice();
-					r.script.excludes = r.script.options.override.orig_excludes.slice();
-					
-					//add user includes (and remove them from original excludes if they exist)
-					for(var n=0; n<request.includes.length; n++){
-						var idx = r.script.excludes.indexOf(request.includes[n]);
-						if(idx >= 0){
-							r.script.excludes.splice(idx, 1);
-						}
-						r.script.includes.push(request.includes[n]);
-					}
-					
-					//who uses matches anyway?
-					if(typeof request.matches !== 'undefined'){
-						r.script.options.override.use_matches = request.matches;
-						r.script.matches = r.script.options.override.orig_matches ?
-							r.script.options.override.orig_matches.slice() : [];
-						for(var n=0; n<request.matches.length; n++){
-							var idx = r.script.excludes.indexOf(request.matches[n]);
-							if(idx >= 0){
-								r.script.excludes.splice(idx, 1);
-							}
-							r.script.matches.push(request.matches[n]);
-						}
-					}
-					
-					//add user excludes (overrides includes anyway)
-					for(var n=0; n<request.excludes.length; n++){
-						r.script.excludes.push(request.excludes[n]);
-					}
+					//merge original and user *cludes					
+					r.script.options.override.use_includes = request.includes;
+					r.script.options.override.use_excludes = request.excludes;
+					r.script.options.override.use_matches = request.matches;
+					r.script = mergeCludes(r.script);
                 }
 
                 storeScript(r.script.name, r.script);
