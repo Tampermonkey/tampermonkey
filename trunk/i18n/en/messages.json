@@ -713,6 +713,41 @@
   "Changes_the_number_of_visible_config_options": {
     "message": "Changes the number of visible config options"
   },
+  "Enter_the_new_rule": {
+    "message": "Enter the new rule"
+  },
+  "Add_as_0clude0": {
+    "message": "Add as $clude$",
+    "placeholders": {
+      "clude": {
+         "content": "$1"
+      }
+    }
+  },
+  "Add": {
+    "message": "Add"
+  },
+  "Remove": {
+    "message": "Remove"
+  },
+  "Original_includes": {
+    "message": "Original includes"
+  },
+  "Original_matches": {
+    "message": "Original matches"
+  },
+  "Original_excludes": {
+    "message": "Original excludes"
+  },
+  "User_includes": {
+    "message": "User includes"
+  },
+  "User_matches": {
+    "message": "User matches"
+  },
+  "User_excludes": {
+    "message": "User excludes"
+  },
   "EOF": {
     "message": "EOF"
   }

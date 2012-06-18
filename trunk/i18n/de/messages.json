@@ -680,6 +680,41 @@
   "Changes_the_number_of_visible_config_options": {
     "message": "Ändert die Anzahl der einstellbaren Optionen"
   },
+  "Enter_the_new_rule": {
+    "message": "Gib eine neue Regel ein"
+  },
+  "Add_as_0clude0": {
+    "message": "Behandle Regel als $clude$",
+    "placeholders": {
+      "clude": {
+         "content": "$1"
+      }
+    }
+  },
+  "Add": {
+    "message": "Hinzufügen"
+  },
+  "Remove": {
+    "message": "Entfernen"
+  },
+  "Original_includes": {
+    "message": "Original Include"
+  },
+  "Original_matches": {
+    "message": "Original Match"
+  },
+  "Original_excludes": {
+    "message": "Original Exclude"
+  },
+  "User_includes": {
+    "message": "Nutzer Include"
+  },
+  "User_matches": {
+    "message": "Nutzer Match"
+  },
+  "User_excludes": {
+    "message": "Nutzer Exclude"
+  },
   "EOF": {
     "message": "EOF"
   }
