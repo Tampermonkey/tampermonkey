@@ -716,8 +716,13 @@
   "Enter_the_new_rule": {
     "message": "Ingresa la nueva regla"
   },
-  "Add_as": {
-    "message": "Agregar como"
+  "Add_as_0clude0": {
+    "message": "Agregar como $clude$",
+    "placeholders": {
+      "clude": {
+         "content": "$1"
+      }
+    }
   },
   "Add": {
     "message": "Agregar"

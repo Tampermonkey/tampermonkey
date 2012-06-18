@@ -1317,7 +1317,7 @@ var createCludesEditor = function(name, type, other_name) {
     if (other_name) {
         //this is the original (in/ex)clude list; items can be added to the user (ex/in)clude list
         var btn = cr('button', i.name, id, 'btn1');
-        btn.innerHTML = chrome.i18n.getMessage('Add_as') + ' ' + other_name;
+        btn.innerHTML = chrome.i18n.getMessage('Add_as_0clude0', other_name);
         btn.addEventListener('click', addToOther, false);
         s.appendChild(btn);
     } else {
