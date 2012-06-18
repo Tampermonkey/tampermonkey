@@ -769,12 +769,12 @@ textarea {
   margin: 0 0 0 0;
 }
 
-div.cludes{
-	display: inline-block;
-	margin: 5px;
+div.cludes {
+  display: inline-block;
+  margin: 5px;
 }
 
-div.cludes select{
-	display: block;
-	width: 300px;
+div.cludes select {
+  display: block;
+  width: 300px;
 }
