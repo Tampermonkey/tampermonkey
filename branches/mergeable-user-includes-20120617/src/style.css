@@ -197,10 +197,6 @@ textarea {
   width: 400px;
 }
 
-.cludes {
-  min-width: 400px;
-}
-
 .editormenu {
   display: table-cell;
   float: left;
@@ -771,4 +767,14 @@ textarea {
   min-width: 500px;
   width: 100%;
   margin: 0 0 0 0;
+}
+
+div.cludes{
+	display: inline-block;
+	margin: 5px;
+}
+
+div.cludes select{
+	display: block;
+	width: 300px;
 }
