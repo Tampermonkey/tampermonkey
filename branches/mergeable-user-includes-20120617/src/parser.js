@@ -57,6 +57,7 @@ var Script = function() {
         awareOfChrome: false,
         run_at : '',
         override: { includes: false, use_includes: [], orig_includes: [],
+                    matches: false, use_matches: [], orig_matches: [],
                     excludes: false, use_excludes: [], orig_excludes: [] }
     };
 };
