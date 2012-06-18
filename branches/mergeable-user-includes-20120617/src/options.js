@@ -1231,27 +1231,27 @@ var createPosition = function(name, e, oc) {
 var createCludesEditor = function(name, type, other_name) {
     var i = type.item;
     var id = i.id + type.id;
-	var key = (other_name ? 'orig_' : 'use_') + type.id;
+    var key = (other_name ? 'orig_' : 'use_') + type.id;
 	
-	var selId = function(k){
-		return 'select_' + createUniqueId(k, i.id) + '_sel1';
-	}
+    var selId = function(k){
+        return 'select_' + createUniqueId(k, i.id) + '_sel1';
+    };
 
-	var s = crc('div', 'cludes', name, id, 'cb1');
-	if(document.getElementById(selId(key))) return {elem: s};
-
+    var s = crc('div', 'cludes', name, id, 'cb1');
+    if (document.getElementById(selId(key))) return { elem: s };
+    
     var span = cr('span', i.name, id, 'cb2');
     span.textContent = name;
     s.title = i.desc ? i.desc : '';
 
     var values = (i.options && i.options.override && i.options.override[key]) ? i.options.override[key] : [];
     var sel = crc('select', 'cludes', key, i.id, 'sel1');
-	sel.setAttribute('size', '6');
-	for (var n=0; n<values.length; n++) {
-            var op = document.createElement('option');
-            op.value = op.text = values[n];
-            sel.appendChild(op);
-	}
+    sel.setAttribute('size', '6');
+    for (var n=0; n<values.length; n++) {
+        var op = document.createElement('option');
+        op.value = op.text = values[n];
+        sel.appendChild(op);
+    }
 
     s.appendChild(span);
     s.appendChild(sel);
@@ -1532,6 +1532,7 @@ var createScriptSettingsTab = function(i, tabd) {
     var e_oe = createCludesEditor(chrome.i18n.getMessage('Original_excludes'),
                                   { id: 'excludes', item: i },
                                   chrome.i18n.getMessage('User_includes'));
+    var clear_cludes = crc('div', 'clear', i.name, i.id, 'clear');
 									
     var e_ui = createCludesEditor(chrome.i18n.getMessage('User_includes'),
                                   { id: 'includes', item: i });
@@ -1579,6 +1580,7 @@ var createScriptSettingsTab = function(i, tabd) {
     section_opt_content.appendChild(e_oi.elem);
     section_opt_content.appendChild(e_om.elem);
     section_opt_content.appendChild(e_oe.elem);
+    section_opt_content.appendChild(clear_cludes);
     section_opt_content.appendChild(e_ui.elem);
     section_opt_content.appendChild(e_um.elem);
     section_opt_content.appendChild(e_ue.elem);
