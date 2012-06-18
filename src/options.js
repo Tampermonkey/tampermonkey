@@ -329,7 +329,7 @@ var itemsToMenu = function(items, tabv) {
                 for (var u=0; u<tds.length;u++) {
                     tr.appendChild(tds[u]);
                 }
-                if (i.userscript) scripts.push({ script: tr, pos: i.position, posof: i.positionof });
+                if (i.userscript) scripts.push({script: tr, pos: i.position, posof: i.positionof});
             } else if (i.version) {
                 version = i.value;
                 tr = null;
@@ -373,12 +373,12 @@ var createUtilTab = function(tabv) {
     var cont = crc('div', 'tv_util', i.name, i.id, 'tab_util_cont');
 
     var expo = function() {
-        var exp = { 'created_by' : 'Tampermonkey', 'version' : '1', scripts: [] };
+        var exp = {'created_by' : 'Tampermonkey', 'version' : '1', scripts: []};
 
         for (var o in allItems) {
             var c = allItems[o];
             if (c.userscript && c.id && !c.system) {
-                var p = { name: c.name, options: c.options, enabled: c.enabled, position: c.position };
+                var p = {name: c.name, options: c.options, enabled: c.enabled, position: c.position};
                 if (c.update_url && c.update_url.trim() != "") {
                     p.update_url = c.update_url;
                 }
@@ -967,7 +967,7 @@ var createTabView = function(_prefix, parent, style) {
                 }
             };
 
-            tvCache[prefix].g_entries[tid] = { entry: entry, tab: tab, content: cont, closable: closeCb != null }
+            tvCache[prefix].g_entries[tid] = {entry: entry, tab: tab, content: cont, closable: closeCb != null}
             setContentVisible(tvCache[prefix].g_entries[tid], false);
 
             // tab visible b default
@@ -1064,7 +1064,7 @@ var createTextarea = function(title, i, oc) {
     s.appendChild(span1);
     s.appendChild(input);
 
-    return { elem: s, textarea: input };
+    return {elem: s, textarea: input};
 };
 
 var createInput = function(name, i, oc) {
@@ -1087,7 +1087,7 @@ var createInput = function(name, i, oc) {
     s.appendChild(input);
     s.appendChild(span2);
 
-    return { elem: s, input: input };
+    return {elem: s, input: input};
 };
 
 var createCheckbox = function(name, i, oc) {
@@ -1111,7 +1111,7 @@ var createCheckbox = function(name, i, oc) {
     s.appendChild(input);
     s.appendChild(span);
 
-    return { elem: s, input: input };
+    return {elem: s, input: input};
 };
 
 var createDropDown = function(name, e, values, oc) {
@@ -1228,78 +1228,118 @@ var createPosition = function(name, e, oc) {
     return s;
 };
 
-var createCludesEditor = function(name, type) {
+var createCludesEditor = function(name, type, other_name) {
     var i = type.item;
     var id = i.id + type.id;
-    var changed = false;
+	var key = (other_name ? 'orig_' : 'use_') + type.id;
+	
+	var selId = function(k){
+		return 'select_' + createUniqueId(k, i.id) + '_sel1';
+	}
 
-    var enabled = i.options && i.options.override && i.options.override[type.id];
-    var value = (i.options && i.options.override && i.options.override['use_' + type.id]) ? i.options.override['use_' + type.id] : [];
+	var s = crc('div', 'cludes', name, id, 'cb1');
+	if(document.getElementById(selId(key))) return {elem: s};
 
-    var s = crc('div', 'checkbox cludes', name, id, 'cb1');
-    var input = cr('input', i.name, id, 'cb');
-    input.title = i.desc ? i.desc : '';
-    input.name = i.name;
-    input.key = i.id;
-    input.warning = i.warning;
-    input.oldvalue = enabled;
-    input.checked = enabled;
-    input.type = "checkbox";
-
-    var span = crc('span', 'checkbox_desc', i.name, id, 'cb2');
+    var span = cr('span', i.name, id, 'cb2');
     span.textContent = name;
     s.title = i.desc ? i.desc : '';
 
-    var tarea = crc('textarea', 'cludes', name, id, 'ta1');
-    tarea.value = value.join('\n');
+    var values = (i.options && i.options.override && i.options.override[key]) ? i.options.override[key] : [];
+    var sel = crc('select', 'cludes', key, i.id, 'sel1');
+	sel.setAttribute('size', '6');
+	for(var n=0; n<values.length; n++){
+		var op = document.createElement('option');
+		op.value = op.text = values[n];
+		sel.appendChild(op);
+	}
 
-    var adjust_vis = function() {
-        tarea.style.display = input.checked ? "block" : "none";
-    };
-
-    var oc = function() {
-        adjust_vis();
-        changed = true;
-    };
-
-    var oca = function() {
-        changed = true;
-    };
-
-    var soc = function() {
-        if (changed) {
-            var options = {};
-            var ar = tarea.value.split("\n");
-            var nar = [];
-            for (var u=0; u<ar.length; u++) {
-                if (ar[u] && ar[u].trim() != "") nar.push(ar[u]);
-            }
-            options[type.id] = input.checked;
-            options['use_' + type.id] = nar;
-
-            modifyScriptOptions(i.name, options);
-            changed = false;
-            return true;
-        }
-        return false;
-    };
-
-    if (!input.inserted) {
-        input.addEventListener("click", oc);
-        tarea.addEventListener("keyup", oca);
-    }
-
-    adjust_vis();
-
-    s.appendChild(input);
     s.appendChild(span);
-    s.appendChild(tarea);
+    s.appendChild(sel);
+	
+	var addToOther = function(){
+		var uid = selId('use_' + (type.id == 'excludes' ? 'includes' : 'excludes'));
+		var other_sel = document.getElementById(uid);
+		var op = sel.options[sel.selectedIndex];
+		
+		if(!other_sel.querySelector('option[value="'+op.value+'"]')){
+			other_sel.appendChild(op.cloneNode(true));
+			saveChanges();
+		}
+	};
+	
+	var addRule = function(){
+		var rule = prompt(chrome.i18n.getMessage('Enter_the_new_rule'));
+		if(rule){
+			var op = document.createElement('option');
+			op.value = op.text = rule.trim();
+			sel.appendChild(op);
+			saveChanges();
+		}
+	}
+	
+	var editRule = function(){
+		var op = sel.options[sel.selectedIndex];
+		if(!op) return;
+		var rule = prompt(chrome.i18n.getMessage('Enter_the_new_rule'), op.value);
+		if(rule){
+			op.value = op.text = rule.trim();
+			saveChanges();
+		}
+	}
+	
+	var delRule = function(){
+		var op = sel.options[sel.selectedIndex];
+		if(!op) return;
+		op.parentNode.removeChild(op);
+		saveChanges();
+	}
 
-    var beforeClose = function() {
-        return soc();
+	var optsToArr = function(select){
+		var arr = [];
+		for(var n=0; n<select.options.length; n++){
+			arr.push(select.options[n].value);
+		}
+		return arr;
+	}
+	
+    var saveChanges = function() {
+		var options = {
+			includes: optsToArr(document.getElementById(selId('use_includes'))),
+			matches: optsToArr(document.getElementById(selId('use_matches'))),
+			excludes: optsToArr(document.getElementById(selId('use_excludes')))
+		};
+		
+		//save and merge original and user *cludes
+		modifyScriptOptions(i.name, options);
+		return true;
     };
 
-    return { elem: s, beforeClose: beforeClose };
+	if(other_name){
+		//this is the original (in/ex)clude list; items can be added to the user (ex/in)clude list
+		var btn = cr('button', i.name, id, 'btn1');
+		btn.innerHTML = chrome.i18n.getMessage('Add_as') + ' ' + other_name;
+		btn.addEventListener('click', addToOther, false);
+		s.appendChild(btn);
+	}
+	else{
+		//this is a user *clude; append add, edit an remove buttons for this list
+		var btn_add = cr('button', i.name, id, 'btn2');
+		btn_add.innerHTML = chrome.i18n.getMessage('Add') + '...';
+		btn_add.addEventListener('click', addRule, false);
+		s.appendChild(btn_add);
+		
+		var btn_edit = cr('button', i.name, id, 'btn3');
+		btn_edit.innerHTML = chrome.i18n.getMessage('Edit') + '...';
+		btn_edit.addEventListener('click', editRule, false);
+		s.appendChild(btn_edit);
+		
+		var btn_del = cr('button', i.name, id, 'btn4');
+		btn_del.innerHTML = chrome.i18n.getMessage('Remove');
+		btn_del.addEventListener('click', delRule, false);
+		s.appendChild(btn_del);
+	}
+
+    return {elem: s};
 };
 
 var sortScripts = function(scripts) {
@@ -1311,7 +1351,7 @@ var sortScripts = function(scripts) {
         }
     }
     var sortEm = function(results) {
-        var numComparisonAsc = function(a, b) { return a.position-b.position; };
+        var numComparisonAsc = function(a, b) {return a.position-b.position;};
         results.sort(numComparisonAsc);
         return results;
     }
@@ -1331,7 +1371,7 @@ var sortScripts = function(scripts) {
                 console.log("options: different parents?!?!");
             }
             index++;
-            sort.push({ tr: tr, position: e.pos ? e.pos: (1000+index) });
+            sort.push({tr: tr, position: e.pos ? e.pos: (1000+index)});
             tr.inserted = false;
             tr.parentNode.removeChild(tr);
         } else {
@@ -1455,7 +1495,7 @@ var createScriptDetailsTabView = function(tab, i, tr, parent, closeTab) {
         }
     };
 
-    var e = { onShow: onShow, onClose: onClose, onSelect: onSelect, beforeClose: beforeClose };
+    var e = {onShow: onShow, onClose: onClose, onSelect: onSelect, beforeClose: beforeClose};
 
     stCache['tab' + i.name] = e;
 
@@ -1478,32 +1518,43 @@ var createScriptSettingsTab = function(i, tabd) {
         }
     };
 
-    var i_pos = createPosition(chrome.i18n.getMessage('Position_') + ' ', { id: 'position', name: i.name, pos: i.position, posof: i.positionof }, co);
+    var i_pos = createPosition(chrome.i18n.getMessage('Position_') + ' ', {id: 'position', name: i.name, pos: i.position, posof: i.positionof}, co);
 
     var i_ra = createScriptStartDropDown(chrome.i18n.getMessage('Run_at'),
-                              { id: 'run_at', name: i.name, value: i.run_at},
+                              {id: 'run_at', name: i.name, value: i.run_at},
                               co);
-    var e_oi = createCludesEditor(chrome.i18n.getMessage('Overwrite_includes'),
-                                  { id: 'includes', item: i});
-    var e_om = createCludesEditor(chrome.i18n.getMessage('Overwrite_matches'),
-                                  { id: 'matches', item: i});
-    var e_oe = createCludesEditor(chrome.i18n.getMessage('Overwrite_excludes'),
-                                  { id: 'excludes', item: i});
+							  
+    var e_oi = createCludesEditor(chrome.i18n.getMessage('Original_includes'),
+                                  {id: 'includes', item: i},
+								  chrome.i18n.getMessage('User_excludes'));
+    var e_om = createCludesEditor(chrome.i18n.getMessage('Original_matches'),
+                                  {id: 'matches', item: i},
+									chrome.i18n.getMessage('User_excludes'));
+    var e_oe = createCludesEditor(chrome.i18n.getMessage('Original_excludes'),
+                                  {id: 'excludes', item: i},
+								  chrome.i18n.getMessage('User_includes'));
+									
+    var e_ui = createCludesEditor(chrome.i18n.getMessage('User_includes'),
+                                  {id: 'includes', item: i});
+    var e_um = createCludesEditor(chrome.i18n.getMessage('User_matches'),
+                                  {id: 'matches', item: i});
+    var e_ue = createCludesEditor(chrome.i18n.getMessage('User_excludes'),
+                                  {id: 'excludes', item: i});
 
     var i_md = createCheckbox(chrome.i18n.getMessage('Convert_CDATA_sections_into_a_chrome_compatible_format'),
-                              { id: 'compat_metadata', name: i.name, enabled: i.compat_metadata},
+                              {id: 'compat_metadata', name: i.name, enabled: i.compat_metadata},
                               co);
     var i_fe = createCheckbox(chrome.i18n.getMessage('Replace_for_each_statements'),
-                              { id: 'compat_foreach', name: i.name, enabled: i.compat_foreach},
+                              {id: 'compat_foreach', name: i.name, enabled: i.compat_foreach},
                               co);
     var i_vi = createCheckbox(chrome.i18n.getMessage('Fix_for_var_in_statements'),
-                              { id: 'compat_forvarin', name: i.name, enabled: i.compat_forvarin},
+                              {id: 'compat_forvarin', name: i.name, enabled: i.compat_forvarin},
                               co);
     var i_al = createCheckbox(chrome.i18n.getMessage('Convert_Array_Assignements'),
-                              { id: 'compat_arrayleft', name: i.name, enabled: i.compat_arrayleft},
+                              {id: 'compat_arrayleft', name: i.name, enabled: i.compat_arrayleft},
                               co);
     var i_ts = createCheckbox(chrome.i18n.getMessage('Add_toSource_function_to_Object_Prototype'),
-                              { id: 'compat_prototypes', name: i.name, enabled: i.compat_prototypes},
+                              {id: 'compat_prototypes', name: i.name, enabled: i.compat_prototypes},
                               co);
 
     var i_compats = [i_md, i_fe, i_vi, i_al, i_ts ];
@@ -1529,6 +1580,9 @@ var createScriptSettingsTab = function(i, tabd) {
     section_opt_content.appendChild(e_oi.elem);
     section_opt_content.appendChild(e_om.elem);
     section_opt_content.appendChild(e_oe.elem);
+    section_opt_content.appendChild(e_ui.elem);
+    section_opt_content.appendChild(e_um.elem);
+    section_opt_content.appendChild(e_ue.elem);
 
     for (var u=0; u<i_compats.length; u++) {
         section_compat_content.appendChild(i_compats[u].elem);
@@ -1559,10 +1613,13 @@ var createScriptSettingsTab = function(i, tabd) {
         if (e_oi.beforeClose) leafmealone |= e_oi.beforeClose();
         if (e_om.beforeClose) leafmealone |= e_om.beforeClose();
         if (e_oe.beforeClose) leafmealone |= e_oe.beforeClose();
+        if (e_ui.beforeClose) leafmealone |= e_ui.beforeClose();
+        if (e_um.beforeClose) leafmealone |= e_um.beforeClose();
+        if (e_ue.beforeClose) leafmealone |= e_ue.beforeClose();
         return leafmealone;
     }
 
-    var e = { beforeClose: beforeClose };
+    var e = {beforeClose: beforeClose};
 
     stCache['settings' + i.name] = e;
 
@@ -1624,7 +1681,7 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
     var i_sc_close =  createButton(i.name, 'close_script', null, chrome.i18n.getMessage('Close'),        closeEditor, chrome.extension.getURL('images/exit.png') );
 
     var i_uu = createInput(chrome.i18n.getMessage('Update_URL_'),
-                           { id: 'update_url', name: i.name, value: i.update_url});
+                           {id: 'update_url', name: i.name, value: i.update_url});
     i_uu.input.setAttribute("class", "updateurl_input");
     i_uu.elem.setAttribute("class", "updateurl");
 
@@ -1754,7 +1811,7 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
                         lineNumbers: gOptions.editor_lineNumbers.toString() == 'true',
                         onKeyEvent: onEditorKey,
                         // saveFunction: saveEditor,
-                        matchBrackets: true });
+                        matchBrackets: true});
                 } else {
                     textarea.value = i.code;
                 }
@@ -2118,17 +2175,17 @@ var createFeatureImagesFromScript = function(i) {
                             chrome.i18n.getMessage("This_script_has_access_to_webpage_scripts"));
         span.appendChild(m);
     }
-    for (var o=0; o<i.includes.length; o++) {
-        if (i.includes[o].search('https') != -1) {
-            var m = createImage(chrome.extension.getURL('images/halfencrypted.png'),
-                                i.name,
-                                i.id,
-                                "encrypt",
-                                chrome.i18n.getMessage("This_script_has_access_to_https_pages"));
-            span.appendChild(m);
-            break;
-        }
-    }
+	for (var o=0; o<i.includes.length; o++) {
+		if (i.includes[o].search('https') != -1) {
+			var m = createImage(chrome.extension.getURL('images/halfencrypted.png'),
+								i.name,
+								i.id,
+								"encrypt",
+								chrome.i18n.getMessage("This_script_has_access_to_https_pages"));
+			span.appendChild(m);
+			break;
+		}
+	}
     for (var k in i.options) {
         if (k.search('compat') != -1 && i.options[k]) {
             var m = createImage(chrome.extension.getURL('images/critical.png'),
@@ -2162,25 +2219,25 @@ var createPosImagesFromScript = function(i) {
                           "position",
                           "2up",
                           "2 Up",
-                          function() { modifyScriptOption(this.name, this.key, 1); });
+                          function() {modifyScriptOption(this.name, this.key, 1);});
     var up1 = createImage(chrome.extension.getURL('images/1downarrow.png'),
                           i.name,
                           "position",
                           "1up",
                           "1 Up",
-                          function() { modifyScriptOption(this.name, this.key, i.position-1); });
+                          function() {modifyScriptOption(this.name, this.key, i.position-1);});
     var down1 = createImage(chrome.extension.getURL('images/1downarrow1.png'),
                             i.name,
                             "position",
                             "1down",
                             "1 Down",
-                            function() { modifyScriptOption(this.name, this.key, i.position+1); });
+                            function() {modifyScriptOption(this.name, this.key, i.position+1);});
     var down2 = createImage(chrome.extension.getURL('images/2downarrow.png'),
                             i.name,
                             "position",
                             "2down",
                             "2 Down",
-                            function() { modifyScriptOption(this.name, this.key, i.positionof); });
+                            function() {modifyScriptOption(this.name, this.key, i.positionof);});
     if (i.position > 1) {
         if (false) span.appendChild(up2);
         span.appendChild(up1);
@@ -2208,7 +2265,7 @@ var createImagesFromScript = function(i) {
             if (ps[t].search('\\*') != -1) break;
             predom.push(ps[t]);
         }
-        return { tld: tld, dom: dom, predom: predom.reverse()};
+        return {tld: tld, dom: dom, predom: predom.reverse()};
     };
 
     if (i.includes) {
@@ -2326,7 +2383,7 @@ var modifyScriptOptions = function(name, options, reload, reorder) {
     if (V) console.log("run modifyScriptOptions");
     if (reload == undefined) reload = true;
     try {
-        var s = { method: "modifyScriptOptions", name: name, reload: reload, reorder: reorder };
+        var s = {method: "modifyScriptOptions", name: name, reload: reload, reorder: reorder};
         for (var k in options) {
             if (!options.hasOwnProperty(k)) continue;
             s[k] = options[k];
@@ -2347,7 +2404,7 @@ var modifyScriptOption = function(name, id, value, reload, reorder) {
     if (V) console.log("run modifyScriptOption");
     if (reload == undefined) reload = true;
     try {
-        var s = { method: "modifyScriptOptions", name: name, reload: reload, reorder: reorder };
+        var s = {method: "modifyScriptOptions", name: name, reload: reload, reorder: reorder};
         if (id && id != '') s[id] = value;
 
         if (V) console.log("modifyScriptOption sendReq");
@@ -2365,7 +2422,7 @@ var modifyNativeScriptOption = function(nid, id, value, reload) {
     if (V) console.log("run modifyNativeScriptOption");
     if (reload == undefined) reload = true;
     try {
-        var s = { method: "modifyNativeScript", nid: nid, actionid: id, value: value, reload: reload };
+        var s = {method: "modifyNativeScript", nid: nid, actionid: id, value: value, reload: reload};
 
         if (V) console.log("modifyNativeScriptOption sendReq");
         chrome.extension.sendRequest(s,
@@ -2431,8 +2488,8 @@ var createCurtain = function(childnode, name, id, app, clas) {
     p.appendChild(d);
     p.appendChild(c);
 
-    p.show = function() { p.setAttribute('class', 'curouter block'); };
-    p.hide = function() { p.setAttribute('class', 'curouter hide'); };
+    p.show = function() {p.setAttribute('class', 'curouter block');};
+    p.hide = function() {p.setAttribute('class', 'curouter hide');};
     var bs = document.getElementsByTagName('body');
     if (!bs.length) {
         console.log("Err: Body not found!");
@@ -2443,7 +2500,7 @@ var createCurtain = function(childnode, name, id, app, clas) {
 };
 
 var hideWait = function() {
-    if (curtain) window.setTimeout(function() { curtain.hide(); }, 1);
+    if (curtain) window.setTimeout(function() {curtain.hide();}, 1);
 };
 
 var pleaseWait = function() {

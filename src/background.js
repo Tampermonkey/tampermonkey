@@ -3043,26 +3043,41 @@ var requestHandler = function(request, sender, sendResponse) {
                 }
 
                 if (typeof request.enabled !== 'undefined') r.script.enabled = request.enabled;
-                if (typeof request.matches !== 'undefined') {
-                    r.script.options.override.matches = request.matches;
-                    r.script.options.override.use_matches = request.use_matches;
-                    r.script.matches = r.script.options.override.matches
-                        ? r.script.options.override.use_matches
-                        : r.script.options.override.orig_matches;
-                }
                 if (typeof request.includes !== 'undefined') {
-                    r.script.options.override.includes = request.includes;
-                    r.script.options.override.use_includes = request.use_includes;
-                    r.script.includes = r.script.options.override.includes
-                        ? r.script.options.override.use_includes
-                        : r.script.options.override.orig_includes;
-                }
-                if (typeof request.excludes !== 'undefined') {
-                    r.script.options.override.excludes = request.excludes;
-                    r.script.options.override.use_excludes = request.use_excludes;
-                    r.script.excludes = r.script.options.override.excludes
-                        ? r.script.options.override.use_excludes
-                        : r.script.options.override.orig_excludes;
+					//merge original and user *cludes
+                    r.script.options.override.use_includes = request.includes;
+                    r.script.options.override.use_excludes = request.excludes;
+
+					r.script.includes = r.script.options.override.orig_includes.slice();
+					r.script.excludes = r.script.options.override.orig_excludes.slice();
+					
+					//add user includes (and remove them from original excludes if they exist)
+					for(var n=0; n<request.includes.length; n++){
+						var idx = r.script.excludes.indexOf(request.includes[n]);
+						if(idx >= 0){
+							r.script.excludes.splice(idx, 1);
+						}
+						r.script.includes.push(request.includes[n]);
+					}
+					
+					//who uses matches anyway?
+					if(typeof request.matches !== 'undefined'){
+						r.script.options.override.use_matches = request.matches;
+						r.script.matches = r.script.options.override.orig_matches ?
+							r.script.options.override.orig_matches.slice() : [];
+						for(var n=0; n<request.matches.length; n++){
+							var idx = r.script.excludes.indexOf(request.matches[n]);
+							if(idx >= 0){
+								r.script.excludes.splice(idx, 1);
+							}
+							r.script.matches.push(request.matches[n]);
+						}
+					}
+					
+					//add user excludes (overrides includes anyway)
+					for(var n=0; n<request.excludes.length; n++){
+						r.script.excludes.push(request.excludes[n]);
+					}
                 }
 
                 storeScript(r.script.name, r.script);
