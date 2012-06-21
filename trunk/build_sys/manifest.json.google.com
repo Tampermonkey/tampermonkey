@@ -2,7 +2,7 @@
    "manifest_version": 1,
    "minimum_chrome_version": "17.0.0.0",
    "content_scripts": [ {
-      "js": [ "content.js" ],
+      "js": [ "registry.js", "content.js" ],
       "matches": [ "file://*", "http://*/*", "https://*/*" ],
       "run_at": "document_start",
       "all_frames": true
@@ -17,9 +17,11 @@
        	     "128": "images/icon128.png" },
    "name": "Tampermonkey",
    "version": "2.5.0",
-   "description": "Greasemonkey compatible script manager for Chrome.",
+   "description": "the most popular userscript manager for Google Chrome",
    "default_locale": "en",
-   "background_page": "background.html",
+   "background": {
+       "page": "background.html"
+   },
    "options_page": "options.html",
    "permissions": [ "notifications", 
                     "unlimited_storage", 

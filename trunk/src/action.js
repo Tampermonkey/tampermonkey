@@ -6,16 +6,15 @@
 
 var V = false;
 
-var cr = function(tag, clas) {
-    return crc(tag);
-};
+(function() {
 
-var crc = function(tag, clas) {
-    var e = document.createElement(tag);
-    if (clas) e.setAttribute("class", clas);
-    return e;
-};
+Registry.require('crcrc');
+Registry.require('htmlutil');
 
+var cr = Registry.get('crcrc').cr;
+var crc = Registry.get('crcrc').crc;
+var HtmlUtil = Registry.get('htmlutil');
+ 
 var createActionsMenu = function(items) {
     var action = document.getElementById('action');
     var p = action.parentNode;
@@ -48,7 +47,7 @@ var createActionsMenu = function(items) {
                         modifyScriptOptions(this.name, 'enabled', !this.oldvalue);
                     };
                     var pt = (i.position > 0) ? ((i.position < 10) ? " " + i.position  : i.position) : null
-                    var g = createImageText(i.image,
+                    var g = HtmlUtil.createImageText(i.image,
                                         i.name,
                                         "enabled",
                                         "enabled",
@@ -58,7 +57,7 @@ var createActionsMenu = function(items) {
                     g.oldvalue = i.enabled;
                     td1.appendChild(g);
                 } else {
-                    image = createImage(i.image, i.name, i.id, null, "");
+                    image = HtmlUtil.createImage(i.image, i.name, i.id, null, "");
                     td1.appendChild(image);
                 }
             }
@@ -153,56 +152,6 @@ var createActionsMenu = function(items) {
     action.appendChild(table);
 };
 
-var createImageText = function(src, name, id, append, title, oc, text) {
-    var wrap = cr('span', name, id, append, 'wrap', true);
-    var image = cr('image', name, id, append, true);
-    var spos;
-
-    image.setAttribute("width", "16px");
-    image.setAttribute("height", "16px");
-    image.setAttribute("src", src);
-    wrap.setAttribute("style", "cursor: pointer;");
-    wrap.title = title;
-    wrap.key = id;
-    wrap.name = name;
-    wrap.alt = ' ?';
-
-    wrap.appendChild(image);
-    spos = crc('span', 'scriptpos', name, id, 'spos');
-    spos.textContent = text;
-    wrap.appendChild(spos);
-    
-    if (oc) {
-        var oco = function(evt) {
-            oc.apply(wrap);
-        };
-        wrap.addEventListener("click", oco);
-    }
-    image.href = 'javascript://nop/';
-    
-    return wrap;
-}
-    
-var createImage = function(src, name, id, append, title, oc, text) {
-    var image = cr('image', name, id, append);
-
-    image.setAttribute("width", "16px");
-    image.setAttribute("height", "16px");
-    image.setAttribute("src", src);
-    image.setAttribute("style", "cursor: pointer;");
-    image.title = title;
-    image.key = id;
-    image.name = name;
-    image.alt = ' ?';
-
-    if (oc && !image.inserted) {
-        image.addEventListener("click", oc);
-        image.href = 'javascript://nop/';
-    }
-    
-    return image;
-};
-
 var loadUrl = function(url, newtab) {
     try {
         var resp = function(tab) {
@@ -217,7 +166,7 @@ var loadUrl = function(url, newtab) {
             chrome.tabs.getSelected(null, resp);
         }
     } catch (e) {
-        alert(e);
+        console.log(e);
     }
 };
 
@@ -225,7 +174,7 @@ var runScriptUpdates = function() {
     try {
         chrome.extension.sendRequest({method: "runScriptUpdates"}, function(response) {});
     } catch (e) {
-        alert(e);
+        console.log(e);
     }
 };
 
@@ -233,7 +182,7 @@ var execMenuCmd = function(id) {
     try {
         chrome.extension.sendRequest({method: "execMenuCmd", id: id}, function(response) {});
     } catch (e) {
-        alert(e);
+        console.log(e);
     }
 };
 
@@ -255,9 +204,8 @@ var getFireItems = function(tabid, cb) {
 
         chrome.extension.sendRequest({method: "getFireItems", countonly: true, tabid: tabid}, fiResp);
     } catch (e) {
-        alert(e);
+        console.log(e);
     }
-
 };
 
 var modifyScriptOptions = function(name, id, value) {
@@ -270,7 +218,7 @@ var modifyScriptOptions = function(name, id, value) {
                                      });
         document.getElementById('action').innerHTML = chrome.i18n.getMessage("Please_ wait___");
     } catch (e) {
-        alert("mSo: " + e);
+        console.log("mSo: " + e.message);
     }
 }
 
@@ -285,3 +233,10 @@ chrome.extension.onRequest.addListener(
             if (V) console.log("a: " + chrome.i18n.getMessage("Unknown_method_0name0" , request.method));
         }
     });
+
+var init = function() {
+    modifyScriptOptions(null, false);
+};
+ 
+window.setTimeout(init, 1);
+})();

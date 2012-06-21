@@ -874,7 +874,7 @@ var HTM_runMyScript = function(HTM_request) {
               try {
                   value = type + JSON.stringify(value);
               } catch (e) {
-                  alert(e);
+                  console.log(e);
                   return;
               }
               break;
@@ -1080,7 +1080,7 @@ var HTM_runMyScript = function(HTM_request) {
     }
 
     TMwin.props[HTM_script['namespace']].elements.push({ name: 'CDATA',  value: function(arg) { this.src = arg; this.toString = function() { return this.src; }; this.toXMLString = this.toString }});
-    TMwin.props[HTM_script['namespace']].elements.push({ name: 'uneval', value: function(arg) { try { return "\$1 = " + JSON.stringify(arg) + ";"; } catch (e) { alert(e) } } });
+    TMwin.props[HTM_script['namespace']].elements.push({ name: 'uneval', value: function(arg) { try { return "\$1 = " + JSON.stringify(arg) + ";"; } catch (e) { console.log(e) } } });
 
     // backup some key elements
     TMwin.props[HTM_script['namespace']].elements.push({ name: 'console',  value: console, type: eBACKUP });
@@ -1206,7 +1206,10 @@ chromeEmu.extension.onRequest.addListener(
             window.setTimeout(ask, 100);
         } else if (request.method == "showMsg") {
             var ask = function() {
-                alert(request.msg);
+                var t = function() {
+                    alert(request.msg);
+                };
+                window.setTimeout(t, 1);
                 sendResponse({});
             }
             window.setTimeout(ask, 100);

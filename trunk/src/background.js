@@ -22,8 +22,13 @@ var SV = false;
 var CV = false;
 var NV = false;
 
-// protect against other background pages
 (function() {
+
+Registry.require('convert');
+Registry.require('xmlhttprequest');
+Registry.require('compat');
+Registry.require('parser');
+Registry.require('helper');
 
 var adjustLogLevel = function(logLevel) {
     D |= (logLevel >= 60);
@@ -63,15 +68,6 @@ var condAppendix = '@re';
 var storeAppendix = '@st';
 var scriptAppendix = '@source';
 
-var urlAll = '://*/*';
-var urlAllHttp = 'http' + urlAll;
-var urlAllHttps = 'https' + urlAll;
-var urlAllInvalid = '*';
-var urlSecurityIssue = '.*/';
-var urlTld = '.tld/';
-var urlTlds = 'museum|travel|aero|arpa|coop|info|jobs|name|nvus|biz|com|edu|gov|int|mil|net|org|pro|xxx|ac|ad|ae|af|ag|ai|ak|al|al|am|an|ao|aq|ar|ar|as|at|au|aw|ax|az|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bm|bn|bo|br|bs|bt|bv|bw|by|bz|ca|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|co|cr|cs|ct|cu|cv|cx|cy|cz|dc|de|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|eu|fi|fj|fk|fl|fm|fo|fr|ga|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gu|gu|gw|gy|hi|hk|hm|hn|hr|ht|hu|ia|id|id|ie|il|il|im|in|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|ks|kw|ky|ky|kz|la|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|ma|mc|md|md|me|mg|mh|mi|mk|ml|mm|mn|mn|mo|mo|mp|mq|mr|ms|ms|mt|mt|mu|mv|mw|mx|my|mz|na|nc|nc|nd|ne|ne|nf|ng|nh|ni|nj|nl|nm|no|np|nr|nu|ny|nz|oh|ok|om|or|pa|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|pr|ps|pt|pw|py|qa|re|ri|ro|ru|rw|sa|sb|sc|sc|sd|sd|se|sg|sh|si|sj|sk|sl|sm|sn|so|sr|st|su|sv|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|tn|to|tp|tr|tt|tv|tw|tx|tz|ua|ug|uk|um|us|ut|uy|uz|va|va|vc|ve|vg|vi|vi|vn|vt|vu|wa|wf|wi|ws|wv|wy|ye|yt|yu|za|zm|zw';
-var url2LevelTlds = "de.net|gb.net|uk.net|dk.org|eu.org|asn.au|com.au|conf.au|csiro.au|edu.au|gov.au|id.au|info.au|net.au|org.au|otc.au|oz.au|telememo.au|ac.cn|ah.cn|bj.cn|com.cn|cq.cn|edu.cn|gd.cn|gov.cn|gs.cn|gx.cn|gz.cn|hb.cn|he.cn|hi.cn|hk.cn|hl.cn|hn.cn|jl.cn|js.cn|ln.cn|mo.cn|net.cn|nm.cn|nx.cn|org.cn|qh.cn|sc.cn|sh.cn|sn.cn|sx.cn|tj.cn|tw.cn|xj.cn|xz.cn|yn.cn|zj.cn|ac.jp|ad.jp|aichi.jp|akita.jp|aomori.jp|chiba.jp|co.jp|ed.jp|ehime.jp|fukui.jp|fukuoka.jp|fukushima.jp|gifu.jp|go.jp|gov.jp|gr.jp|gunma.jp|hiroshima.jp|hokkaido.jp|hyogo.jp|ibaraki.jp|ishikawa.jp|iwate.jp|kagawa.jp|kagoshima.jp|kanagawa.jp|kanazawa.jp|kawasaki.jp|kitakyushu.jp|kobe.jp|kochi.jp|kumamoto.jp|kyoto.jp|lg.jp|matsuyama.jp|mie.jp|miyagi.jp|miyazaki.jp|nagano.jp|nagasaki.jp|nagoya.jp|nara.jp|ne.jp|net.jp|niigata.jp|oita.jp|okayama.jp|okinawa.jp|or.jp|org.jp|osaka.jp|saga.jp|saitama.jp|sapporo.jp|sendai.jp|shiga.jp|shimane.jp|shizuoka.jp|takamatsu.jp|tochigi.jp|tokushima.jp|tokyo.jp|tottori.jp|toyama.jp|utsunomiya.jp|wakayama.jp|yamagata.jp|yamaguchi.jp|yamanashi.jp|yokohama.jp|ac.uk|co.uk|edu.uk|gov.uk|ltd.uk|me.uk|mod.uk|net.uk|nhs.uk|nic.uk|org.uk|plc.uk|police.uk|sch.uk|co.tv";
-var urlAllTlds = ("(" + [urlTlds, url2LevelTlds].join("|") + ")").replace(/\./gi, "\\.");
 var allURLs = {};
 var scriptOptions = [];
 var requireCache = {};
@@ -84,22 +80,6 @@ var initScriptOptions = function() {
         if (!d.options.hasOwnProperty(k)) continue;
         scriptOptions.push(k);
     }
-};
-
-var getStringBetweenTags = function(source, tag1, tag2) {
-    var b = source.search(escapeForRegExp(tag1));
-    if (b == -1) {
-        return "";
-    }
-    if (!tag2) {
-        return source.substr(b + tag1.length);
-    }
-    var e = source.substr(b + tag1.length).search(escapeForRegExp(tag2));
-
-    if (e == -1) {
-        return "";
-    }
-    return source.substr(b + tag1.length, e);
 };
 
 var versionCmp = function(v1, v2) {
@@ -125,71 +105,6 @@ var versionCmp = function(v1, v2) {
     }
 
     return eEQUAL;
-};
-
-var getConverter = function() {
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", "convert.js", false);
-    xhr.send(null);
-    var x = window['eval'](xhr.responseText);
-    return x;
-};
-
-var getRawContent = function(file) {
-    var url = chrome.extension.getURL(file);
-    var content = null;
-    try {
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url, false);
-        xhr.send(null);
-        content = xhr.responseText;
-        if (!content) console.log("WARN: content of " + file + " is null!");
-    } catch (e) {
-        console.log("getRawContent " + e);
-    }
-    return content;
-};
-
-var include = function(file) {
-    window['eval'](getRawContent(file));
-};
-
-/* ###### URL Handling ####### */
-
-var escapeForRegExpURL = function(str, more) {
-    if (more == undefined) more = [];
-    var re = new RegExp( '(\\' + [ '/', '.', '+', '?', '|', '(', ')', '[', ']', '{', '}', '\\' ].concat(more).join('|\\') + ')', 'g');
-    return str.replace(re, '\\$1');
-};
-
-var escapeForRegExp = function(str, more) {
-    return escapeForRegExpURL(str, ['*']);
-};
-
-var getRegExpFromUrl = function(url, safe, match) {
-    var u;
-    if ((Config.values.tryToFixUrl || safe) && url == urlAllInvalid) {
-        u = urlAllHttp;
-    } else if ((Config.values.safeUrls || safe) && url != urlAllHttp && url != urlAllHttps && url.search(escapeForRegExpURL(urlSecurityIssue)) != -1) {
-        u = url.replace(escapeForRegExpURL(urlSecurityIssue), urlTld);
-    } else {
-        u = url;
-    }
-
-    if (match) {
-        // @match *.biniok.net should match at "foo.biniok.net" and "biniok.net" but not evil.de#biniok.net
-        // TODO: is this allowed to work on foo.*.net too?
-        // TODO: is there a better way then using <>?
-        u = u.replace(/\*\.([a-z0-9A-Z\.%].*\/)/gi, "<>$1");
-    }
-
-    u = '^' + escapeForRegExpURL(u);
-    u = u.replace(/\*/gi, '.*');
-    u = u.replace(escapeForRegExpURL(urlTld), '.' + urlAllTlds + '\/');
-    u = u.replace(/(\^|:\/\/)\.\*/, '$1([^\?#])*');
-    u = u.replace("<>", '([^\/#\?]*\\.)?');
-
-    return '(' + u + ')';
 };
 
 /* ###### Extension Helpers ####### */
@@ -1064,7 +979,7 @@ var TM_fire = {
                 scripts.push([index[i], JSON.stringify(obj)]);
                 for (var j=0; j < obj.excludes.length; j++) {
 
-                    var k = getRegExpFromUrl(obj.excludes[j], true);
+                    var k = Helper.getRegExpFromUrl(obj.excludes[j], Config, true);
                     if (!excludes[k]) {
                         excludes[k] = { sids: [] };
                     }
@@ -1073,7 +988,7 @@ var TM_fire = {
 
                 for (var j=0; j < obj.includes.length; j++) {
                     var inc = obj.includes[j].trim();
-                    var k = getRegExpFromUrl(inc, true);
+                    var k = Helper.getRegExpFromUrl(inc, Config, true);
                     if (!includes[k]) {
                         var generic = 0;
                          /* function t(inc) {
@@ -1084,7 +999,7 @@ var TM_fire = {
                          if (inc.search("^[https*]]{1,}[:\/\/]{0,}[w\.]{0,4}[\*|\.]{1,}[$|\/]") != -1 ||
                              inc.search("^[\.\*\/]{1,}$") != -1 ||
                              inc.search("^[https*]{1,}[:\/\/]{0,}[w\.]{0,4}[\.|\*|\/]{1,}$") != -1 ||
-                             inc.search("^" + escapeForRegExp("*://*[$|\/]")) != -1 ||
+                             inc.search("^" + Helper.escapeForRegExp("*://*[$|\/]")) != -1 ||
                              inc.replace(new RegExp("(https|http|\\*).://\\*"), '') == "" ||
                              inc == "*") {
                             generic = 1;
@@ -1636,7 +1551,7 @@ var defaultScripts = function() {
 
     for (var i=0; i < scripts.length; i++) {
         var u = 'system/' + scripts[i] + '.tamper.js';
-        var c = getRawContent(u);
+        var c = Registry.getRaw(u);
         if (c) ret.push(c);
     }
 
@@ -1788,13 +1703,6 @@ var xmlhttpRequestInternal = function(details, callback, onreadychange, onerr, d
     
 /* ###### Runtime ####### */
 
-var isLocalImage = function(url) {
-    var bg = 'background.js';
-    var u = chrome.extension.getURL(bg);
-    u = u.replace(bg, '') + 'images/';
-    return (url.length >= u.length && u == url.substr(0, u.length));
-};
-
 var runtimeInit = function() {
     var oobj = this;
 
@@ -1822,7 +1730,7 @@ var runtimeInit = function() {
             if (req.readyState == 4) {
                 if (req.status == 200 || req.status == 0) {
                     res.resText = req.responseText;
-                    if (req.status == 0 || isLocalImage(res.url)) {
+                    if (req.status == 0 || Helper.isLocalImage(res.url)) {
                         if (res.url.search('.ico$') != -1) {
                             image = 'image/x-icon';
                         } else if (res.url.search('.gif$') != -1) {
@@ -2214,8 +2122,8 @@ var addNewUserScript = function(o) {
     if (!script.includes.length && !script.matches.length) {
         msg += '\n' + chrome.i18n.getMessage('Note_') + '\n';
         msg += '    ' + chrome.i18n.getMessage('This_script_does_not_provide_any__include_information_') + '\n';
-        msg += '    ' + chrome.i18n.getMessage('Tampermonkey_assumes_0urlAllHttp0_in_order_to_continue_', urlAllHttp) + '    \n';
-        script.includes.push(urlAllHttp);
+        msg += '    ' + chrome.i18n.getMessage('Tampermonkey_assumes_0urlAllHttp0_in_order_to_continue_', Helper.urlAllHttp) + '    \n';
+        script.includes.push(Helper.urlAllHttp);
     }
 
     if (!script.options.awareOfChrome) {
@@ -2679,7 +2587,7 @@ var matchUrl = function(href, reg, match) {
         reg.substr(0, 1) == '/') {
         r = new RegExp('.*' + reg.replace(/^\//g, '').replace(/\/$/g, '') + '.*', 'i');
     } else {
-        var re = getRegExpFromUrl(reg, false, match);
+        var re = Helper.getRegExpFromUrl(reg, Config, false, match);
         r = new RegExp(re);
     }
     return href.replace(r, '') == '';
@@ -3228,7 +3136,7 @@ var requestHandler = function(request, sender, sendResponse) {
                 if (enabledScriptsCount) {
                     if (request.raw) {
                         for (var o=0; o<request.raw.length; o++) {
-                            r.raw[request.raw[o]] = getRawContent(request.raw[o]);
+                            r.raw[request.raw[o]] = Registry.getRaw(request.raw[o]);
                         }
                     }
                     sendResponse(r);
@@ -4461,7 +4369,7 @@ var updateListener = function(tabID, changeInfo, tab, request, length_cb, allrun
         return;
     }
     if (changeInfo.status == 'complete') {
-        if (tab.title.search(escapeForRegExp(tab.url) + " is not available") != -1) {
+        if (tab.title.search(Helper.escapeForRegExp(tab.url) + " is not available") != -1) {
             var reload = function() {
                 console.log("trigger reload (tabID " + tabID + ") of " + tab.url);
                 chrome.tabs.update(tabID, {url: tab.url});
@@ -4518,14 +4426,18 @@ var removeListener = function(tabId, removeInfo) {
 
 var Config;
 var Converter;
+var xmlhttpRequest;
+var compaMo;
+var scriptParser;
+var Helper;
 
 init = function() {
-    /* TODO: include magic needs to be reworked cause eval fails when using
-       manifest_version 2 -> http://code.google.com/chrome/extensions/manifest.html */
-    include('xmlhttprequest.js');
-    include('compat.js');
-    include('parser.js');
-
+    Converter = Registry.get('convert');
+    xmlhttpRequest = Registry.get('xmlhttprequest').run;
+    compaMo = Registry.get('compat');
+    scriptParser = Registry.get('parser');
+    Helper = Registry.get('helper');
+    
     TM_storage.init();
     initScriptOptions();
 
@@ -4535,7 +4447,6 @@ init = function() {
     };
 
     Config = new configInit(cfgdone, setOptions);
-    Converter = getConverter();
 
     var waitForWebNav  = function() {
         if (!chrome.webNavigation || !chrome.webNavigation.onCommitted) {
@@ -4569,7 +4480,6 @@ init = function() {
 }
 
 // webRequest API forces us to not use synchronous xmlHttpRequest initially
-// window.setTimeout(init, 1);
-init();
+window.setTimeout(init, 1);
 
 })();
