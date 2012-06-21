@@ -10,95 +10,33 @@
 var V = false;
 
 var initialized = false;
-var curtain = null;
 var allItems = null;
 var gOptions = {};
 var version = '0.0.0';
 var gNoWarn = false;
-var tvCache = {};
 var stCache = {};
-
-var gVis = undefined;
-var gNVis = 'display: none;';
-var gVisMove = undefined;
-var gNVisMove = 'position:absolute; left: -20000px; top: -200000px; width: 1px; height: 1px;';
-var gUSOicon = 'http://userscripts.org/images/script_icon.png';
 
 if (!window.requestFileSystem) window.requestFileSystem = window.webkitRequestFileSystem;
 if (!window.BlobBuilder) window.BlobBuilder = window.WebKitBlobBuilder;
 
-var cr = function(tag, name, id, append, replace) {
-    return crc(tag, null, name, id, append, replace);
-};
+/* ########### include ############## */
+Registry.require('crcrc');
+Registry.require('curtain');
+Registry.require('tabview');
+Registry.require('htmlutil');
+Registry.require('helper');
+Registry.require('convert');
 
-var crc = function(tag, clas, name, id, append, replace) {
-    try {
-        var uid = tag + '_' + createUniqueId(name, id);
-        if (append != undefined) uid += '_' + append;
-        var e = document.getElementById(uid);
-        if (e && replace) {
-            var f = document.createElement(tag);
-            f.setAttribute('id', uid);
-            var p = e.parentNode;
-            p.insertBefore(f, e);
-            p.removeChild(e);
-            e = f;
-        }
-        if (e) {
-            e.inserted = true;
-        } else {
-            e = document.createElement(tag);
-            e.setAttribute('id', uid);
-        }
-        if (clas) e.setAttribute("class", clas);
-        if (!e.__removeChild) {
-            e.__removeChild = e.removeChild;
-            e.removeChild = function(elem) {
-                e.inserted = false;
-                e.__removeChild(elem);
-            };
-        }
-        if (!e.__appendChild) {
-            e.__appendChild = e.appendChild;
-            e.appendChild = function(elem) {
-                if (!elem.parentNode && !elem.inserted) {
-                    e.__appendChild(elem);
-                }
-            };
-        }
-        if (!e.__insertBefore) {
-            e.__insertBefore = e.insertBefore;
-            e.insertBefore = function(elem, old) {
-                if (!elem.parentNode && !elem.inserted) {
-                    e.__insertBefore(elem, old);
-                }
-            };
-        }
-    } catch (err) {
-        console.log("options: Error:" + JSON.stringify(err));
-    }
-    return e;
-};
+var cr = Registry.get('crcrc').cr;
+var crc = Registry.get('crcrc').crc;
+var Please = Registry.get('curtain');
+var TabView = Registry.get('tabview');
+var HtmlUtil = Registry.get('htmlutil');
+var Helper = Registry.get('helper');
+var Converter = Registry.get('convert');
 
-var getConverter = function() {
-    return window['eval'](getRawContent("convert.js"));
-};
-
-var getRawContent = function(file) {
-    var url = chrome.extension.getURL(file);
-    var content = null;
-    try {
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url, false);
-        xhr.send(null);
-        content = xhr.responseText;
-        if (!content) console.log("WARN: content of " + file + " is null!");
-    } catch (e) {
-        console.log("getRawContent " + e);
-    }
-    return content;
-};
-
+/* ########### main ############## */
+ 
 var itemsToMenu = function(items, tabv) {
 
     var table = null;
@@ -179,7 +117,7 @@ var itemsToMenu = function(items, tabv) {
                         modifyNativeScriptOption(this.name, this.key, !this.oldvalue);
                     };
                     var pt = (i.position > 0) ? ((i.position < 10) ? " " + i.position  : i.position) : null
-                    var g = createImageText(i.image,
+                    var g = HtmlUtil.createImageText(i.image,
                                         i.nativeScript ? i.id : i.name,
                                         "enabled",
                                         "enabled",
@@ -189,7 +127,7 @@ var itemsToMenu = function(items, tabv) {
                     g.oldvalue = i.enabled;
                     td1.appendChild(g);
                 } else {
-                    td1.appendChild(createImage(i.image, i.name, i.id));
+                    td1.appendChild(HtmlUtil.createImage(i.image, i.name, i.id));
                 }
             }
             var td2 = crc('td', 'settingstd', i.name, i.id, '2');
@@ -211,16 +149,16 @@ var itemsToMenu = function(items, tabv) {
                         setOption(this.key, this.checked, this.reload);
                     }
                 }
-                var input = createCheckbox(i.name, i, i.option ? oco : oc);
+                var input = HtmlUtil.createCheckbox(i.name, i, i.option ? oco : oc);
                 if (section) {
                     section.appendChild(input.elem);
                     tr = null;
                 } else {
                     td2.appendChild(input.elem);
                 }
-                input.elem.setAttribute('style', (i.level > gOptions.configMode) ? gNVis : gVis);
+                input.elem.setAttribute('style', (i.level > gOptions.configMode) ? Helper.staticVars.invisible : Helper.staticVars.visible);
             } else if (i.input) {
-                var input = createTextarea(i.name, i);
+                var input = HtmlUtil.createTextarea(i.name, i);
                 if (section) {
                     section.appendChild(input.elem);
                     tr = null;
@@ -228,19 +166,19 @@ var itemsToMenu = function(items, tabv) {
                 } else {
                     td2.appendChild(input.elem);
                 }
-                input.elem.setAttribute('style', (i.level > gOptions.configMode) ? gNVis : gVis);
+                input.elem.setAttribute('style', (i.level > gOptions.configMode) ? Helper.staticVars.invisible : Helper.staticVars.visible);
             } else if (i.select) {
                 var oc = function() {
                     setOption(this.key, this.value);
                 }
-                var input = createDropDown(i.name, i, i.select, oc);
+                var input = HtmlUtil.createDropDown(i.name, i, i.select, oc);
                 if (section) {
                     section.appendChild(input);
                     tr = null;
                 } else {
                     td2.appendChild(input);
                 }
-                input.setAttribute('style', (i.level > gOptions.configMode) ? gNVis : gVis);
+                input.setAttribute('style', (i.level > gOptions.configMode) ? Helper.staticVars.invisible : Helper.staticVars.visible);
             } else if (i.url) {
                 var a = cr('a', i.name, i.id);
                 a.href = 'javascript://nop/';
@@ -262,7 +200,7 @@ var itemsToMenu = function(items, tabv) {
                 current_elem = cr('div', i.name, i.id, 'tab_content');
                 current_elem.appendChild(table);
                 tr = null;
-                var tab = tabv.appendTab(createUniqueId(i.name, i.id), h, current_elem);
+                var tab = tabv.appendTab(Helper.createUniqueId(i.name, i.id), h, current_elem);
             } else if (i.section) {
                 if (section && section_need_save) {
                     var b = cr('input', section.name, section.id, 'Save');
@@ -311,7 +249,7 @@ var itemsToMenu = function(items, tabv) {
                 section_need_save = false;
                 section_root.appendChild(s);
 
-                s.setAttribute('style', (i.level > gOptions.configMode) ? gNVis : gVis);
+                s.setAttribute('style', (i.level > gOptions.configMode) ? Helper.staticVars.invisible : Helper.staticVars.visible);
                 section = c;
                 td1 = null;
             } else if (i.menucmd) {
@@ -361,7 +299,7 @@ var createUtilTab = function(tabv) {
     var h = cr('div', i.name, i.id, 'tab_util_h');
     h.textContent = chrome.i18n.getMessage('Utilities');
     var util = cr('div', i.name, i.id, 'tab_util');
-    var tab = tabv.appendTab(createUniqueId(i.name, i.id), h, util);
+    var tab = tabv.appendTab(Helper.createUniqueId(i.name, i.id), h, util);
 
     // TODO: hardcoded !!
     if (50 > gOptions.configMode) {
@@ -413,7 +351,7 @@ var createUtilTab = function(tabv) {
                         impo();
                     }
                 } else {
-                    alert(chrome.i18n.getMessage('Unable_to_parse_this_'));
+                    Helper.alert(chrome.i18n.getMessage('Unable_to_parse_this_'));
                 }
                 return;
             }
@@ -452,7 +390,7 @@ var createUtilTab = function(tabv) {
                 processScript(p[o]);
             }
             if (err) {
-                alert(chrome.i18n.getMessage("An_error_occured_during_import_"));
+                Helper.alert(chrome.i18n.getMessage("An_error_occured_during_import_"));
             }
         }
     };
@@ -481,7 +419,7 @@ var createUtilTab = function(tabv) {
               break;
         };
 
-        alert('Error: ' + msg);
+        Helper.alert('Error: ' + msg);
     };
 
     var impo_ls = function() {
@@ -544,8 +482,8 @@ var createUtilTab = function(tabv) {
 	saveAs(bb.getBlob("text/plain"), "tmScripts.txt");
     };
 
-    var imp_ta = createButton(i.name, i.id + '_i_ta', null, chrome.i18n.getMessage('Import_from_Textarea'), impo);
-    var imp_ls = createButton(i.name, i.id + '_i_ls', null, chrome.i18n.getMessage('Import_from_SandboxFS'), impo_ls);
+    var imp_ta = HtmlUtil.createButton(i.name, i.id + '_i_ta', null, chrome.i18n.getMessage('Import_from_Textarea'), impo);
+    var imp_ls = HtmlUtil.createButton(i.name, i.id + '_i_ls', null, chrome.i18n.getMessage('Import_from_SandboxFS'), impo_ls);
     var imp_file = cr('input', i.name, i.id + '_i_file', 'file');
 
     var handleFileSelect = function (evt) {
@@ -572,9 +510,9 @@ var createUtilTab = function(tabv) {
         imp_file.addEventListener('change', handleFileSelect, false);
     }
 
-    var exp_ta = createButton(i.name, i.id + '_e_ta', null, chrome.i18n.getMessage('Export_to_Textarea'), expo);
-    var exp_doc = createButton(i.name, i.id + '_e_doc', null, chrome.i18n.getMessage('Export_to_file'), expo_doc);
-    var exp_ls = createButton(i.name, i.id + '_e_ls', null, chrome.i18n.getMessage('Export_to_SandboxFS'), expo_ls);
+    var exp_ta = HtmlUtil.createButton(i.name, i.id + '_e_ta', null, chrome.i18n.getMessage('Export_to_Textarea'), expo);
+    var exp_doc = HtmlUtil.createButton(i.name, i.id + '_e_doc', null, chrome.i18n.getMessage('Export_to_file'), expo_doc);
+    var exp_ls = HtmlUtil.createButton(i.name, i.id + '_e_ls', null, chrome.i18n.getMessage('Export_to_SandboxFS'), expo_ls);
 
     var ta = crc('textarea', 'importta', i.name, i.id, 'ta');
     var sta = crc('div', 'section', i.name, i.id, 'ta');
@@ -672,7 +610,7 @@ var createOptionsMenu = function(items, noWarn) {
     main.appendChild(tv);
 
     if (V) console.log("options: tabView");
-    var tabv = createTabView('_main', tv);
+    var tabv = TabView.create('_main', tv);
 
     if (V) console.log("options: itemsToMenu");
     itemsToMenu(items, tabv);
@@ -681,551 +619,7 @@ var createOptionsMenu = function(items, noWarn) {
 
     gNoWarn = null;
     initialized = true;
-    hideWait();
-};
-
-// TODO: make this function shared between options, fire and ask.js!
-var createTabView = function(_prefix, parent, style) {
-    var prefix = _prefix.match(/[0-9a-zA-Z]/g).join('');
-    var cached = false;
-
-    if (style == undefined) {
-        style = {
-            "tv" : 'tv',
-            "tv_table" : 'tv_table',
-            "tr_tabs" : 'tr_tabs',
-            "tr_content" : 'tr_content',
-            "td_content" : 'td_content',
-            "td_tabs" : 'td_tabs',
-            "tv_tabs_table" : 'tv_tabs_table',
-            "tv_tabs_align" : 'tv_tabs_align',
-            "tv_contents" : 'tv_contents',
-            "tv_tab_selected" : 'tv_tab tv_selected',
-            "tv_tab_close" : 'tv_tab_close',
-            "tv_tab" : 'tv_tab',
-            "tv_content": 'tv_content'
-        };
-    }
-
-    var container = crc('div', style.tv, 'main' + prefix);
-    var table = crc('table', style.tv_table + ' noborder', 'main_table' + prefix);
-
-    if (table.inserted) {
-        cached = true;
-    } else {
-        tvCache[prefix] = {};
-        tvCache[prefix].g_entries = {};
-        tvCache[prefix].g_selectedId = null;
-    }
-
-    var ptr = crc('tr', style.tr_tabs, 'tabs' + parent.id + prefix);
-    var ptd = crc('td', style.td_tabs, 'pages' + prefix);
-    var tabs_table = crc('div', style.tv_tabs_table, 'tv_tabs_table' + prefix);
-    var tabs = crc('div', style.tv_tabs_align, 'tv_tabs_align' + prefix);
-
-    var ctr = crc('tr', style.tr_content, 'content' + parent.id + prefix);
-    var ctd = crc('td', style.td_content, 'content' + prefix);
-    var content = crc('table', style.tv_contents + ' noborder', 'tv_content' + prefix);
-
-    tabs_table.appendChild(tabs);
-    ptd.appendChild(tabs_table);
-    ptr.appendChild(ptd);
-    table.appendChild(ptr);
-
-    ctd.appendChild(content);
-    ctr.appendChild(ctd);
-    table.appendChild(ctr);
-    container.appendChild(table);
-
-    parent.appendChild(container);
-
-    var setHtmlVisible = function(elem, vis, move) {
-        if (vis) {
-            elem.setAttribute('style', move ? gVisMove : gVis);
-        } else {
-            elem.setAttribute('style', move ? gNVisMove : gNVis);
-        }
-        elem.setAttribute('vis', vis.toString());
-    };
-
-    var setEntryVisible = function(tab, vis) {
-        var id = tab.getId();
-        if (tvCache[prefix].g_entries[id]){
-            if (vis == tvCache[prefix].g_entries[id].visible) return;
-
-            tvCache[prefix].g_entries[id].visible = vis;
-            setHtmlVisible(tvCache[prefix].g_entries[id].tab, vis);
-        }
-    };
-
-    var setContentVisible = function(e, vis) {
-        setHtmlVisible(e.content, vis, true);
-    };
-
-    var findEntryByTab = function(tab) {
-        for (var k in tvCache[prefix].g_entries) {
-            var e = tvCache[prefix].g_entries[k];
-
-            if (e.tab.id == tab.id) {
-                return e;
-            }
-        };
-
-        return null;
-    };
-
-    var findIdByTab = function(tab) {
-        for (var k in tvCache[prefix].g_entries) {
-            var e = tvCache[prefix].g_entries[k];
-
-            if (e.tab.id == tab.id) {
-                return k;
-            }
-        };
-
-        return null;
-    };
-
-    var selectTab = function(tab) {
-        if (tab.getId() == tvCache[prefix].g_selectedId) return;
-        var id = tab.getId();
-
-        if (tvCache[prefix].g_selectedId) {
-            setContentVisible(tvCache[prefix].g_entries[tvCache[prefix].g_selectedId], false);
-        }
-
-        for (var k in tvCache[prefix].g_entries) {
-            var e = tvCache[prefix].g_entries[k];
-
-            if (e.entry.getId() == id) {
-                if (!e.visible) {
-                    console.log("tv: WARN: tab selected but not visible!");
-                } else if (!e.selected) {
-                    e.tab.setAttribute('class', style.tv_tab_selected);
-                    setContentVisible(e, true);
-                    e.selected = true;
-                }
-            } else {
-                if (e.selected) {
-                    e.tab.setAttribute('class', style.tv_tab);
-                    setContentVisible(e, false);
-                    e.selected = false;
-                }
-            }
-        }
-
-        tvCache[prefix].g_selectedId = id;
-    };
-
-    var hideTab = function(tab) {
-        var id = tab.getId();
-        var sel = (id == tvCache[prefix].g_selectedId);
-
-        if (tvCache[prefix].g_entries[id]){
-            setEntryVisible(tab, false);
-        } else {
-            console.log("tv: WARN: tab not part of tabview!");
-        }
-
-        if (sel) {
-            var f = null;
-            var ff = null;
-            for (var k in tvCache[prefix].g_entries) {
-                if (tvCache[prefix].g_entries[k].visible) {
-                    f = tvCache[prefix].g_entries[k];
-                    if (!ff && !f.closable) ff = f;
-                }
-            }
-
-            // select first "system" tab instead of last.
-            if (!f.closable) f = ff;
-
-            if (f) {
-                f.entry.select();
-            } else {
-                tvCache[prefix].g_selectedId = null;
-                console.log("tv: WARN: selected tab set, but entry collection empty!");
-            }
-        }
-    };
-
-    var showTab = function(tab) {
-        var id = tab.getId();
-        if (tvCache[prefix].g_entries[id]){
-            setEntryVisible(tab, true);
-        } else {
-            console.log("tv: WARN: tab not part of tabview!");
-        }
-    };
-
-    var removeTab = function(tab) {
-        tab.hide();
-        var id = tab.getId();
-        var e = tvCache[prefix].g_entries[id];
-
-        if (e) {
-            e.tab.parentNode.removeChild(e.tab);
-            e.content.parentNode.removeChild(e.content);
-            var d = findIdByTab(e.tab);
-            if (d) {
-                delete tvCache[prefix].g_entries[d];
-            }
-        } else {
-            console.log("tv: WARN: tab not part of tabview!");
-        }
-
-    };
-
-    var tv = null;
-
-    if (!cached) {
-        tv = {
-        removeTab : removeTab,
-
-        appendTab : function(id, head, cont, selectCb, closeCb) {
-            return this.insertTab(undefined, id, head, cont, selectCb, closeCb);
-        },
-
-        insertTab : function(before, id, head, cont, selectCb, closeCb) {
-
-            if (before === null) {
-                before = tabs.firstChild;
-            }
-
-            var tab = crc('div', '', id, 'content' + prefix);
-            var old = (tab.inserted !== undefined && tab.inserted == true);
-
-            if (closeCb) {
-                // do this here, cause tab content might me overwritten!
-                var closeX = crc('div', style.tv_tab_close, id, 'tv_close' + prefix, 'tab_close');
-                if (!closeX.inserted) closeX.addEventListener('click', closeCb);
-                closeX.textContent = "X";
-                head.appendChild(closeX);
-            }
-
-            if (old) {
-                var e = findEntryByTab(tab);
-                if (e) return e.entry;
-                console.log("tv: WARN: old tab, but not in tabs collection!");
-            }
-
-            var entry;
-            var tid = (new Date()).getTime() + Math.floor(Math.random() * 061283 + 1);
-            var oc = function(e) {
-                // TODO: is there a better way to determine X button?!
-                if (e.target.className != "" && e.target.className == style.tv_tab_close) return;
-                entry.select();
-            };
-
-            tab.setAttribute('tv_id' + prefix, id);
-            tab.addEventListener('click', oc);
-            head.setAttribute('tv_id' + prefix, id);
-            head.addEventListener('click', oc);
-            tab.setAttribute('name', 'tabview_tab'+prefix);
-            tab.setAttribute('class', style.tv_tab);
-            tab.appendChild(head);
-
-            if (before) {
-                tabs.insertBefore(tab, before);
-            } else {
-                tabs.appendChild(tab);
-            }
-
-            cont.setAttribute('name', 'tabview_content'+prefix);
-            cont.setAttribute('tv_id' + prefix, id);
-            cont.setAttribute('class', style.tv_content);
-            content.appendChild(cont);
-
-            entry = {
-                getId : function() {
-                    return tid;
-                },
-
-                isVisible : function() {
-                    return tab.getAttribute('vis') == 'true';
-                },
-
-                isSelected: function() {
-                    return (tvCache[prefix].g_selectedId == this.getId());
-                },
-
-                remove: function() {
-                    removeTab(this);
-                },
-
-                hide: function() {
-                    hideTab(this);
-                },
-
-                show: function() {
-                    showTab(this);
-                },
-
-                select: function() {
-                    if (selectCb) selectCb();
-                    selectTab(this);
-                }
-            };
-
-            tvCache[prefix].g_entries[tid] = { entry: entry, tab: tab, content: cont, closable: closeCb != null };
-            setContentVisible(tvCache[prefix].g_entries[tid], false);
-
-            // tab visible b default
-            entry.show();
-            // select first entry added
-            if (!tvCache[prefix].g_selectedId) {
-                entry.select();
-            }
-
-            return entry;
-        }
-        };
-        tvCache[prefix].tv = tv;
-
-    } else {
-        tv = tvCache[prefix].tv;
-    }
-
-    return tv;
-};
-
-var createImageText = function(src, name, id, append, title, oc, text) {
-    var wrap = cr('div', name, id, append, 'wrap', true);
-    var image = cr('image', name, id, append, true);
-    var spos;
-
-    image.setAttribute("width", "16px");
-    image.setAttribute("height", "16px");
-    image.setAttribute("src", src);
-    wrap.setAttribute("style", "cursor: pointer;");
-    wrap.title = title;
-    wrap.key = id;
-    wrap.name = name;
-    wrap.alt = ' ?';
-
-    wrap.appendChild(image);
-    spos = crc('span', 'scriptpos', name, id, 'spos');
-    spos.textContent = text;
-    wrap.appendChild(spos);
-
-    if (oc) { //  && !wrap.inserted) { // TODO: dunno why...
-        var oco = function(evt) {
-            oc.apply(wrap);
-        };
-        wrap.addEventListener("click", oco);
-    }
-    image.href = 'javascript://nop/';
-
-    return wrap;
-}
-
-var createImage = function(src, name, id, append, title, oc, text) {
-    var image = cr('image', name, id, append);
-
-    image.setAttribute("width", "16px");
-    image.setAttribute("height", "16px");
-    image.setAttribute("src", src);
-    image.setAttribute("style", "cursor: pointer;");
-    image.title = title;
-    image.key = id;
-    image.name = name;
-    image.alt = ' ?';
-
-    if (oc && !image.inserted) {
-        image.addEventListener("click", oc);
-        image.href = 'javascript://nop/';
-    }
-
-    return image;
-};
-
-var createFileInput = function(name, id, oc) {
-    var input = crc('input', 'import', 'file');
-    if (!input.inserted) {
-        input.type = 'file';
-        if (oc) input.addEventListener("change", oc);
-    }
-    return input;
-};
-
-var createTextarea = function(title, i, oc) {
-    var s = cr('div', i.name, i.id, 'textarea');
-    var input = crc('textarea', 'settingsta', i.name, i.id, 'textarea');
-    input.name = i.name;
-    input.key = i.id;
-    input.array = i.array;
-    input.oldvalue = i.value;
-    input.value = (i.value != undefined) ? (i.array ? i.value.join("\n") : i.value) : '';
-    if (!input.inserted) {
-        if (oc) input.addEventListener("change", oc);
-    }
-    var span1 = cr('span', i.name, i.id, 's1');
-    span1.textContent = title + ':';
-    s.appendChild(span1);
-    s.appendChild(input);
-
-    return { elem: s, textarea: input };
-};
-
-var createInput = function(name, i, oc) {
-    var s = cr('div', i.name, i.id, 'input');
-    var input = cr('input', i.name, i.id, 'input');
-    var n = name.split('##');
-    input.name = i.name;
-    input.key = i.id;
-    input.oldvalue = i.value;
-    input.value = (i.value != undefined) ? i.value : '';
-    if (!input.inserted) {
-        input.type = "text";
-        if (oc) input.addEventListener("change", oc);
-    }
-    var span1 = cr('span', i.name, i.id, 's1');
-    var span2 = cr('span', i.name, i.id, 's2');
-    span1.textContent = n[0];
-    if (n.length > 1) span2.textContent = n[1];
-    s.appendChild(span1);
-    s.appendChild(input);
-    s.appendChild(span2);
-
-    return { elem: s, input: input };
-};
-
-var createCheckbox = function(name, i, oc) {
-    var s = crc('div', 'checkbox', i.name, i.id, 'cb1');
-    var input = cr('input', i.name, i.id, 'cb');
-    input.title = i.desc ? i.desc : '';
-    input.name = i.name;
-    input.key = i.id;
-    input.reload = i.reload;
-    input.warning = i.warning;
-    input.oldvalue = i.enabled;
-    input.checked = i.enabled;
-    input.type = "checkbox";
-
-    if (!input.inserted) {
-        if (oc) input.addEventListener("click", oc);
-    }
-    var span = crc('span', 'checkbox_desc', i.name, i.id, 'cb2');
-    span.textContent = name;
-    s.title = i.desc ? i.desc : '';
-    s.appendChild(input);
-    s.appendChild(span);
-
-    return { elem: s, input: input };
-};
-
-var createDropDown = function(name, e, values, oc) {
-    var s = cr('div', e.name, e.id, 'outer_dd');
-    var b = cr('select', e.name, e.id, 'dd');
-
-    for (var k in values) {
-        var o1 = cr('option', values[k].name, values[k].name, 'dd' + name);
-        o1.textContent = values[k].name;
-        o1.value = values[k].value;
-        if (values[k].value == e.value) o1.selected = true;
-        b.appendChild(o1);
-    }
-
-    b.key = e.id;
-    b.name = e.name;
-    if (!b.inserted) {
-        b.addEventListener("change", oc);
-    }
-
-    var span = cr('span', e.name, e.id, 'inner_dd');
-    span.textContent = name + ": ";
-    s.appendChild(span);
-    s.appendChild(b);
-    return s;
-};
-
-var createScriptStartDropDown = function(name, e, oc) {
-    var s = cr('div', e.name, e.id, 'outer_dd');
-    var b = cr('select', e.name, e.id, 'dd');
-
-    var o1 = cr('option', e.name, e.id, 'dd1');
-    var i1 = "document-start";
-    o1.textContent = i1;
-    if (i1 == e.value) o1.selected = true;
-
-    var o2 = cr('option', e.name, e.id, 'dd2');
-    var i2 = "document-body";
-    o2.textContent = i2;
-    if (i2 == e.value) o2.selected = true;
-
-    var o3 = cr('option', e.name, e.id, 'dd3');
-    var i3 = "document-end";
-    o3.textContent = i3;
-    if (i3 == e.value || (!o1.selected && !o2.selected)) o3.selected = true;
-
-    b.appendChild(o1);
-    b.appendChild(o2);
-    b.appendChild(o3);
-
-    b.key = e.id;
-    b.name = e.name;
-    if (!b.inserted) {
-        b.addEventListener("change", oc);
-    }
-
-    var span = cr('span', e.name, e.id, 'inner_dd');
-    span.textContent = name;
-    s.appendChild(span);
-    s.appendChild(b);
-    return s;
-};
-
-var createButton = function(name, id, value, text, oc, img) {
-    var b = null;
-    var c = null;
-    var i = null;
-
-    if (img) {
-        b = crc('input', 'button', name, id, 'bu');
-        c = crc('div', 'button_container', name, id, 'bu_container');
-        c.appendChild(b);
-    } else {
-        b = cr('input', 'button' , name, id, 'bu');
-    }
-    b.name = name;
-    b.key = id;
-    b.type = "button";
-    b.oldvalue = value;
-    if (!img) {
-        b.value = text;
-    } else {
-        i = crc('img', 'button_image', name, id, 'bu_img');
-        i.src = img;
-        c.appendChild(i);
-        b.setAttribute('title', text);
-        i.setAttribute('title', text);
-    }
-    if (!b.inserted && oc)  {
-        b.addEventListener("click", oc);
-        if (img) i.addEventListener("click", oc);
-    }
-
-    return img ? c : b;
-};
-
-var createPosition = function(name, e, oc) {
-    var s = cr('div', e.name, e.id, 'pos1');
-    var b = cr('select', e.name, e.id, 'pos', true);
-    for (var i=1; i<=e.posof; i++) {
-        var o = cr('option', e.name, e.id, 'opt' + i);
-        o.textContent = i;
-        if (i == e.pos) o.selected = true;
-        b.appendChild(o);
-    }
-    b.key = e.id;
-    b.name = e.name;
-    b.addEventListener("change", oc);
-
-    var span = cr('span', e.name, e.id, 'pos2');
-    span.textContent = name;
-    s.appendChild(span);
-    s.appendChild(b);
-    return s;
+    Please.hide();
 };
 
 var createCludesEditor = function(name, type, other_name) {
@@ -1234,7 +628,7 @@ var createCludesEditor = function(name, type, other_name) {
     var key = (other_name ? 'orig_' : 'use_') + type.id;
 	
     var selId = function(k){
-        return 'select_' + createUniqueId(k, i.id) + '_sel1';
+        return 'select_' + Helper.createUniqueId(k, i.id) + '_sel1';
     };
 
     var s = crc('div', 'cludes', name, id, 'cb1');
@@ -1440,7 +834,7 @@ var createScriptDetailsTabView = function(tab, i, tr, parent, closeTab) {
         "tv_content": 'tv_content tv_content_alt'
     };
 
-    var tabd = createTabView('_details' + createUniqueId(i.name, i.id), details, style);
+    var tabd = TabView.create('_details' + Helper.createUniqueId(i.name, i.id), details, style);
     var set = createScriptEditorTab(i, tabd, closeTab);
     var sst = !i.id || i.system ? {} : createScriptSettingsTab(i, tabd);
 
@@ -1517,9 +911,9 @@ var createScriptSettingsTab = function(i, tabd) {
         }
     };
 
-    var i_pos = createPosition(chrome.i18n.getMessage('Position_') + ' ', { id: 'position', name: i.name, pos: i.position, posof: i.positionof }, co);
+    var i_pos = HtmlUtil.createPosition(chrome.i18n.getMessage('Position_') + ' ', { id: 'position', name: i.name, pos: i.position, posof: i.positionof }, co);
 
-    var i_ra = createScriptStartDropDown(chrome.i18n.getMessage('Run_at'),
+    var i_ra = HtmlUtil.createScriptStartDropDown(chrome.i18n.getMessage('Run_at'),
                               { id: 'run_at', name: i.name, value: i.run_at },
                               co);
 							  
@@ -1541,19 +935,19 @@ var createScriptSettingsTab = function(i, tabd) {
     var e_ue = createCludesEditor(chrome.i18n.getMessage('User_excludes'),
                                   { id: 'excludes', item: i });
 
-    var i_md = createCheckbox(chrome.i18n.getMessage('Convert_CDATA_sections_into_a_chrome_compatible_format'),
+    var i_md = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Convert_CDATA_sections_into_a_chrome_compatible_format'),
                               { id: 'compat_metadata', name: i.name, enabled: i.compat_metadata },
                               co);
-    var i_fe = createCheckbox(chrome.i18n.getMessage('Replace_for_each_statements'),
+    var i_fe = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Replace_for_each_statements'),
                               { id: 'compat_foreach', name: i.name, enabled: i.compat_foreach },
                               co);
-    var i_vi = createCheckbox(chrome.i18n.getMessage('Fix_for_var_in_statements'),
+    var i_vi = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Fix_for_var_in_statements'),
                               { id: 'compat_forvarin', name: i.name, enabled: i.compat_forvarin },
                               co);
-    var i_al = createCheckbox(chrome.i18n.getMessage('Convert_Array_Assignements'),
+    var i_al = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Convert_Array_Assignements'),
                               { id: 'compat_arrayleft', name: i.name, enabled: i.compat_arrayleft },
                               co);
-    var i_ts = createCheckbox(chrome.i18n.getMessage('Add_toSource_function_to_Object_Prototype'),
+    var i_ts = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Add_toSource_function_to_Object_Prototype'),
                               { id: 'compat_prototypes', name: i.name, enabled: i.compat_prototypes },
                               co);
 
@@ -1603,7 +997,7 @@ var createScriptSettingsTab = function(i, tabd) {
     content.appendChild(section_compat);
     tabc.appendChild(content);
 
-    var tab = tabd.appendTab('script_settings_tab' + createUniqueId(i.name, i.id), tabh, tabc);
+    var tab = tabd.appendTab('script_settings_tab' + Helper.createUniqueId(i.name, i.id), tabh, tabc);
 
     if (old) {
         return stCache['settings' + i.name];
@@ -1676,12 +1070,12 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
         }
     };
 
-    var i_sc_save =   createButton(i.name, 'save',         null, chrome.i18n.getMessage('Save'),         saveEditor, chrome.extension.getURL('images/filesave.png'));
-    var i_sc_cancel = createButton(i.name, 'cancel',       null, chrome.i18n.getMessage('Editor_reset'), resetScript, chrome.extension.getURL('images/editor_cancel.png'));
-    var i_sc_reset =  createButton(i.name, 'reset',        null, chrome.i18n.getMessage('Full_reset'),   fullReset, chrome.extension.getURL('images/script_cancel.png'));
-    var i_sc_close =  createButton(i.name, 'close_script', null, chrome.i18n.getMessage('Close'),        closeEditor, chrome.extension.getURL('images/exit.png') );
+    var i_sc_save =   HtmlUtil.createButton(i.name, 'save',         null, chrome.i18n.getMessage('Save'),         saveEditor, chrome.extension.getURL('images/filesave.png'));
+    var i_sc_cancel = HtmlUtil.createButton(i.name, 'cancel',       null, chrome.i18n.getMessage('Editor_reset'), resetScript, chrome.extension.getURL('images/editor_cancel.png'));
+    var i_sc_reset =  HtmlUtil.createButton(i.name, 'reset',        null, chrome.i18n.getMessage('Full_reset'),   fullReset, chrome.extension.getURL('images/script_cancel.png'));
+    var i_sc_close =  HtmlUtil.createButton(i.name, 'close_script', null, chrome.i18n.getMessage('Close'),        closeEditor, chrome.extension.getURL('images/exit.png') );
 
-    var i_uu = createInput(chrome.i18n.getMessage('Update_URL_'),
+    var i_uu = HtmlUtil.createInput(chrome.i18n.getMessage('Update_URL_'),
                            { id: 'update_url', name: i.name, value: i.update_url });
     i_uu.input.setAttribute("class", "updateurl_input");
     i_uu.elem.setAttribute("class", "updateurl");
@@ -1698,7 +1092,7 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
             return [];
         } else if (!i.nnew) {
             // huh! script item is recreated but editor is open!
-            alert(chrome.i18n.getMessage('Script_modified_in_background'));
+            Helper.alert(chrome.i18n.getMessage('Script_modified_in_background'));
             return [];
         }
     }
@@ -1714,7 +1108,7 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
     }
 
     /* if (!container.inserted) {
-        var v = i.id ? "" : gNVis;
+        var v = i.id ? "" : Helper.staticVars.invisible;
         i_pos.setAttribute('style', v);
         i_en.setAttribute('style', v);
         i_del.setAttribute('style', v);
@@ -1751,7 +1145,7 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
     }
     menu.appendChild(i_sc_close);
 
-    var tab = tabd.appendTab('script_editor_tab' + createUniqueId(i.name, i.id), tabh, tabc);
+    var tab = tabd.appendTab('script_editor_tab' + Helper.createUniqueId(i.name, i.id), tabh, tabc);
 
     if (old) {
         return stCache['editor' + i.name];
@@ -1936,14 +1330,14 @@ var createScriptItem = function(i, tr, tabv) {
         var tabh = null;
         if (i.nnew) {
             tabh = crc('div', 'head_icon', i.name, i.id, 'details_h');
-            tabh.appendChild(createImage(i.image, i.name, i.id, 'new_script_head'));
+            tabh.appendChild(HtmlUtil.createImage(i.image, i.name, i.id, 'new_script_head'));
         } else {
             tabh = crc('div', '', i.name, i.id, 'details_h');
             tabh.textContent = chrome.i18n.getMessage('Edit') + ' - ' + (i.name.length > 25 ? i.name.substr(0,25) + '...' : i.name);
         }
 
         var tabc = cr('td', i.name, i.id, 'details_c');
-        tab = tabv.insertTab(null, 'details_' + createUniqueId(i.name, i.id), tabh, tabc, onSelect, i.nnew ? null : doClose);
+        tab = tabv.insertTab(null, 'details_' + Helper.createUniqueId(i.name, i.id), tabh, tabc, onSelect, i.nnew ? null : doClose);
 
         scriptdetails = createScriptDetailsTabView(tab, i, tr, tabc, doClose);
     };
@@ -1969,7 +1363,7 @@ var createScriptItem = function(i, tr, tabv) {
         hpa.setAttribute('href', hp);
         hpa.setAttribute('target', '_blank');
 
-        var hp_script_img = createImage(chrome.extension.getURL('images/home.png'),
+        var hp_script_img = HtmlUtil.createImage(chrome.extension.getURL('images/home.png'),
                                     i.name,
                                     i.id,
                                     "hp",
@@ -2013,7 +1407,7 @@ var createScriptItem = function(i, tr, tabv) {
         var scriptUpdate = function() {
             var t = last_updated.textContent;
             last_updated.textContent = '';
-            last_updated.appendChild(createImage('/images/download.gif',
+            last_updated.appendChild(HtmlUtil.createImage('/images/download.gif',
                                                  i.name + '_down',
                                                  i.id));
             var done = function(up) {
@@ -2061,7 +1455,7 @@ var createScriptItem = function(i, tr, tabv) {
             hpa.setAttribute('href', 'http://userscripts.org/scripts/show/' + usoid[1]);
             hpa.setAttribute('target', '_blank');
 
-            var uso_script_img = createImage(gUSOicon,
+            var uso_script_img = HtmlUtil.createImage(Helper.staticVars.USOicon,
                                             i.name,
                                             i.id,
                                             "uso",
@@ -2072,7 +1466,7 @@ var createScriptItem = function(i, tr, tabv) {
         }
     }
 
-    var img_delete = createImage(chrome.extension.getURL('images/delete.png'),
+    var img_delete = HtmlUtil.createImage(chrome.extension.getURL('images/delete.png'),
                                  i.nativeScript ? i.id : i.name,
                                  "delete",
                                  "delete",
@@ -2134,7 +1528,7 @@ var createFeatureImagesFromScript = function(i) {
     if (!i.id) return span;
 
     if (i.awareOfChrome) {
-        var m = createImage('http://www.google.com/images/icons/product/chrome-16.png',
+        var m = HtmlUtil.createImage('http://www.google.com/images/icons/product/chrome-16.png',
                             i.name,
                             i.id,
                             "chrome_mode",
@@ -2142,7 +1536,7 @@ var createFeatureImagesFromScript = function(i) {
         span.appendChild(m);
     }
     if (i.nativeScript) {
-        var m = createImage(i.icon,
+        var m = HtmlUtil.createImage(i.icon,
                             i.name,
                             i.id,
                             "chrome_ext",
@@ -2153,7 +1547,7 @@ var createFeatureImagesFromScript = function(i) {
     if (i.nativeScript) return span;
 
     if (i.code.search('GM_xmlhttpRequest') != -1) {
-        var m = createImage(chrome.extension.getURL('images/web.png'),
+        var m = HtmlUtil.createImage(chrome.extension.getURL('images/web.png'),
                             i.name,
                             i.id,
                             "web",
@@ -2161,7 +1555,7 @@ var createFeatureImagesFromScript = function(i) {
         span.appendChild(m);
     }
     if (i.code.search('GM_setValue') != -1) {
-        var m = createImage(chrome.extension.getURL('images/db.png'),
+        var m = HtmlUtil.createImage(chrome.extension.getURL('images/db.png'),
                             i.name,
                             i.id,
                             "db",
@@ -2169,7 +1563,7 @@ var createFeatureImagesFromScript = function(i) {
         span.appendChild(m);
     }
     if (i.code.search('unsafeWindow') != -1) {
-        var m = createImage(chrome.extension.getURL('images/resources.png'),
+        var m = HtmlUtil.createImage(chrome.extension.getURL('images/resources.png'),
                             i.name,
                             i.id,
                             "resource",
@@ -2178,7 +1572,7 @@ var createFeatureImagesFromScript = function(i) {
     }
     for (var o=0; o<i.includes.length; o++) {
         if (i.includes[o].search('https') != -1) {
-            var m = createImage(chrome.extension.getURL('images/halfencrypted.png'),
+            var m = HtmlUtil.createImage(chrome.extension.getURL('images/halfencrypted.png'),
                                 i.name,
                                 i.id,
                                 "encrypt",
@@ -2189,7 +1583,7 @@ var createFeatureImagesFromScript = function(i) {
     }
     for (var k in i.options) {
         if (k.search('compat') != -1 && i.options[k]) {
-            var m = createImage(chrome.extension.getURL('images/critical.png'),
+            var m = HtmlUtil.createImage(chrome.extension.getURL('images/critical.png'),
                                 i.name,
                                 i.id,
                                 "crit",
@@ -2199,7 +1593,7 @@ var createFeatureImagesFromScript = function(i) {
         }
     }
     if (i.system) {
-        var m = createImage(chrome.extension.getURL('images/lock.png'),
+        var m = HtmlUtil.createImage(chrome.extension.getURL('images/lock.png'),
                             i.name,
                             i.id,
                             "lock",
@@ -2215,25 +1609,25 @@ var createPosImagesFromScript = function(i) {
 
     if (!i.id || i.nativeScript) return span;
 
-    var up2 = createImage(chrome.extension.getURL('images/2uparrow.png'),
+    var up2 = HtmlUtil.createImage(chrome.extension.getURL('images/2uparrow.png'),
                           i.name,
                           "position",
                           "2up",
                           "2 Up",
                           function() { modifyScriptOption(this.name, this.key, 1); });
-    var up1 = createImage(chrome.extension.getURL('images/1downarrow.png'),
+    var up1 = HtmlUtil.createImage(chrome.extension.getURL('images/1downarrow.png'),
                           i.name,
                           "position",
                           "1up",
                           "1 Up",
                           function() { modifyScriptOption(this.name, this.key, i.position-1); });
-    var down1 = createImage(chrome.extension.getURL('images/1downarrow1.png'),
+    var down1 = HtmlUtil.createImage(chrome.extension.getURL('images/1downarrow1.png'),
                             i.name,
                             "position",
                             "1down",
                             "1 Down",
                             function() { modifyScriptOption(this.name, this.key, i.position+1); });
-    var down2 = createImage(chrome.extension.getURL('images/2downarrow.png'),
+    var down2 = HtmlUtil.createImage(chrome.extension.getURL('images/2downarrow.png'),
                             i.name,
                             "position",
                             "2down",
@@ -2275,7 +1669,7 @@ var createImagesFromScript = function(i) {
             var inc = i.includes[o];
             if (inc.search(/htt(ps|p):\/\/(\*\/\*|\*)*$/) != -1 ||
                 inc == "*") {
-                var img = createImage(chrome.extension.getURL('images/web.png'),
+                var img = HtmlUtil.createImage(chrome.extension.getURL('images/web.png'),
                                       i.name,
                                       i.id,
                                       i.includes[o],
@@ -2303,9 +1697,9 @@ var createImagesFromScript = function(i) {
                 if (inf.predom.length) predom = inf.predom.join('.') + '.';
                 var ico = ("http://" + predom + inf.dom + '.' + tld + '/favicon.ico').replace(/\*/g, '');
                 if (ico.search('http://userscripts.org/') == 0 ||
-                    ico.search('http://userscripts.com/') == 0) ico = gUSOicon;
+                    ico.search('http://userscripts.com/') == 0) ico = Helper.staticVars.USOicon;
 
-                var img = createImage(ico,
+                var img = HtmlUtil.createImage(ico,
                                       i.name,
                                       i.id,
                                       i.includes[o],
@@ -2341,7 +1735,7 @@ var loadUrl = function(url, newtab) {
             chrome.tabs.getSelected(null, resp);
         }
     } catch (e) {
-        console.log("lU: " + JSON.stringify(e));
+        console.log("lU: " + e.message);
     }
 };
 
@@ -2356,15 +1750,15 @@ var saveScript = function(name, code, ta, clean, cb) {
                                      function(response) {
                                          if (response.items) createOptionsMenu(response.items, name && true);
                                          if (!code) {
-                                             hideWait();
+                                             Please.hide();
                                          }
                                          if (cb) {
                                              cb(response);
                                          }
                                      });
-        pleaseWait();
+        Please.wait();
     } catch (e) {
-        console.log("sS: " + JSON.stringify(e));
+        console.log("sS: " + e.message);
     }
 };
 
@@ -2374,9 +1768,9 @@ var setOption = function(name, value, ignore) {
                                      function(response) {
                                          if (!ignore) createOptionsMenu(response.items);
                                      });
-        pleaseWait();
+        Please.wait();
     } catch (e) {
-        console.log("sO: " + JSON.stringify(e));
+        console.log("sO: " + e.message);
     }
 };
 
@@ -2395,9 +1789,9 @@ var modifyScriptOptions = function(name, options, reload, reorder) {
                                      function(response) {
                                          if (response.items) createOptionsMenu(response.items, name && true);
                                      });
-        pleaseWait();
+        Please.wait();
     } catch (e) {
-        console.log("mSo: " + JSON.stringify(e));
+        console.log("mSo: " + e.message);
     }
 };
 
@@ -2413,9 +1807,9 @@ var modifyScriptOption = function(name, id, value, reload, reorder) {
                                      function(response) {
                                          if (response && response.items) createOptionsMenu(response.items, name && true);
                                      });
-        pleaseWait();
+        Please.wait();
     } catch (e) {
-        console.log("mSo: " + JSON.stringify(e));
+        console.log("mSo: " + e.message);
     }
 };
 
@@ -2430,9 +1824,9 @@ var modifyNativeScriptOption = function(nid, id, value, reload) {
                                      function(response) {
                                          if (response.items) createOptionsMenu(response.items, name && true);
                                      });
-        pleaseWait();
+        Please.wait();
     } catch (e) {
-        console.log("mSo: " + JSON.stringify(e));
+        console.log("mSo: " + e.message);
     }
 };
 
@@ -2443,102 +1837,8 @@ var runScriptUpdates = function(id, cb) {
         }
         chrome.extension.sendRequest({method: "runScriptUpdates", scriptid: id}, done);
     } catch (e) {
-        console.log("rSu: " + JSON.stringify(e));
+        console.log("rSu: " + e.message);
     }
-};
-
-var createUniqueId = function(name, id) {
-    var name_ = (name != undefined) ? name.replace(/ /g, '_') : "null";
-    return name_ + "_" + id;
-};
-
-var createCenterTable = function(elem, name, id, app, clas) {
-    if (!app) app = '';
-
-    var t = crc('table', 'curtable' + (clas ? ' ' + clas : ''), name, id, 'table' + app);
-
-    // var tr1 = cr('tr', name, id, 'tr1' + app);
-    var tr2 = crc('tr', (clas ? ' ' + clas : ''), name, id, 'tr2' + app);
-    // var tr3 = cr('tr', name, id, 'tr3' + app);
-    var td1 = crc('td', 'curtableoutertd', name, id, 'td1' + app);
-    var td2 = crc('td', 'curtableinner', name, id, 'td2' + app);
-    var td3 = crc('td', 'curtableoutertd', name, id, 'td3' + app);
-
-    tr2.appendChild(td1);
-    tr2.appendChild(td2);
-    tr2.appendChild(td3);
-    // t.appendChild(tr1);
-    t.appendChild(tr2);
-    // t.appendChild(tr3);
-
-    if (elem) td2.appendChild(elem);
-    return t;
-}
-
-var createCurtain = function(childnode, name, id, app, clas) {
-    var p = cr('div', name, id, 'p' + app);
-    var c = crc('div', 'curbg', name, id, 'c' + app);
-    var d = crc('div', 'curmiddle', name, id, 'd' + app);
-    if (!p.inserted) {
-        p.setAttribute('class', 'curouter hide');
-        p.setAttribute('style', 'z-index: ' + (name ? "10000" : "20000"));
-    }
-    var t = createCenterTable(childnode, name, id, app, clas);
-
-    d.appendChild(t);
-    p.appendChild(d);
-    p.appendChild(c);
-
-    p.show = function() { p.setAttribute('class', 'curouter block'); };
-    p.hide = function() { p.setAttribute('class', 'curouter hide'); };
-    var bs = document.getElementsByTagName('body');
-    if (!bs.length) {
-        console.log("Err: Body not found!");
-    } else {
-        bs[0].appendChild(p);
-    }
-    return p;
-};
-
-var hideWait = function() {
-    if (curtain) window.setTimeout(function() { curtain.hide(); }, 1);
-};
-
-var pleaseWait = function() {
-    if (curtain) {
-        curtain.show();
-        return;
-    }
-    var createCurtainWaitMsg = function(text) {
-        var outer = document.createElement('div');
-        outer.setAttribute('class', 'curcontainer');
-
-        var head = document.createElement('div');
-        head.setAttribute('class', 'curwaithead');
-        var msg = document.createElement('div');
-        msg.setAttribute('class', 'curwaitmsg');
-
-        var dimg = document.createElement('div');
-        var t = document.createElement('div');
-        t.textContent = text;
-        t.innerHTML += '<br><br>';
-        t.setAttribute('class','curtext');
-
-        var img = document.createElement('img')
-        img.src = chrome.extension.getURL('images/large-loading.gif');
-        dimg.appendChild(img);
-
-        msg.appendChild(dimg);
-        msg.appendChild(t);
-
-        outer.appendChild(head);
-        outer.appendChild(msg);
-
-        return outer;
-    };
-
-    curtain = createCurtain(createCurtainWaitMsg(chrome.i18n.getMessage("Please_wait___")));
-    curtain.show();
 };
 
 chrome.extension.onRequest.addListener(
@@ -2551,7 +1851,7 @@ chrome.extension.onRequest.addListener(
             var c = confirm(request.msg);
             sendResponse({confirm: c});
         } else if (request.method == "showMsg") {
-            alert(request.msg);
+            Helper.alert(request.msg);
             sendResponse({});
         } else {
             if (V) console.log("o: " + chrome.i18n.getMessage("Unknown_method_0name0" , request.method));
@@ -2568,7 +1868,5 @@ var listener = function() {
 
 window.addEventListener('DOMContentLoaded', listener, false);
 window.addEventListener('load', listener, false);
-
-var Converter = getConverter();
 
 })();

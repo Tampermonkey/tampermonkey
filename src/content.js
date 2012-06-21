@@ -34,7 +34,6 @@ if (window.self != window.top &&
 
 // global (by emulation used) variables
 var _background = true;
-var Converter = null;
 var _webRequest = {};
 
 var D = false;
@@ -44,11 +43,9 @@ var EMV = false;
 var ENV = false;
 var TS = false;
 
-// protect against other content scripts
 (function() {
 
 var eDOMATTRMODIFIED = "DOMAttrModified";
-var _retries = 5; // global xmlHttpRequest retry var
 var XMLHttpRequest = window.XMLHttpRequest;
 
 var use = { safeContext: true };
@@ -67,30 +64,20 @@ var adjustLogLevel = function() {
     TS |= (logLevel >= 100);
 };
 
-var getExtFile = function(s) {
-    try {
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", chrome.extension.getURL(s), false);
-        xhr.send(null);
-        return xhr.responseText;
-    } catch (e) {
-        if (V) console.log("content: getExtFile(): " + e.message);
-    }
-    return null;
-};
+/* ######## include #### */
 
-var include = function(file) {
-    var f = getExtFile(file);
-    if (f) {
-        window['eval'](f);
-    } else {
-        console.log("content: xmlthttprequest not loaded yet!");
-    }
-};
+Registry.require("xmlhttprequest");
+Registry.require("convert");
+Registry.require("helper");
 
-/* ######## xmlhttprequest #### */
-include('xmlhttprequest.js');
+var emu = Registry.getRaw("emulation.js");
+var env = Registry.getRaw("environment.js");
 
+var xmlhttpRequest = Registry.get('xmlhttprequest').run;
+var Helper = Registry.get('helper');
+var Converter = Registry.get('convert');
+var ConverterInit = null;
+ 
 /* ######## eventing #### */
 var domContentLoaded = function() {
     if (V || EV || D) console.log("content: detected DOMContentLoaded " + contextId);
@@ -133,7 +120,7 @@ var _handler = {
             is += "                  JSON = TMJSON;\n";
             is += "                  console.log('page: use JSON backup');\n";
             is += "              } else {\n";
-            is += "                  JSON = Converter.JSON;\n";
+            is += "                  JSON = window.JSON;\n";
             is += "                  console.log('page: use JSON fallback');\n";
             is += "              }\n";
             is += "        } else if (ENV) { \n";
@@ -815,12 +802,9 @@ function TM_fireEvent(data, evt) {
 var contextId = TM_generateScriptId();
 var context = "var TM_context_id = '" + contextId + "';\n";
 var back = "var _background = false;\n";
-var emu = null;
-var env = null;
 var tm = "var tmCE = (" + tmCEinit.toString() + ")();\nvar TM_content_context = '" + contextId + "';\n";
 var evt = TM_fireEvent.toString() + "\n";
 var load = "";
-var ConverterInit = null;
 
 function runHlp(arg) {
     if (!allReady) {
@@ -835,8 +819,7 @@ function runHlp(arg) {
 }
 
 function run() {
-    if (!allReady && env && emu && Converter) {
-
+    if (!allReady) {
         var debug  = "var V = " + (V ? "true" : "false")+ ";\n";
         debug += "var EV = " + (EV ? "true" : "false")+ ";\n";
         debug += "var ENV = " + (ENV ? "true" : "false")+ ";\n";
@@ -882,7 +865,7 @@ function eventHandler(evt) {
         }
         j = '';
     } catch (e) {
-        console.log("Error: retrieving event! " + JSON.stringify(e));
+        console.log("Error: retrieving event! " + e.message);
         console.log("Error: " + evt.attrName);
     }
     evt.attrName = '';
@@ -962,10 +945,6 @@ var forceTestXhr = function() {
 };
  
 var init = function() {
-    var Femu = "emulation.js";
-    var Fconvert = "convert.js";
-    var Fenv = "environment.js";
-    var Fxml = "xmlhttprequest.js";
 
     var updateResponse = function(resp) {
         logLevel = resp.logLevel;
@@ -977,11 +956,6 @@ var init = function() {
             if (V || D) console.log('content: start event processing for ' + contextId + ' (' + resp.enabledScriptsCount + ' to run)');
             wannaRun = true;
 
-            if (resp.raw[Fxml]) {
-                // create xmlhttpRequest obj
-                window['eval'](resp.raw[Fxml]);
-            }
-
             if (resp.webRequest) {
                 _webRequest = resp.webRequest;
                 if (_webRequest.use && !_webRequest.verified && xhrRetryCnt-- > 0) {
@@ -989,16 +963,6 @@ var init = function() {
                 }
             }
 
-            if (!ConverterInit) {
-                ConverterInit = resp.raw[Fconvert];
-                emu = resp.raw[Femu];
-                env = resp.raw[Fenv];
-            } else if (V) {
-                console.log("content: getExtFile is working!");
-            }
-
-            Converter = window['eval'](ConverterInit);
-            
             runHlp();
         } else {
             if (V || D) console.log('content: disable event processing for ' + contextId);
@@ -1009,7 +973,7 @@ var init = function() {
         }
     };
 
-    ConverterInit = getExtFile(Fconvert);
+    ConverterInit = Helper.serialize(Converter);
 
     var req = { method: "prepare",
                 id: contextId,
@@ -1018,17 +982,6 @@ var init = function() {
                 url: window.location.origin + window.location.pathname,
                 params: window.location.search + window.location.hash };
 
-    if (ConverterInit) {
-        emu = getExtFile(Femu);
-        env = getExtFile(Fenv);
-    } else {
-        req.raw = [ Femu, Fconvert, Fenv ];
-    }
-
-    if (!window.xmlhttpRequest) {
-        req.raw.push(Fxml);
-    }
-
     chrome.extension.sendRequest(req, updateResponse);
 };
 
@@ -1036,4 +989,4 @@ init();
 
 })();
 
-}
+} // endif

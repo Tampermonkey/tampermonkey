@@ -28,11 +28,11 @@
 	}
     };
 
-    return {UTF8: UTF8,
+    Registry.register('convert',
+          { UTF8: UTF8,
             Base64: Base64,
-            JSON: window.JSON,
             encode: function(t) { return escape(t);  },
             decode: function(t) { return unescape(t); },
             encodeR: function(t) { return t; },
-            decodeR: function(t) { return t; }};
+            decodeR: function(t) { return t; }} );
 })();

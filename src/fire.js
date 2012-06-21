@@ -10,122 +10,55 @@
 var V = false;
  
 var initialized = false;
-var curtain = null;
 var allItems = null;
 var scriptItems = null;
 var scriptTable = null;
 var scriptOrderDown = true;
 var scriptOrder = 'rank';
 var gOptions = {};
-var tvCache = {};
 
 var tabID = 0;
 var tabURL = 'http://...';
 var versionDB = new Date();
 
-var gVis = undefined;
-var gNVis = 'display: none;';
-var gVisMove = undefined;
-var gNVisMove = 'position:absolute; left: -20000px; top: -200000px; width: 1px; height: 1px;';
-
 if (!window.requestFileSystem) window.requestFileSystem = window.webkitRequestFileSystem;
 if (!window.BlobBuilder) window.BlobBuilder = window.WebKitBlobBuilder;
 
-var cr = function(tag, name, id, append, replace) {
-    return crc(tag, null, name, id, append, replace);
-};
+/* ########### include ############## */
+Registry.require('crcrc');
+Registry.require('curtain');
+Registry.require('helper');
+Registry.require('tabview');
+Registry.require('convert');
+Registry.require('htmlutil');
+ 
+var cr = Registry.get('crcrc').cr;
+var crc = Registry.get('crcrc').crc;
+var Please = Registry.get('curtain');
+var Helper = Registry.get('helper');
+var TabView = Registry.get('tabview');
+var Converter = Registry.get('convert');
+var HtmlUtil = Registry.get('htmlutil');
 
-var crc = function(tag, clas, name, id, append, replace) {
-    try {
-        var uid = tag + '_' + createUniqueId(name, id);
-        if (append != undefined) uid += '_' + append;
-        var e = document.getElementById(uid);
-        if (e && replace) {
-            var f = document.createElement(tag);
-            f.setAttribute('id', uid);
-            var p = e.parentNode;
-            p.insertBefore(f, e);
-            p.removeChild(e);
-            e.inserted = false;
-            e = f;
-        }
-        if (e) {
-            e.inserted = true;
-        } else {
-            e = document.createElement(tag);
-            e.setAttribute('id', uid);
-        }
-        if (clas) e.setAttribute("class", clas);
-        if (!e.__appendChild) {
-            e.__appendChild = e.appendChild;
-            e.appendChild = function(elem) {
-                if (!elem.parentNode && !elem.inserted) {
-                    e.__appendChild(elem);
-                }
-            };
-        }
-        if (!e.__insertBefore) {
-            e.__insertBefore = e.insertBefore;
-            e.insertBefore = function(elem, old) {
-                if (!elem.parentNode && !elem.inserted) {
-                    e.__insertBefore(elem, old);
-                }
-            };
-        }
-    } catch (err) {
-        console.log("fire: Error:" + JSON.stringify(err));
-    }
-    return e;
-};
-
+/* ########### main ############## */
+var gArgs = Helper.getUrlArgs();
+    
 var setVisible = function(elem, vis) {
      if (vis) {
-         elem.setAttribute('style', gVis);
+         elem.setAttribute('style', Helper.staticVars.visible);
          elem.vis = true;
      } else {
-         elem.setAttribute('style', gNVis);
+         elem.setAttribute('style', Helper.staticVars.invisible);
          elem.vis = false;
      }
 };
 
-var getConverter = function() {
-    return window['eval'](getRawContent("convert.js"));
-};
-
-var getRawContent = function(file) {
-    var url = chrome.extension.getURL(file);
-    var content = null;
-    try {
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url, false);
-        xhr.send(null);
-        content = xhr.responseText;
-        if (!content) console.log("WARN: content of " + file + " is null!");
-    } catch (e) {
-        console.log("getRawContent " + e);
-    }
-    return content;
-};
-
- var getURLParam = function(p, d) {
-    var q = window.location.search.split('?');
-    if (q.length != 2) return d;
-    var as = q[1].split('&');
-    for (var r in as) {
-        var a = as[r];
-        var va = a.split('=');
-        if (va.length != 2) continue;
-        if (va[0] == p) return va[1];
-    }
-    return d;
-};
-
 var determineTabID = function(d) {
-    return getURLParam('tab', d);
+    return gArgs['tab'] ? gArgs['tab'] : d;
 };
 
 var determineTabURL = function(d) {
-    return getURLParam('url', d);
+    return gArgs['url'] ? gArgs['url'] : d;
 };
 
 var cacluateRank = function(i) {
@@ -247,14 +180,14 @@ var createScriptTable = function(ts) {
         };
         var cb = function() {
             mS();
-            hideWait();
+            Please.hide();
         };
         var sort = function() {
             var run = function() {
                 scriptOrder = cmp;
                 sortScripts(scriptItems, scriptOrder, scriptOrderDown, cb);
             };
-            pleaseWait();
+            Please.wait();
             window.setTimeout(run, 1);
         };
         var sortUp = function() {
@@ -263,7 +196,7 @@ var createScriptTable = function(ts) {
                 scriptOrder = cmp;
                 sortScripts(scriptItems, scriptOrder, scriptOrderDown, cb);
             };
-            pleaseWait();
+            Please.wait();
             window.setTimeout(run, 1);
         };
         var sortDown = function() {
@@ -272,7 +205,7 @@ var createScriptTable = function(ts) {
                 scriptOrder = cmp;
                 sortScripts(scriptItems, scriptOrder, scriptOrderDown, cb);
             };
-            pleaseWait();
+            Please.wait();
             window.setTimeout(run, 1);
         };
 
@@ -377,13 +310,13 @@ var itemsToMenu = function(items, tabv, cb) {
             if (ic) {
                 td1.setAttribute("class", "imagetd");
                 if (i.id && i.userscript) {
-                    var g = createImage(ic,
+                    var g = HtmlUtil.createImage(ic,
                                         i.name,
                                         i.id);
                     g.oldvalue = i.enabled;
                     td1.appendChild(g);
                 } else {
-                    td1.appendChild(createImage(ic, i.name, i.id));
+                    td1.appendChild(HtmlUtil.createImage(ic, i.name, i.id));
                 }
             }
             if (i.option) {
@@ -400,7 +333,7 @@ var itemsToMenu = function(items, tabv, cb) {
                     t.appendChild(table);
                     current_elem = cr('div', i.name, i.id, 'tab_content');
                     current_elem.appendChild(t);
-                    tabv.appendTab(createUniqueId(i.name, i.id), h, current_elem);
+                    tabv.appendTab(Helper.createUniqueId(i.name, i.id), h, current_elem);
                 }
                 tr = null;
             } else if (i.section) {
@@ -442,8 +375,8 @@ var itemsToMenu = function(items, tabv, cb) {
                     startFireUpdate(true);
                 };
 
-                var input = createButton(i.name, i.id, null, i.name, oc);
-                var inputf = createButton(i.fname, i.id, null, i.fname, ocf);
+                var input = HtmlUtil.createButton(i.name, i.id, null, i.name, oc);
+                var inputf = HtmlUtil.createButton(i.fname, i.id, null, i.fname, ocf);
 
                 if (section) {
                     section.appendChild(input);
@@ -457,7 +390,7 @@ var itemsToMenu = function(items, tabv, cb) {
             } else if (i.search) {
                 tabURL = i.value;
                 var search = cr('div', 'search', 'box', '');
-                search.appendChild(createSearchBox());
+                search.appendChild(HtmlUtil.createSearchBox());
                 tr = null;
             } else if (i.version) {
                 version = i.value;
@@ -544,14 +477,14 @@ var createFireMenu = function(items, use_curtain) {
     main.appendChild(tv);
     
     if (V) console.log("fire: tabView");
-    var tabv = createTabView('_main', tv);
+    var tabv = TabView.create('_main', tv);
 
     if (V) console.log("fire: itemsToMenu");
     var run = function() {
         var cb = function() {
             if (use_curtain) {
                 console.log("fire: done! :)");
-                hideWait();
+                Please.hide();
             }
 
             initialized = true;
@@ -561,356 +494,6 @@ var createFireMenu = function(items, use_curtain) {
     }
 
     window.setTimeout(run, 10);
-};
-
-var createSearchBox = function() {
-    var search = crc('div', 'searchbox', 'search_inner');
-    var search_mv = crc('div', 'searchbox_mv tv_tab', 'search_inner_mv');
-    var search_input = crc('input', 'searchbox_input', 'search_input');
-    var search_button = crc('input', 'searchbox_button', 'search_button');
-
-    search_input.type = "text";
-    search_input.value = tabURL;
-    search_button.type = "button";
-    search_button.value = "Go";
-
-    var onC = function() {
-        var v = search_input.value;
-        // if (v.split('/').length < 4) v += '/';
-        window.location = window.location.origin + window.location.pathname + "?url=" + encodeURI(v);
-    };
-
-    var onK = function(e) {
-        if (e && e.keyCode == 13) {
-            onC();
-        }
-    };
-
-    search_button.addEventListener('click', onC);
-    search_input.addEventListener('keyup', onK);
-
-    search_mv.appendChild(search_input);
-    search_mv.appendChild(search_button);
-
-    search.appendChild(search_mv);
-    return search;
-};
-
-// TODO: make this function shared between options, fire and ask.js!
-var createTabView = function(_prefix, parent, style) {
-    var prefix = _prefix.match(/[0-9a-zA-Z]/g).join('');
-    var cached = false;
-    
-    if (style == undefined) {
-        style = {
-            "tv" : 'tv',
-            "tv_table" : 'tv_table',
-            "tr_tabs" : 'tr_tabs',
-            "tr_content" : 'tr_content',
-            "td_content" : 'td_content',
-            "td_tabs" : 'td_tabs',
-            "tv_tabs_table" : 'tv_tabs_table',
-            "tv_tabs_align" : 'tv_tabs_align',
-            "tv_contents" : 'tv_contents',
-            "tv_tab_selected" : 'tv_tab tv_selected',
-            "tv_tab_close" : 'tv_tab_close',
-            "tv_tab" : 'tv_tab',
-            "tv_content": 'tv_content'
-        };
-    }
-
-    var container = crc('div', style.tv, 'main' + prefix);
-    var table = crc('table', style.tv_table + ' noborder', 'main_table' + prefix);
-
-    if (table.inserted) {
-        cached = true;
-    } else {
-        tvCache[prefix] = {};
-        tvCache[prefix].g_entries = {};
-        tvCache[prefix].g_selectedId = null;
-    }
-    
-    var ptr = crc('tr', style.tr_tabs, 'tabs' + parent.id + prefix);
-    var ptd = crc('td', style.td_tabs, 'pages' + prefix);
-    var tabs_table = crc('div', style.tv_tabs_table, 'tv_tabs_table' + prefix);
-    var tabs = crc('div', style.tv_tabs_align, 'tv_tabs_align' + prefix);
-
-    var ctr = crc('tr', style.tr_content, 'content' + parent.id + prefix);
-    var ctd = crc('td', style.td_content, 'content' + prefix);
-    var content = crc('table', style.tv_contents + ' noborder', 'tv_content' + prefix);
-
-    tabs_table.appendChild(tabs);
-    ptd.appendChild(tabs_table);
-    ptr.appendChild(ptd);
-    table.appendChild(ptr);
-
-    ctd.appendChild(content);
-    ctr.appendChild(ctd);
-    table.appendChild(ctr);
-    container.appendChild(table);
-    
-    parent.appendChild(container);
-
-    var setHtmlVisible = function(elem, vis, move) {
-        if (vis) {
-            elem.setAttribute('style', move ? gVisMove : gVis);
-        } else {
-            elem.setAttribute('style', move ? gNVisMove : gNVis);
-        }
-        elem.setAttribute('vis', vis.toString());
-    };
-
-    var setEntryVisible = function(tab, vis) {
-        var id = tab.getId();
-        if (tvCache[prefix].g_entries[id]){
-            if (vis == tvCache[prefix].g_entries[id].visible) return;
-
-            tvCache[prefix].g_entries[id].visible = vis;
-            setHtmlVisible(tvCache[prefix].g_entries[id].tab, vis);
-        }
-    };
-
-    var setContentVisible = function(e, vis) {
-        setHtmlVisible(e.content, vis, true);
-    };
-    
-    var selectTab = function(tab) {
-        if (tab.getId() == tvCache[prefix].g_selectedId) return;
-        var id = tab.getId();
-        
-        if (tvCache[prefix].g_selectedId) {
-            setContentVisible(tvCache[prefix].g_entries[tvCache[prefix].g_selectedId], false);
-        }
-
-        for (var k in tvCache[prefix].g_entries) {
-            var e = tvCache[prefix].g_entries[k];
-
-            if (e.entry.getId() == id) {
-                if (!e.visible) {
-                    console.log("tv: WARN: tab selected but not visible!");
-                } else if (!e.selected) {
-                    e.tab.setAttribute('class', style.tv_tab_selected);
-                    setContentVisible(e, true);
-                    e.selected = true;
-                }
-            } else {
-                if (e.selected) {
-                    e.tab.setAttribute('class', style.tv_tab);
-                    setContentVisible(e, false);
-                    e.selected = false;
-                }
-            }
-        }
-
-        tvCache[prefix].g_selectedId = id;
-    };
-
-    var hideTab = function(tab) {
-        var id = tab.getId();
-        var sel = (id == tvCache[prefix].g_selectedId);
-
-        if (tvCache[prefix].g_entries[id]){
-            setEntryVisible(tab, false);
-        } else {
-            console.log("tv: WARN: tab not part of tabview!");
-        }
-
-        if (sel) {
-            var f = null;
-            var ff = null;
-            for (var k in tvCache[prefix].g_entries) {
-                if (tvCache[prefix].g_entries[k].visible) {
-                    f = tvCache[prefix].g_entries[k];
-                    if (!ff && !f.closable) ff = f;
-                }
-            }
-
-            // select first "system" tab instead of last.
-            if (!f.closable) f = ff;
-            
-            if (f) {
-                f.entry.select();
-            } else {
-                tvCache[prefix].g_selectedId = null;
-                console.log("tv: WARN: selected tab set, but entry collection empty!");
-            }
-        }
-    };
-
-    var showTab = function(tab) {
-        var id = tab.getId();
-        if (tvCache[prefix].g_entries[id]){
-            setEntryVisible(tab, true);
-        } else {
-            console.log("tv: WARN: tab not part of tabview!");
-        }
-    };
-
-    var removeTab = function(tab) {
-        tab.hide();
-        var id = tab.getId();
-        var e = tvCache[prefix].g_entries[id];
-        
-        if (e){
-            e.tab.parentNode.removeChild(e.tab);
-            e.content.parentNode.removeChild(e.content);
-        } else {
-            console.log("tv: WARN: tab not part of tabview!");
-        }
-        
-    };
-    
-    var findEntryByTab = function(tab) {
-        for (var k in tvCache[prefix].g_entries) {
-            var e = tvCache[prefix].g_entries[k];
-
-            if (e.tab.id == tab.id) {
-                return e;
-            }
-        };
-
-        return null;
-    };
-    
-    var tv = null;
-
-    if (!cached) {
-        tv = {
-        removeTab : removeTab,
-
-        appendTab : function(id, head, cont, selectCb, closeCb) {
-            return this.insertTab(undefined, id, head, cont, selectCb, closeCb);
-        },
-        
-        insertTab : function(before, id, head, cont, selectCb, closeCb) {
-
-            if (before === null) {
-                before = tabs.firstChild;
-            }
-
-            var tab = crc('div', '', id, 'content' + prefix);
-            var old = (tab.inserted !== undefined && tab.inserted == true);
-
-            if (old) {
-                var e = findEntryByTab(tab);
-                if (e) return e.entry;
-                console.log("tv: WARN: old tab, but not in tabs collection!");
-            }
-
-            var entry;
-            var tid = (new Date()).getTime() + Math.floor(Math.random() * 061283 + 1);
-            var oc = function(e) {
-                // TODO: is there a better way to determine X button?!
-                if (e.target.className != "" && e.target.className == style.tv_tab_close) return;
-                entry.select();
-            };
-
-            tab.setAttribute('tv_id' + prefix, id);
-            tab.addEventListener('click', oc);
-            head.setAttribute('tv_id' + prefix, id);
-            head.addEventListener('click', oc);
-            tab.setAttribute('name', 'tabview_tab'+prefix);
-            tab.setAttribute('class', style.tv_tab);
-            tab.appendChild(head);
-
-            if (before) {
-                tabs.insertBefore(tab, before);
-            } else {
-                tabs.appendChild(tab);
-            }
-
-            cont.setAttribute('name', 'tabview_content'+prefix);
-            cont.setAttribute('tv_id' + prefix, id);
-            cont.setAttribute('class', style.tv_content);
-            content.appendChild(cont);
-
-            if (closeCb) {
-                var closeX = crc('div', style.tv_tab_close, id, 'tv_close' + prefix, 'tab_close');
-                if (!closeX.inserted) closeX.addEventListener('click', closeCb);
-                closeX.textContent = "X";
-                head.appendChild(closeX);
-            }
-
-            entry = {
-                getId : function() {
-                    return tid;
-                },
-                
-                isVisible : function() {
-                    return tab.getAttribute('vis') == 'true';
-                },
-                
-                isSelected: function() {
-                    return (tvCache[prefix].g_selectedId == this.getId());
-                },
-                
-                remove: function() {
-                    removeTab(this);
-                },
-                
-                hide: function() {
-                    hideTab(this);
-                },
-                
-                show: function() {
-                    showTab(this);
-                },
-                
-                select: function() {
-                    if (selectCb) selectCb();
-                    selectTab(this);
-                }
-            };
-
-            tvCache[prefix].g_entries[tid] = { entry: entry, tab: tab, content: cont, closable: closeCb != null }
-            setContentVisible(tvCache[prefix].g_entries[tid], false);
-            
-            // tab visible b default
-            entry.show();
-            // select first entry added
-            if (!tvCache[prefix].g_selectedId) entry.select();
-
-            return entry;
-        }
-        };
-        tvCache[prefix].tv = tv;
-
-    } else {
-        tv = tvCache[prefix].tv;
-    }
-
-    return tv;
-};
-
-var createImage = function(src, name, id, append, title, oc, text) {
-    var image = cr('image', name, id, append);
-
-    image.setAttribute("width", "16px");
-    image.setAttribute("height", "16px");
-    image.setAttribute("src", src);
-    image.setAttribute("style", "cursor: pointer;");
-    image.title = title;
-    image.key = id;
-    image.name = name;
-    image.alt = ' ?';
-
-    if (oc && !image.inserted) {
-        image.addEventListener("click", oc);
-        image.href = 'javascript://nop/';
-    }
-
-    return image;
-};
-
-var createButton = function(name, id, value, text, oc, img) {
-    var b = cr('input', name, id, 'bu');
-    b.name = name;
-    b.key = id;
-    b.type = "button";
-    b.oldvalue = value;
-    b.value = text;
-    if (!b.inserted && oc) b.addEventListener("click", oc);
-    return b;
 };
 
 var sortFn = {
@@ -954,7 +537,7 @@ var sortScripts = function(scripts, cmp, down, cb) {
         if (cached && V) {
             console.log("use cached table " + id);
         }
-        scriptTable.setAttribute('style', gNVisMove);
+        scriptTable.setAttribute('style', Helper.staticVars.invisible_move);
     }
 
     /* var delayedRemove = function() {
@@ -969,7 +552,7 @@ var sortScripts = function(scripts, cmp, down, cb) {
     if (gOptions.fire_sort_cache_enabled) {
         scriptTable.parentNode.insertBefore(newTable, scriptTable);
         scriptTable = newTable;
-        scriptTable.setAttribute('style', gVisMove);
+        scriptTable.setAttribute('style', Helper.staticVars.visible_move);
     }
 
     var parent = null;
@@ -997,7 +580,7 @@ var sortScripts = function(scripts, cmp, down, cb) {
 
                 if (ic) {
                     td1.setAttribute("class", "scripttd imagetd");
-                    td1.appendChild(createImage(ic, i.name, i.id));
+                    td1.appendChild(HtmlUtil.createImage(ic, i.name, i.id));
                 }
                 
                 tr.appendChild(td1);
@@ -1104,7 +687,7 @@ var createScriptUsoTab = function(i, tabd, closeEditor) {
     container.appendChild(info_outer);
     container_menu.appendChild(menu);
 
-    var i_sc_close = createButton(i.name, 'close_script', null, chrome.i18n.getMessage('Close'), closeEditor);
+    var i_sc_close = HtmlUtil.createButton(i.name, 'close_script', null, chrome.i18n.getMessage('Close'), closeEditor);
 
     var install = function() {
         var cb = function(resp) {
@@ -1119,12 +702,12 @@ var createScriptUsoTab = function(i, tabd, closeEditor) {
                                        cb);
     };
 
-    var install_button = createButton(i.name, 'save', null, chrome.i18n.getMessage('Install'), install);
+    var install_button = HtmlUtil.createButton(i.name, 'save', null, chrome.i18n.getMessage('Install'), install);
 
     menu.appendChild(install_button);
     menu.appendChild(i_sc_close);
 
-    tab = tabd.appendTab('script_editor_tab' + createUniqueId(i.name, i.id), tabh, tabc);
+    tab = tabd.appendTab('script_editor_tab' + Helper.createUniqueId(i.name, i.id), tabh, tabc);
 
     return { onShow: function() {
                  var iframe = document.createElement('iframe');
@@ -1192,7 +775,7 @@ var createScriptDetailsTabView = function(tab, i, tr, parent, closeTab) {
         "tv_content": 'tv_content tv_content_alt'
     };
     
-    var tabd = createTabView('_details' + createUniqueId(i.name, i.id), details, style);
+    var tabd = TabView.create('_details' + Helper.createUniqueId(i.name, i.id), details, style);
     var set = createScriptUsoTab(i, tabd, closeTab);
 
     var onKey = function(e) {
@@ -1264,7 +847,7 @@ var createScriptItem = function(tabv, i, tr) {
         tabh.textContent = chrome.i18n.getMessage('Edit') + ' - ' + ((i.name.length > 25) ? i.name.substr(0,25) + '...' : i.name);
         var tabc = cr('div', i.name, i.id, 'details_c');
 
-        tab = tabv.insertTab(null, 'details_' + createUniqueId(i.name, i.id), tabh, tabc, null, doClose);
+        tab = tabv.insertTab(null, 'details_' + Helper.createUniqueId(i.name, i.id), tabh, tabc, null, doClose);
 
         scriptdetails = createScriptDetailsTabView(tab, i, tr, tabc, doClose);
     };
@@ -1383,7 +966,7 @@ var createImagesFromScript = function(i) {
             var inc = i.includes[o];
             if (inc.search(/htt(ps|p):\/\/(\*\/\*|\*)*$/) != -1 ||
                 inc == "*") {
-                var img = createImage(chrome.extension.getURL('images/web.png'),
+                var img = HtmlUtil.createImage(chrome.extension.getURL('images/web.png'),
                                       i.name,
                                       i.id,
                                       i.includes[o],
@@ -1412,7 +995,7 @@ var createImagesFromScript = function(i) {
                 var ico = ("http://" + predom + inf.dom + '.' + tld + '/favicon.ico').replace(/\*/g, '');
                 if (ico.search('http://userscripts.org/') == 0 ||
                     ico.search('http://userscripts.com/') == 0) ico = 'http://userscripts.org/images/script_icon.png';
-                var img = createImage(ico,
+                var img = HtmlUtil.createImage(ico,
                                       i.name,
                                       i.id,
                                       i.includes[o],
@@ -1452,7 +1035,7 @@ var getFireItems = function(tab, url) {
                         p = ' ' + Math.round(response.progress.state.n * 100 / response.progress.state.of) + '%';
                     }
                     var c = (a != "" || p != "") ? a + p : null;
-                    pleaseWait(c);
+                    Please.wait(c);
                     var retry = function() {
                         getFireItems(tab, url);
                     }
@@ -1475,9 +1058,9 @@ var getFireItems = function(tab, url) {
         };
 
         chrome.extension.sendRequest(s, onResp);
-        pleaseWait();
+        Please.wait();
     } catch (e) {
-        console.log("mSo: " + JSON.stringify(e));
+        console.log("mSo: " + e.message);
     }
 };
 
@@ -1490,118 +1073,16 @@ var startFireUpdate = function(force, cb) {
         };
         chrome.extension.sendRequest(s, function(response) {
                                          if (response.suc === false) {
-                                             hideWait();
+                                             Please.hide();
                                              alert(chrome.i18n.getMessage('TamperFire_is_up_to_date_'));
                                          } else {
                                              window.setTimeout(refresh, 1000);
                                          }
                                      });
-        pleaseWait();
+        Please.wait();
     } catch (e) {
-        console.log("mSo: " + JSON.stringify(e));
+        console.log("mSo: " + e.message);
     }
-};
-
-var createUniqueId = function(name, id) {
-    var name_ = (name != undefined) ? name.replace(/ /g, '_') : "null";
-    return name_ + "_" + id;
-};
-
-var createCenterTable = function(elem, name, id, app, clas) {
-    if (!app) app = '';
-
-    var t = crc('table', 'curtable' + (clas ? ' ' + clas : ''), name, id, 'table' + app);
-
-    // var tr1 = cr('tr', name, id, 'tr1' + app);
-    var tr2 = crc('tr', (clas ? ' ' + clas : ''), name, id, 'tr2' + app);
-    // var tr3 = cr('tr', name, id, 'tr3' + app);
-    var td1 = crc('td', 'curtableoutertd', name, id, 'td1' + app);
-    var td2 = crc('td', 'curtableinner', name, id, 'td2' + app);
-    var td3 = crc('td', 'curtableoutertd', name, id, 'td3' + app);
-
-    tr2.appendChild(td1);
-    tr2.appendChild(td2);
-    tr2.appendChild(td3);
-    // t.appendChild(tr1);
-    t.appendChild(tr2);
-    // t.appendChild(tr3);
-
-    if (elem) td2.appendChild(elem);
-    return t;
-}
-
-var createCurtain = function(childnode, name, id, app, clas) {
-    var p = cr('div', name, id, 'p' + app);
-    var c = crc('div', 'curbg', name, id, 'c' + app);
-    var d = crc('div', 'curmiddle', name, id, 'd' + app);
-    if (!p.inserted) {
-        p.setAttribute('class', 'curouter hide');
-        p.setAttribute('style', 'z-index: ' + (name ? "10000" : "20000"));
-    }
-    var t = createCenterTable(childnode, name, id, app, clas);
-
-    d.appendChild(t);
-    p.appendChild(d);
-    p.appendChild(c);
-
-    p.show = function() { p.setAttribute('class', 'curouter block'); };
-    p.hide = function() { p.setAttribute('class', 'curouter hide'); };
-    p.setText = function(elem) { p.text = elem; };
-    p.print = function(msg) { if (p.text) p.text.textContent = msg; };
-
-    var bs = document.getElementsByTagName('body');
-    if (!bs.length) {
-        console.log("Err: Body not found!");
-    } else {
-        bs[0].appendChild(p);
-    }
-    return p;
-};
-
-var hideWait = function() {
-    if (curtain) window.setTimeout(function() { curtain.hide(); }, 1);
-};
-
-var pleaseWait = function(msg) {
-    if (msg == undefined) msg = chrome.i18n.getMessage("Please_wait___");
-    if (curtain) {
-        curtain.print(msg);
-        curtain.show();
-        return;
-    }
-    var createCurtainWaitMsg = function(text) {
-        var outer = document.createElement('div');
-        outer.setAttribute('class', 'curcontainer');
-
-        var head = document.createElement('div');
-        head.setAttribute('class', 'curwaithead');
-        var msg = document.createElement('div');
-        msg.setAttribute('class', 'curwaitmsg');
-
-        var dimg = document.createElement('div');
-        var t = document.createElement('div');
-        t.textContent = text;
-        t.innerHTML += '<br><br>';
-        t.setAttribute('class','curtext');
-
-        var img = document.createElement('img')
-        img.src = chrome.extension.getURL('images/large-loading.gif');
-        dimg.appendChild(img);
-
-        msg.appendChild(dimg);
-        msg.appendChild(t);
-
-        outer.appendChild(head);
-        outer.appendChild(msg);
-
-        return { all: outer, text: t };
-    };
-
-    var m = createCurtainWaitMsg(msg);
-    curtain = createCurtain(m.all);
-    // setTextNode
-    curtain.setText(m.text);
-    curtain.show();
 };
 
 chrome.extension.onRequest.addListener(
@@ -1627,7 +1108,6 @@ var listener = function() {
 window.addEventListener('DOMContentLoaded', listener, false);
 window.addEventListener('load', listener, false);
 
-var Converter = getConverter();
 tabID = determineTabID();
 tabURL = decodeURI(determineTabURL(encodeURI(tabURL)));
 

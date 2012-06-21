@@ -6,15 +6,14 @@
 
 (function() {
 
-var getConverter = function() {
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", "convert.js", false);
-    xhr.send(null);
-    var x = window['eval'](xhr.responseText);
-    return x;
-};
+Registry.require('helper');
+Registry.require('convert');
+Registry.require('parser');
+Registry.require('compat');
 
-var Converter = getConverter();
+var Converter = Registry.get('convert');
+var Helper = Registry.get('helper');
+var compaMo = Registry.get('compat');
 
 var getScriptId = function(name) {
     var id = null;
@@ -61,34 +60,8 @@ var Script = function() {
                     excludes: false, use_excludes: [], orig_excludes: [] }
     };
 };
-
-var escapeForRegExpURL = function(str, more) {
-    if (more == undefined) more = [];
-    var re = new RegExp( '(\\' + [ '/', '.', '+', '?', '|', '(', ')', '[', ']', '{', '}', '\\' ].concat(more).join('|\\') + ')', 'g');
-    return str.replace(re, '\\$1');
-};
-
-var escapeForRegExp = function(str, more) {
-    return escapeForRegExpURL(str, ['*']);
-};
-
-var getStringBetweenTags = function(source, tag1, tag2) {
-    var b = source.search(escapeForRegExp(tag1));
-    if (b == -1) {
-        return "";
-    }
-    if (!tag2) {
-        return source.substr(b + tag1.length);
-    }
-    var e = source.substr(b + tag1.length).search(escapeForRegExp(tag2));
-
-    if (e == -1) {
-        return "";
-    }
-    return source.substr(b + tag1.length, e);
-};
-
-window.scriptParser = window.scriptParser || {
+ 
+var scriptParser = {
     Script : Script,
     getScriptId : getScriptId,
     processMetaHeader : function(header) {
@@ -103,7 +76,7 @@ window.scriptParser = window.scriptParser || {
         header = header.replace(/\r/gi, '');
 
         for (var t in tags) {
-            meta[tags[t]] = getStringBetweenTags(header, '@'+tags[t], '\n').trim();
+            meta[tags[t]] = Helper.getStringBetweenTags(header, '@'+tags[t], '\n').trim();
         }
 
         if (V || UV) console.log("parser: processMetaHeader -> " + JSON.stringify(meta));
@@ -131,7 +104,7 @@ window.scriptParser = window.scriptParser || {
         header = header.replace(/[^|\n][ \t]+\/\//g, '//')
 
         for (var t in tags) {
-            script[tags[t]] = getStringBetweenTags(header, '@'+tags[t], '\n').trim();;
+            script[tags[t]] = Helper.getStringBetweenTags(header, '@'+tags[t], '\n').trim();;
         }
 
         var lines = header.split('\n');
@@ -140,7 +113,7 @@ window.scriptParser = window.scriptParser || {
             var c = false;
 
             for (var t in icon64_tags) {
-                var s = getStringBetweenTags(l, '@'+icon64_tags[t]).trim();
+                var s = Helper.getStringBetweenTags(l, '@'+icon64_tags[t]).trim();
                 if (s != '') {
                     script.icon64 = s;
                     c = true;
@@ -150,7 +123,7 @@ window.scriptParser = window.scriptParser || {
             if (c) continue;
 
             for (var t in icon_tags) {
-                var s = getStringBetweenTags(l, '@'+icon_tags[t]).trim();
+                var s = Helper.getStringBetweenTags(l, '@'+icon_tags[t]).trim();
                 if (s != '') {
                     script.icon = s;
                     c = true;
@@ -160,7 +133,7 @@ window.scriptParser = window.scriptParser || {
             if (c) continue;
 
             for (var t in homepage_tags) {
-                var s = getStringBetweenTags(l, '@'+homepage_tags[t]).trim();
+                var s = Helper.getStringBetweenTags(l, '@'+homepage_tags[t]).trim();
                 if (s != '') {
                     script.homepage = s;
                     c = true;
@@ -226,7 +199,7 @@ window.scriptParser = window.scriptParser || {
         var t1 = '==UserScript==';
         var t2 = '==/UserScript==';
 
-        var header = getStringBetweenTags(src, t1, t2);
+        var header = Helper.getStringBetweenTags(src, t1, t2);
 
         if (!header || header == '') {
             return null;
@@ -251,9 +224,9 @@ window.scriptParser = window.scriptParser || {
         // save some space ;)
         src = src.replace(/\r/g, '');
 
-        var header = window.scriptParser.getHeader(src);
+        var header = scriptParser.getHeader(src);
         if (!header) return {};
-        var script = window.scriptParser.processHeader(header);
+        var script = scriptParser.processHeader(header);
 
         script.textContent = src;
         script.header = header;
@@ -277,4 +250,5 @@ window.scriptParser = window.scriptParser || {
     }
 };
 
+Registry.register('parser', scriptParser);
 })();

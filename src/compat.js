@@ -6,49 +6,26 @@
 
 (function() {
 
-var escapeForRegExpURL = function(str, more) {
-    if (more == undefined) more = [];
-    var re = new RegExp( '(\\' + [ '/', '.', '+', '?', '|', '(', ')', '[', ']', '{', '}', '\\' ].concat(more).join('|\\') + ')', 'g');
-    return str.replace(re, '\\$1');
-};
+Registry.require('helper');
 
-var escapeForRegExp = function(str, more) {
-    return escapeForRegExpURL(str, ['*']);
-};
+var Helper = Registry.get('helper');
 
-var getStringBetweenTags = function(source, tag1, tag2) {
-    var b = source.search(escapeForRegExp(tag1));
-    if (b == -1) {
-        return "";
-    }
-    if (!tag2) {
-        return source.substr(b + tag1.length);
-    }
-    var e = source.substr(b + tag1.length).search(escapeForRegExp(tag2));
-
-    if (e == -1) {
-        return "";
-    }
-    return source.substr(b + tag1.length, e);
-};
-
-window.compaMo = window.compaMo || {
-
+var compaMo = {
     mkCompat : function(src, script, test) {
-        if (script.options.compat_metadata || test) src = window.compaMo.unMetaDataify(src);
-        if (script.options.compat_foreach || test) src = window.compaMo.unEachify(src);
-        if (script.options.compat_arrayleft || test) src = window.compaMo.unArrayOnLeftSideify(src);
-        if (script.options.compat_forvarin /* || test */) src = window.compaMo.fixForVarXStatements(src);
+        if (script.options.compat_metadata || test) src = compaMo.unMetaDataify(src);
+        if (script.options.compat_foreach || test) src = compaMo.unEachify(src);
+        if (script.options.compat_arrayleft || test) src = compaMo.unArrayOnLeftSideify(src);
+        if (script.options.compat_forvarin /* || test */) src = compaMo.fixForVarXStatements(src);
         return src;
     },
 
     findPrototypes : function(src) {
-        if (src.search(escapeForRegExp('.toSource(')) != -1) {
+        if (src.search(Helper.escapeForRegExp('.toSource(')) != -1) {
             return true;
         }
         var fns = ["indexOf", "lastIndexOf", "filter", "forEach", "every", "map", "some", "slice"];
         for (var k in fns) {
-            if (src.search(escapeForRegExp('Array.' + fns[k] + '(')) != -1) {
+            if (src.search(Helper.escapeForRegExp('Array.' + fns[k] + '(')) != -1) {
                 return true;
             }
         }
@@ -65,7 +42,7 @@ window.compaMo = window.compaMo || {
 
         for (var i = 1; i < arr.length; i++) {
             var a = arr[i];
-            var e = a.search(escapeForRegExp(t3));
+            var e = a.search(Helper.escapeForRegExp(t3));
             if (e == -1) continue;
             var f = a.substr(0, e);
             if (f.search(/[ \r\n]*in[ \r\n]/) == -1) continue;
@@ -99,7 +76,7 @@ window.compaMo = window.compaMo || {
             var p = a.search(/\)[\n\r\t ]*\{/);
             if (p != e) {
                 continue;
-                /* if (getStringBetweenTags(arr[i], ')', '\n').trim() == "") {
+                /* if (Helper.getStringBetweenTags(arr[i], ')', '\n').trim() == "") {
                    arr[i] = arr[i].replace(')','){').replace(/([\n|\r].*[\n|\r|;])/, '$1}');
                    } else {
                    arr[i] = arr[i].replace(')','){').replace(/([\n|\r|;])/, '}$1');
@@ -153,7 +130,7 @@ window.compaMo = window.compaMo || {
 
                 nl += 'var ' + randvar + ' = ' + value + ';\n';
 
-                var vars = getStringBetweenTags(wosp, '[', ']=');
+                var vars = Helper.getStringBetweenTags(wosp, '[', ']=');
                 var vara = vars.split(',');
 
                 for (var e in vara) {
@@ -196,7 +173,7 @@ window.compaMo = window.compaMo || {
                 arr[i] = ' each' + arr[i];
                 continue;
             }
-            var f = getStringBetweenTags(a, t2, t3);
+            var f = Helper.getStringBetweenTags(a, t2, t3);
             var m = f.split(' ');
             var varname = null;
             var inname = null;
@@ -223,7 +200,7 @@ window.compaMo = window.compaMo || {
             b += '{\n' + '    if (!' + arrname + '.hasOwnProperty(__kk)) continue;';
             b += ' \n' + '    var ' + varname + ' = ' + arrname + '[__kk];';
 
-            arr[i] = arr[i].replace(escapeForRegExp(f), n).replace('{', b);
+            arr[i] = arr[i].replace(Helper.escapeForRegExp(f), n).replace('{', b);
         }
 
         return arr.join('for');
@@ -257,7 +234,7 @@ window.compaMo = window.compaMo || {
         var t = src;
         var t1 = '<><![CDATA[';
         var t2 = ']]></>';
-        var pos = s.search(escapeForRegExp(t1));
+        var pos = s.search(Helper.escapeForRegExp(t1));
         while (pos != -1) {
             var p = s.substr(0, pos);
             var lc = p.lastIndexOf('\n');
@@ -270,7 +247,7 @@ window.compaMo = window.compaMo || {
             var c2 = cc.search("\\/\\/");
             if (c1 == -1 &&
                 c2 == -1) {
-                var z = getStringBetweenTags(s,t1, t2);
+                var z = Helper.getStringBetweenTags(s,t1, t2);
                 var x;
                 x = z.replace(/\"/g, '\\"').replace(/\n/g, '\\n" + \n"');
                 x = x.replace(/^\n/g, '').replace(/\n$/g, '');
@@ -278,11 +255,12 @@ window.compaMo = window.compaMo || {
                 t = t.replace(g, '(new CDATA("' + x + '"))');
             }
             s = s.substr(1, s.length-1);
-            pos = s.search(escapeForRegExp(t1));
+            pos = s.search(Helper.escapeForRegExp(t1));
         }
 
         return t;
     }
 };
 
+Registry.register('compat', compaMo);
 })()
