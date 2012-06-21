@@ -390,7 +390,7 @@ var itemsToMenu = function(items, tabv, cb) {
             } else if (i.search) {
                 tabURL = i.value;
                 var search = cr('div', 'search', 'box', '');
-                search.appendChild(HtmlUtil.createSearchBox());
+                search.appendChild(HtmlUtil.createSearchBox(tabURL));
                 tr = null;
             } else if (i.version) {
                 version = i.value;

@@ -243,7 +243,7 @@ var createPosition = function(name, e, oc) {
     return s;
 };
 
-var createSearchBox = function() {
+var createSearchBox = function(tabURL) {
     var search = crc('div', 'searchbox', 'search_inner');
     var search_mv = crc('div', 'searchbox_mv tv_tab', 'search_inner_mv');
     var search_input = crc('input', 'searchbox_input', 'search_input');
