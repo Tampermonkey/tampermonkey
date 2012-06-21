@@ -35,7 +35,8 @@ if (window.self != window.top &&
 // global (by emulation used) variables
 var _background = true;
 var _webRequest = {};
-
+var Converter;
+    
 var D = false;
 var V = false;
 var EV = false;
@@ -75,9 +76,9 @@ var env = Registry.getRaw("environment.js");
 
 var xmlhttpRequest = Registry.get('xmlhttprequest').run;
 var Helper = Registry.get('helper');
-var Converter = Registry.get('convert');
 var ConverterInit = null;
- 
+Converter = Registry.get('convert');
+
 /* ######## eventing #### */
 var domContentLoaded = function() {
     if (V || EV || D) console.log("content: detected DOMContentLoaded " + contextId);
