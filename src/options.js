@@ -317,8 +317,8 @@ var createUtilTab = function(tabv) {
             var c = allItems[o];
             if (c.userscript && c.id && !c.system) {
                 var p = { name: c.name, options: c.options, enabled: c.enabled, position: c.position };
-                if (c.update_url && c.update_url.trim() != "") {
-                    p.update_url = c.update_url;
+                if (c.file_url && c.file_url.trim() != "") {
+                    p.file_url = c.file_url;
                 }
                 if (c.code && c.code.trim() != "" ){
                     p.source = Converter.Base64.encode(Converter.UTF8.encode(c.code));
@@ -359,7 +359,7 @@ var createUtilTab = function(tabv) {
                 try {
                     var name = s.name;
                     var code = Converter.UTF8.decode(Converter.Base64.decode(s.source));
-                    var uu = s.update_url;
+                    var uu = s.file_url || s.update_url; // compatibility cause update_url was renamed to file_url
 
                     if (code && code.trim() != "") {
                         var resp = function(response) {
@@ -377,7 +377,7 @@ var createUtilTab = function(tabv) {
                                                              name: name,
                                                              code: code,
                                                              reload: false,
-                                                             update_url: uu},
+                                                             file_url: uu},
                                                      resp);
                     }
                 } catch (e) {
@@ -1055,7 +1055,10 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
                 closeEditor();
             }
         }
-        saveScript(i.name, null, i_uu.input, true, cb);
+        var ou = i_uu.input ? i_uu.input.oldvalue : "";
+        var nu = i_uu.input ? i_uu.input.value : "";
+
+        saveScript(i.name, null, ou, nu, true, cb);
     };
 
     var resetScript = function() {
@@ -1076,7 +1079,7 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
     var i_sc_close =  HtmlUtil.createButton(i.name, 'close_script', null, chrome.i18n.getMessage('Close'),        closeEditor, chrome.extension.getURL('images/exit.png') );
 
     var i_uu = HtmlUtil.createInput(chrome.i18n.getMessage('Update_URL_'),
-                           { id: 'update_url', name: i.name, value: i.update_url });
+                           { id: 'file_url', name: i.name, value: i.file_url });
     i_uu.input.setAttribute("class", "updateurl_input");
     i_uu.elem.setAttribute("class", "updateurl");
 
@@ -1131,7 +1134,10 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
                         }
                     }
                 }
-                saveScript(i.name, value, i_uu.input, false, cb);
+                var ou = i_uu.input ? i_uu.input.oldvalue : "";
+                var nu = i_uu.input ? i_uu.input.value : "";
+        
+                saveScript(i.name, value, ou, nu, false, cb);
             }
             return doIt;
         };
@@ -1256,7 +1262,7 @@ var createScriptItem = function(i, tr, tabv) {
     var scriptdetails;
     var use_icon = i.icon && !i.nativeScript;
 
-    var sname = crc('span', 'script_name clickable', i.name, i.id, 'sname');
+    var sname = crc('span', 'script_name' + (i.nativeScript ? '' : ' clickable'), i.name, i.id, 'sname');
     var sname_img = crc('img', 'nameNicon16', i.name, i.id, 'sname_img');
 
     var sname_name = crc('span', use_icon ? 'nameNname16': '', i.name, i.id, 'sname_name');
@@ -1447,9 +1453,9 @@ var createScriptItem = function(i, tr, tabv) {
     }
     last_updated.textContent = lUp;
 
-    if (i.update_url && i.update_url.trim() != "") {
+    if (i.file_url && i.file_url.trim() != "") {
         // "http://userscripts.org/scripts/source/44327.user.js".match(new RegExp("/http:\/\/userscripts\.org\/scripts\/source\/([0-9]{1,9})\.user\.js/"));
-        var usoid = i.update_url.match(new RegExp("http:\/\/userscripts\.org\/scripts\/source\/([0-9]{1,9})\.user\.js"));
+        var usoid = i.file_url.match(new RegExp("http:\/\/userscripts\.org\/scripts\/source\/([0-9]{1,9})\.user\.js"));
         if (usoid && usoid.length == 2) {
             var hpa = cr('a', i.name, i.id, 'hp');
             hpa.setAttribute('href', 'http://userscripts.org/scripts/show/' + usoid[1]);
@@ -1481,7 +1487,7 @@ var createScriptItem = function(i, tr, tabv) {
                                      } else {
                                          var c = confirm(chrome.i18n.getMessage('Really_delete_this_script__'));
                                          if (c == true) {
-                                             saveScript(i.name, null, false, null);
+                                             saveScript(i.name, null, null, null, null);
                                              tr.parentNode.removeChild(tr);
                                          }
                                      }
@@ -1739,14 +1745,17 @@ var loadUrl = function(url, newtab) {
     }
 };
 
-var saveScript = function(name, code, ta, clean, cb) {
+var saveScript = function(name, code, old_url, new_url, clean, cb) {
     try {
-        var uu = ta ? ta.value : "";
+        var ou = old_url ? old_url : "";
+        var nu = (new_url && new_url != old_url) ? new_url : "";
+
         chrome.extension.sendRequest({method: "saveScript",
                                       name: name,
                                       code: code,
                                       clean : clean,
-                                      update_url: uu},
+                                      file_url: ou,
+                                      force_url: nu },
                                      function(response) {
                                          if (response.items) createOptionsMenu(response.items, name && true);
                                          if (!code) {

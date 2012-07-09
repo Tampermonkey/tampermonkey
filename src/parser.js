@@ -32,6 +32,8 @@ var Script = function() {
     this.icon = null;
     this.icon64 = null;
     this.fileURL = null;
+    this.downloadURL = null;
+    this.updateURL = null;
     this.name = null;
     this.namespace = null;
     this.homepage = null;
@@ -107,13 +109,13 @@ var scriptParser = {
             script[tags[t]] = Helper.getStringBetweenTags(header, '@'+tags[t], '\n').trim();;
         }
 
-        var lines = header.split('\n');
-        for (var i in lines) {
-            var l = lines[i].replace(/^[\t\s]*\/\//gi, '').replace(/^[\t\s]*/gi, '').replace(/\s\s+/gi, ' ');
-            var c = false;
+        var s, t, i, l, c, o, lines = header.split('\n');
+        for (i in lines) {
+            l = lines[i].replace(/^[\t\s]*\/\//gi, '').replace(/^[\t\s]*/gi, '').replace(/\s\s+/gi, ' ');
+            c = false;
 
-            for (var t in icon64_tags) {
-                var s = Helper.getStringBetweenTags(l, '@'+icon64_tags[t]).trim();
+            for (t in icon64_tags) {
+                s = Helper.getStringBetweenTags(l, '@'+icon64_tags[t]).trim();
                 if (s != '') {
                     script.icon64 = s;
                     c = true;
@@ -122,8 +124,8 @@ var scriptParser = {
             }
             if (c) continue;
 
-            for (var t in icon_tags) {
-                var s = Helper.getStringBetweenTags(l, '@'+icon_tags[t]).trim();
+            for (t in icon_tags) {
+                s = Helper.getStringBetweenTags(l, '@'+icon_tags[t]).trim();
                 if (s != '') {
                     script.icon = s;
                     c = true;
@@ -132,8 +134,8 @@ var scriptParser = {
             }
             if (c) continue;
 
-            for (var t in homepage_tags) {
-                var s = Helper.getStringBetweenTags(l, '@'+homepage_tags[t]).trim();
+            for (t in homepage_tags) {
+                s = Helper.getStringBetweenTags(l, '@'+homepage_tags[t]).trim();
                 if (s != '') {
                     script.homepage = s;
                     c = true;
@@ -143,30 +145,30 @@ var scriptParser = {
             if (c) continue;
 
             if (l.search(/^@include/) != -1) {
-                var c = l.replace(/^@include/gi, '').trim().replace(/ /gi, '%20').replace(/[\b\r\n]/gi, '');
+                c = l.replace(/^@include/gi, '').trim().replace(/ /gi, '%20').replace(/[\b\r\n]/gi, '');
                 if (V) console.log("c " + c);
                 if (c.trim() != "") script.includes.push(c);
             }
             if (l.search(/^@match/) != -1) {
-                var c = l.replace(/^@match/gi, '').trim().replace(/ /gi, '%20').replace(/[ \b\r\n]/gi, '');
+                c = l.replace(/^@match/gi, '').trim().replace(/ /gi, '%20').replace(/[ \b\r\n]/gi, '');
                 if (V) console.log("c " + c);
                 if (c.trim() != "") script.matches.push(c);
                 script.options.awareOfChrome = true;
             }
             if (l.search(/^@exclude/) != -1) {
-                var c = l.replace(/^@exclude/gi, '').trim().replace(/ /gi, '%20').replace(/[ \b\r\n]/gi, '');
+                c = l.replace(/^@exclude/gi, '').trim().replace(/ /gi, '%20').replace(/[ \b\r\n]/gi, '');
                 if (V) console.log("c " + c);
                 if (c.trim() != "") script.excludes.push(c);
             }
             if (l.search(/^@require/) != -1) {
-                var c = l.replace(/^@require/gi, '').trim().replace(/ /gi, '%20').replace(/[ \b\r\n]/gi, '');
+                c = l.replace(/^@require/gi, '').trim().replace(/ /gi, '%20').replace(/[ \b\r\n]/gi, '');
                 if (V) console.log("c " + c);
-                var o = { url: c, loaded: false, textContent: ''};
+                o = { url: c, loaded: false, textContent: ''};
                 if (c.trim() != "") script.requires.push(o);
             }
             if (l.search(/^@resource/) != -1) {
-                var c = l.replace(/^@resource/gi, '').replace(/[\r\n]/gi, '');
-                var s = c.trim().split(' ');
+                c = l.replace(/^@resource/gi, '').replace(/[\r\n]/gi, '');
+                s = c.trim().split(' ');
                 if (V) console.log("c " + c);
                 if (V) console.log("s " + s);
                 if (s.length >= 2) {
@@ -174,7 +176,7 @@ var scriptParser = {
                 }
             }
             if (l.search(/^@run-at/) != -1) {
-                var c = l.replace(/^@run-at/gi, '').replace(/[ \b\r\n]/gi, '');
+                c = l.replace(/^@run-at/gi, '').replace(/[ \b\r\n]/gi, '');
                 if (V) console.log("c " + c);
                 if (c.trim() != "") script.options.run_at = c.trim();
             }
@@ -183,6 +185,15 @@ var scriptParser = {
             }
             if (l.search(/^@nocompat/) != -1) {
                 script.options.awareOfChrome = true;
+            }
+            
+            if (l.search(/^@updateURL/) != -1) {
+                c = l.replace(/^@updateURL/gi, '').trim().replace(/[ \b\r\n]/gi, '');
+                if (c.trim() != "") script.updateURL = c;
+            }
+            if (l.search(/^@downloadURL/) != -1) {
+                c = l.replace(/^@downloadURL/gi, '').trim().replace(/[ \b\r\n]/gi, '');
+                if (c.trim() != "") script.downloadURL = c;
             }
         }
 
