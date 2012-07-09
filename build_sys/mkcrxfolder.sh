@@ -42,12 +42,14 @@ mkdir _locales/de
 mkdir _locales/en
 mkdir _locales/es
 mkdir _locales/fr
+mkdir _locales/pl
 mkdir _locales/ja
 mkdir _locales/zh_CN
 cp ../i18n/en/* _locales/en/
 cp ../i18n/es/* _locales/es/
 cp ../i18n/de/* _locales/de/
 cp ../i18n/fr/* _locales/fr/
+cp ../i18n/pl/* _locales/pl/
 cp ../i18n/ja/* _locales/ja/
 cp ../i18n/zh_CN/* _locales/zh_CN/
 mkdir system

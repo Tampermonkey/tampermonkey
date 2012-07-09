@@ -1,0 +1,7 @@
+Polish translation for Tampermonkey extension (author: Pawelsky)
+Found and error? Have sugestions? Please visit
+http://forum.tampermonkey.net/viewtopic.php?f=17&t=289
+---------------------------------------------------------
+Polskie t≥umaczenie dla rozszerzenia Tampermonkey (autor: Pawelsky)
+Znalaz≥eú b≥πd? Masz sugestie? Odwiedü
+http://forum.tampermonkey.net/viewtopic.php?f=17&t=289
