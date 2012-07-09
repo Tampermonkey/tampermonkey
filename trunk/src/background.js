@@ -1931,36 +1931,70 @@ var removeUserScript = function(name) {
     storeScriptStorage(name, null);
 };
 
+var determineSourceURL = function(o) {
+    if (!o) return null;
+
+    var f = null, d = null;
+
+    if (o.fileURL && o.fileURL.search('^file://' == -1)) f = o.fileURL;
+    if (o.downloadURL && o.downloadURL.search('^file://' == -1)) d = o.downloadURL;
+
+    if (d) return d;
+
+    return f;
+};
+ 
+var determineMetaURL = function(o) {
+    if (!o) return null;
+
+    var f = null, u = null;
+
+    if (o.fileURL && o.fileURL.search('^file://' == -1)) f = o.fileURL;
+    if (o.downloadURL && o.downloadURL.search('^file://' == -1)) f = o.downloadURL;
+    if (o.updateURL && o.updateURL.search('^file://' == -1)) u = o.updateURL;
+
+    if (u) return u;
+    
+    if (f) {
+        var murl = null;
+
+        murl = f.replace('\.user\.js', '.meta.js');
+        if (murl == f) murl = f.replace('\.tamper\.js', '.meta.js');
+        if (murl == f) murl = null;
+
+        return murl;
+    }
+
+    return null;
+};
+ 
 var getMetaData = function(o, callback) {
-    if (o.fileURL && o.fileURL.search('^file://' == -1)) {
-        var murl = o.fileURL.replace('\.user\.js', '.meta.js');
-        if (murl == o.fileURL) murl = o.fileURL.replace('\.tamper\.js', '.meta.js');
+    var murl = determineMetaURL(o);
 
-        if (murl != o.fileURL) {
-            murl += (murl.search('\\?') == -1 ? '?' : '&') + 'ts=' + (new Date()).getTime();
+    if (murl) {
+        murl += (murl.search('\\?') == -1 ? '?' : '&') + 'ts=' + (new Date()).getTime();
 
-            var details = {
-                method: 'GET',
-                retries: 0,
-                url: murl,
-            };
+        var details = {
+            method: 'GET',
+            retries: 0,
+            url: murl,
+        };
 
-            var getmeta = function(req) {
-                o.meta = null;
-                if (req.readyState == 4 && req.status == 200) {
-                    var meta = scriptParser.processMetaHeader(req.responseText);
-                    o.meta = meta;
-                    o.metasrc = req.responseText;
-                } else {
-                    console.log("bg: unable to find meta data @ " + murl + " req.status = " + req.status);
-                }
-                callback(o);
-            };
+        var getmeta = function(req) {
+            o.meta = null;
+            if (req.readyState == 4 && req.status == 200) {
+                var meta = scriptParser.processMetaHeader(req.responseText);
+                o.meta = meta;
+                o.metasrc = req.responseText;
+            } else {
+                console.log("bg: unable to find meta data @ " + murl + " req.status = " + req.status);
+            }
+            callback(o);
+        };
 
-            xmlhttpRequest(details, getmeta);
+        xmlhttpRequest(details, getmeta);
 
-            return;
-        }
+        return;
     }
 
     o.meta = null;
@@ -2005,7 +2039,7 @@ var mergeCludes = function(script){
 };
 
 var addNewUserScript = function(o) {
-    // { tabid: tabid, url: url, src: src, ask: ask, defaultscript:defaultscript, noreinstall : noreinstall, save : save, cb : cb }
+    // { tabid: tabid, force_url: durl, url: url, src: src, ask: ask, defaultscript:defaultscript, noreinstall : noreinstall, save : save, cb : cb }
     var reset = false;
     var allowSilent = false;
 
@@ -2016,6 +2050,7 @@ var addNewUserScript = function(o) {
     if (o.url == undefined || o.url == null) o.url = "";
     if (o.save == undefined) o.save = false;
     if (o.hash == undefined) o.hash = "";
+    if (o.force_url == "") o.force_url = null;
 
     var script = scriptParser.createScriptFromSrc(o.src);
 
@@ -2048,6 +2083,15 @@ var addNewUserScript = function(o) {
     script.lastUpdated = (new Date()).getTime();
     script.system = o.defaultscript;
     script.fileURL = o.url;
+
+    if (!o.clean && o.force_url) {
+        /* Note: Replace downloadURL with the users preference and clear the updateURL.
+           When a new script version is detected it will be installed and the parameters
+           (@downloadURL, @updateURL) of the script will be used again. */
+        script.updateURL = null;
+        script.downloadURL = o.force_url;
+    }
+    
     script.position = oldscript ? oldscript.position : determineLastScriptPosition() + 1;
 
     if (script.name.search('@') != -1) {
@@ -2113,8 +2157,11 @@ var addNewUserScript = function(o) {
             }
         }
 
-        if (oldscript.fileURL != script.fileURL) {
-            msg += '\n' + chrome.i18n.getMessage('The_update_url_has_changed_from_0oldurl0_to__0newurl0', [oldscript.fileURL, script.fileURL]);
+        var ouu = determineMetaURL(oldscript);
+        var nuu = determineMetaURL(script);
+
+        if (ouu != nuu) {
+            msg += '\n' + chrome.i18n.getMessage('The_update_url_has_changed_from_0oldurl0_to__0newurl0', [ouu, nuu]);
             allowSilent = false;
         }
     }
@@ -2472,16 +2519,17 @@ var updateUserscripts = function(tabid, showResult, scriptid, callback) {
         var details = {
             method: 'GET',
             retries: _retries,
-            url: r.script.fileURL,
+            url: determineSourceURL(r.script),
         };
 
         running++;
         (function() {
             var obj = { tabid: tabid, r: r};
+            var durl = determineSourceURL(obj.r.script)
             var cb = function(req) {
                 running--;
                 if (req.readyState == 4 && req.status == 200) {
-                    if (V) console.log(obj.r.script.fileURL);
+                    if (V) console.log(durl);
 
                     var updateHash = function() {
                         // call only if local and remove script version do match
@@ -2496,16 +2544,16 @@ var updateUserscripts = function(tabid, showResult, scriptid, callback) {
                     if (ret == eNEWER) {
                         found++;
                         if (callback) callback(true, { name: obj.r.script.name,
-                                                       url: obj.r.script.fileURL,
+                                                       url: durl,
                                                        code: req.responseText,
                                                        newhash: obj.r.newhash });
                         return;
                     } else if (ret == eEQUAL) {
-                        if (V || UV) console.log("bg: found same version @ " + obj.r.script.fileURL);
+                        if (V || UV) console.log("bg: found same version @ " + durl);
                         updateHash();
                     }
                 } else {
-                    console.log(chrome.i18n.getMessage("UpdateCheck_of_0name0_Url_0url0_failed_", [ obj.r.script.name, obj.r.script.fileURL ]));
+                    console.log(chrome.i18n.getMessage("UpdateCheck_of_0name0_Url_0url0_failed_", [ obj.r.script.name, durl ]));
                 }
                 checkNoUpdateNotification();
             };
@@ -2545,7 +2593,7 @@ var updateUserscripts = function(tabid, showResult, scriptid, callback) {
         var c_scriptid = scriptid && r.script.id != scriptid
         var c_disabled = !Config.values.scriptUpdateCheckDisabled && !r.script.enabled && !scriptid;
 
-        if (c_scriptid || c_disabled || !r.script.fileURL || r.script.fileURL == "") continue;
+        if (c_scriptid || c_disabled || !(determineMetaURL(r.script) || determineSourceURL(r.script))) continue;
 
         one = true;
         metaCheck(r);
@@ -3037,7 +3085,7 @@ var requestHandler = function(request, sender, sendResponse) {
                 console.log(chrome.i18n.getMessage("fatal_error") + " (" + n + ")" +"!!!");
                 callback(false);
             } else {
-                if (!addNewUserScript({ name: request.name, tabid: sender.tab.id, url: request.update_url, src: r.script.textContent, clean: true, ask: true, save: true, cb : callback })) {
+                if (!addNewUserScript({ name: request.name, tabid: sender.tab.id, force_url: null, url: request.file_url, src: r.script.textContent, clean: true, ask: true, save: true, cb : callback })) {
                     if (callback) callback(false);
                 }
             }
@@ -3047,7 +3095,7 @@ var requestHandler = function(request, sender, sendResponse) {
                 callback = function (installed) { reorderScripts();
                                                   cb(installed); };
             }
-            if (!addNewUserScript({ tabid: sender.tab.id, url: request.update_url, src: request.code, ask: true, save: true, cb : callback })) {
+            if (!addNewUserScript({ tabid: sender.tab.id, force_url: request.force_url, url: request.file_url, src: request.code, ask: true, save: true, cb : callback })) {
                 if (callback) callback(false);
             }
         } else {
@@ -3803,7 +3851,7 @@ var convertScriptsToMenuItems = function(scripts, options) {
         }
 
         item.image = img;
-        item.update_url = script.fileURL,
+        item.file_url = script.downloadURL || script.fileURL;
         item.positionof = scripts.length;
         item.userscript = true;
 
