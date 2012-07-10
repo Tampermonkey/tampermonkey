@@ -1872,7 +1872,13 @@ if (V) console.log("Register request listener (options)");
 var listener = function() {
     window.removeEventListener('DOMContentLoaded', listener, false);
     window.removeEventListener('load', listener, false);
-    modifyScriptOption(null, false);
+
+    var delay = function() {
+        modifyScriptOption(null, false);
+    };
+
+    window.setTimeout(delay, 500);
+    Please.wait();
 };
 
 window.addEventListener('DOMContentLoaded', listener, false);

@@ -1102,7 +1102,11 @@ chrome.extension.onRequest.addListener(
 var listener = function() {
     window.removeEventListener('DOMContentLoaded', listener, false);
     window.removeEventListener('load', listener, false);
-    getFireItems(tabID, tabURL);
+    var delay = function() {
+        getFireItems(tabID, tabURL);
+    };
+    window.setTimeout(delay, 500);
+    Please.wait();
 };
 
 window.addEventListener('DOMContentLoaded', listener, false);
