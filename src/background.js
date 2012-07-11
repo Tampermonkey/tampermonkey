@@ -1931,20 +1931,24 @@ var removeUserScript = function(name) {
     storeScriptStorage(name, null);
 };
 
-var determineSourceURL = function(o) {
+var ts_ify = function(u) {
+    if (u) u += (u.search('\\?') == -1 ? '?' : '&') + 'ts=' + (new Date()).getTime();
+    return u;
+};
+ 
+var determineSourceURL = function(o, add_ts) {
     if (!o) return null;
 
-    var f = null, d = null;
+    var f = null;
 
     if (o.fileURL && o.fileURL.search('^file://' == -1)) f = o.fileURL;
-    if (o.downloadURL && o.downloadURL.search('^file://' == -1)) d = o.downloadURL;
-
-    if (d) return d;
+    if (o.downloadURL && o.downloadURL.search('^file://' == -1)) f = o.downloadURL;
+    if (f && add_ts) f = ts_ify(f);
 
     return f;
 };
  
-var determineMetaURL = function(o) {
+var determineMetaURL = function(o, add_ts) {
     if (!o) return null;
 
     var f = null, u = null;
@@ -1953,7 +1957,7 @@ var determineMetaURL = function(o) {
     if (o.downloadURL && o.downloadURL.search('^file://' == -1)) f = o.downloadURL;
     if (o.updateURL && o.updateURL.search('^file://' == -1)) u = o.updateURL;
 
-    if (u) return u;
+    if (u) return add_ts ? ts_ify(u) : u;
     
     if (f) {
         var murl = null;
@@ -1962,18 +1966,16 @@ var determineMetaURL = function(o) {
         if (murl == f) murl = f.replace('\.tamper\.js', '.meta.js');
         if (murl == f) murl = null;
 
-        return murl;
+        return add_ts ? ts_ify(murl) : murl;
     }
 
     return null;
 };
  
 var getMetaData = function(o, callback) {
-    var murl = determineMetaURL(o);
+    var murl = determineMetaURL(o, true);
 
     if (murl) {
-        murl += (murl.search('\\?') == -1 ? '?' : '&') + 'ts=' + (new Date()).getTime();
-
         var details = {
             method: 'GET',
             retries: 0,
@@ -2519,7 +2521,7 @@ var updateUserscripts = function(tabid, showResult, scriptid, callback) {
         var details = {
             method: 'GET',
             retries: _retries,
-            url: determineSourceURL(r.script),
+            url: determineSourceURL(r.script, true),
         };
 
         running++;
@@ -2565,7 +2567,17 @@ var updateUserscripts = function(tabid, showResult, scriptid, callback) {
         running++;
 
         var getmeta = function(o) {
-            if (!r.script.hash || !o.meta || o.meta[cUSOHASH] != r.script.hash) {
+            var meta_found = !!o.meta;
+            var hash_different = meta_found && !!o.meta[cUSOHASH] && o.meta[cUSOHASH] != r.script.hash;
+            var version_found = meta_found && !!o.meta.version;
+            var version_newer = version_found && (!r.script.version || versionCmp(o.meta.version, r.script.version) == eNEWER);
+
+            // check script source in case:
+            if (!meta_found || // no meta data was found
+                hash_different || // hash has changed
+                !version_found || // meta data does not contain version info
+                version_newer) { // we noticed a newer version
+                
                 if (V || UV) console.log("bg: hash of script " + r.script.name + " has changed or does not exist! running version check!");
                 r.meta = o.meta;
                 r.metasrc = o.metasrc;
