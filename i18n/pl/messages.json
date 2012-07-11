@@ -256,7 +256,7 @@
     "message": "Nie zapisano wszystkich zmian.\nCzy na pewno chcesz zamknąć edytor?"
   },
   "Do_you_really_want_to_store_fixed_code_": {
-    "message": "Opcja '$option$' jest włączona!\n\nCzy na pewno chcesz zapisac poprawiony plik zródłowy?",
+    "message": "Opcja '$option$' jest włączona!\n\nCzy na pewno chcesz zapisać poprawiony plik zródłowy?",
     "placeholders": {
       "option": {
          "content": "$1"
@@ -288,7 +288,7 @@
     "message": "Ten skrypt zapisuje dane w Tampermonkey."
   },
   "This_script_has_access_to_https_pages": {
-    "message": "Ten skrypt ma dostep do stron https."
+    "message": "Ten skrypt ma dostęp do stron https."
   },
   "One_or_more_compatibility_options_are_set": {
     "message": "Ustawione są opcje zgodności. Prosze o ręczne sprawdzenie."
@@ -315,7 +315,7 @@
     "message": "Edycja skryptu"
   },
   "This_script_has_access_to_webpage_scripts": {
-    "message": "This script has full access to the webpage."
+    "message": "Ten skrypt ma pełen dostęp do źródła strony."
   },
   "Utilities": {
     "message": "Narzędzia"
@@ -336,7 +336,7 @@
     "message": "Nie można przetworzyć! :("
   },
   "An_error_occured_during_import_": {
-    "message": "Wystąpił problem podczas importu. Prosze sprawdzić informacje wyśweitlane na konsoli! (CTRL+SHIFT+J)"
+    "message": "Wystąpił problem podczas importu. Proszę sprawdzić informacje wyświetlane na konsoli! (CTRL+SHIFT+J)"
   },
   "Import_from_Textarea": {
     "message": "Importuj z pola tekstowego"
@@ -354,7 +354,7 @@
     "message": "Eksportuj do SandboxFS"
   },
   "There_is_an_update_for_0name0_avaiable_": {
-    "message": "Dostępna jest aktualizacja dla '$name$'. :)",
+    "message": "Dostępna jest aktualizacja dla skryptu '$name$'. :)",
     "placeholders": {
       "name": {
          "content": "$1"
@@ -362,7 +362,7 @@
     }
   },
   "Just_another_service_provided_by_your_friendly_script_updater_": {
-    "message": "Just another service provided by your friendly script updater:"
+    "message": "Zaprzyjaźniony aktualizator skryptów uprzejmie donosi:"
   },
   "Welcome_": {
     "message": "Witamy!"
