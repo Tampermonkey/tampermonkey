@@ -1563,7 +1563,7 @@ var defaultScripts = function() {
 var setIcon = function(tabId, obj) {
     if (obj == undefined) obj = Config;
 
-    if (tabId != null && allURLs[tabId] && allURLs[tabId].scripts_running) {
+    if (tabId != null && allURLs[tabId] && allURLs[tabId].stats.running) {
         obj.images.icon = obj.values.appearance_3d_icons ? 'images/icon_3d.png' : 'images/icon.png';
         chrome.browserAction.setIcon( { tabId: tabId, path: chrome.extension.getURL( obj.images.icon) } );
     } else {
@@ -3181,6 +3181,32 @@ var requestHandler = function(request, sender, sendResponse) {
             console.log(chrome.i18n.getMessage("Unable_to_run_scripts_due_to_empty_tabID_"));
             sendResponse({});
         }
+    } else if (request.method == "unLoad") {
+        if (!request.topframe && // unload of topframe will be handled by next load event
+            (Config.values.appearance_badges == 'running' ||
+             Config.values.appearance_badges == 'disabled')) {
+
+            var contextId = request.id;
+            if (V || UV) console.log("unload check " + contextId + " url: " + request.url);
+
+            if (contextId &&
+                allURLs[sender.tab.id] &&
+                allURLs[sender.tab.id].stats.executed[contextId]) {
+                
+                allURLs[sender.tab.id].stats.running -= allURLs[sender.tab.id].stats.executed[contextId].running;
+                allURLs[sender.tab.id].stats.disabled -= allURLs[sender.tab.id].stats.executed[contextId].disabled;
+
+                // shouldn't happen...
+                if (allURLs[sender.tab.id].stats.running < 0) allURLs[sender.tab.id].stats.running = 0;
+                if (allURLs[sender.tab.id].stats.disabled < 0) allURLs[sender.tab.id].stats.disabled = 0;
+
+                var url = request.url + request.params;
+                removeFromAllURLs(sender.tab.id, url);
+
+                setBadge(sender.tab.id);
+            }
+        }
+        sendResponse({});
     } else if (request.method == "prepare") {
         if (typeof sender.tab != 'undefined' && sender.tab.index >= 0) { // index of -1 is used by google search for omnibox
             if (request.topframe || !allURLs[sender.tab.id] /* i.e. tamperfire page */) {
@@ -3207,8 +3233,10 @@ var requestHandler = function(request, sender, sendResponse) {
                     if (!scripts.hasOwnProperty(k)) continue;
                     allURLs[sender.tab.id].scripts[k] = true;
                 }
-                allURLs[sender.tab.id].scripts_running += enabledScriptsCount;
-                allURLs[sender.tab.id].scripts_disabled += disabledScriptsCount;
+                allURLs[sender.tab.id].stats.running += enabledScriptsCount;
+                allURLs[sender.tab.id].stats.disabled += disabledScriptsCount;
+                allURLs[sender.tab.id].stats.executed[request.id] = { disabled: disabledScriptsCount, running: enabledScriptsCount };
+
                 setIcon(sender.tab.id);
                 if (Config.values.appearance_badges != 'tamperfire') {
                     // dont determine tamperfire entries too often!
@@ -4118,7 +4146,7 @@ var setBadge = function(tabId) {
         c = 0;
     } else if (Config.values.appearance_badges == 'running') {
         if (tabId && allURLs[tabId]) {
-            c = allURLs[tabId].scripts_running;
+            c = allURLs[tabId].stats.running;
         }
     } else if (Config.values.appearance_badges == 'running_unique') {
         if (tabId && allURLs[tabId]) {
@@ -4129,7 +4157,7 @@ var setBadge = function(tabId) {
         }
     } else if (Config.values.appearance_badges == 'disabled') {
         if (tabId && allURLs[tabId]) {
-            c = allURLs[tabId].scripts_disabled;
+            c = allURLs[tabId].stats.disabled;
         }
     } else if (Config.values.appearance_badges == 'tamperfire') {
         var done = function(cnt) {
@@ -4419,8 +4447,22 @@ var addToAllURLs = function(tabid, url) {
     allURLs[tabid].empty = false;
 };
 
+var removeFromAllURLs = function(tabid, url) {
+    if (V || UV) console.log("Remove from AllURL["+tabid+"] -> " + url);
+    if (allURLs[tabid].urls[url]) {
+        delete allURLs[tabid].urls[url];
+        allURLs[tabid].empty = true;
+        
+        for (var k in allURLs[tabid].urls) {
+            if (!allURLs[tabid].urls.hasOwnProperty(k)) continue;
+            allURLs[tabid].empty = false;
+            break;
+        }
+    }
+};
+
 var initAllURLsByTabId = function(tabId) {
-    allURLs[tabId] = { ts: (new Date()).getTime(), urls: {}, fire: null, empty: true, allow_requests: false, scripts: {}, scripts_running: 0, scripts_disabled: 0 };
+    allURLs[tabId] = { ts: (new Date()).getTime(), urls: {}, fire: null, empty: true, allow_requests: false, scripts: {}, stats: { running : 0, disabled: 0, executed: {} } };
 };
 
 var updateListener = function(tabID, changeInfo, tab, request, length_cb, allrun_cb) {

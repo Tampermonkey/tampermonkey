@@ -874,6 +874,15 @@ function eventHandler(evt) {
 
 function cleanup() {
     if (V) console.log("content: cleanup!");
+
+    var req = { method: "unLoad",
+                id: contextId,
+                topframe: window.self == window.top,
+                url: window.location.origin + window.location.pathname,
+                params: window.location.search + window.location.hash };
+
+    chrome.extension.sendRequest(req, function(response) {});
+    
     document.removeEventListener("TM_event"+contextId, eventHandler, false);
     window.removeEventListener("DOMContentLoaded", domContentLoaded, false);
     window.removeEventListener("DOMNodeInserted", domNodeInserted, false);
