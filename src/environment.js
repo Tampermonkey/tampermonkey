@@ -721,6 +721,36 @@ var HTM_runMyScript = function(HTM_request) {
     var nop = function(response) {};
     var storagePort = null;
 
+    var HTM_getInfo = function() {
+        var excl = { 'observers' : 1,
+                     'id': 1,
+                     'enabled': 1,
+                     'hash' : 1,
+                     'fileURL' : 1 };
+        var o = { script: {} };
+
+        for (var k in HTM_script) {
+            if (!HTM_script.hasOwnProperty(k) || excl[k]) continue;
+            o.script[k] = HTM_script[k];
+        }
+
+        // GM_info compatibility
+        o.script['run-at'] = HTM_script['options'].override.run_at || HTM_script['options'].run_at;
+        o.script['excludes'] = HTM_script['options'].override.orig_excludes;
+        o.script['includes'] = HTM_script['options'].override.orig_includes;
+        o.script['matches'] = HTM_script['options'].override.orig_includes;
+        o.script['unwrap'] = false;
+
+        o['scriptMetaStr'] = HTM_request.header;
+        o['scriptSource'] = HTM_request.code;
+        o['scriptWillUpdate'] = !!(HTM_script['options'].fileURL && HTM_script['options'].fileURL != "");
+        o['scriptUpdateURL'] = HTM_script['options'].fileURL;
+        o['version'] = HTM_request.version;
+        o['scriptHandler'] = "Tampermonkey";
+
+        return o;
+    };
+    
     var HTM_initStoragePort = function() {
         var storageListener = function(response) {
             if (response.storage) {
@@ -954,36 +984,6 @@ var HTM_runMyScript = function(HTM_request) {
         return r;
     };
 
-    var TM_info = function() {
-        var excl = { 'observers' : 1,
-                     'id': 1,
-                     'enabled': 1,
-                     'hash' : 1,
-                     'fileURL' : 1 };
-        var o = { script: {} };
-
-        for (var k in HTM_script) {
-            if (!HTM_script.hasOwnProperty(k) || excl[k]) continue;
-            o.script[k] = HTM_script[k];
-        }
-
-        // GM_info compatibility
-        o.script['run-at'] = HTM_script['options'].override.run_at || HTM_script['options'].run_at;
-        o.script['excludes'] = HTM_script['options'].override.orig_excludes;
-        o.script['includes'] = HTM_script['options'].override.orig_includes;
-        o.script['matches'] = HTM_script['options'].override.orig_includes;
-        o.script['unwrap'] = false;
-
-        o['scriptMetaStr'] = HTM_request.header;
-        o['scriptSource'] = HTM_request.code;
-        o['scriptWillUpdate'] = !!(HTM_script['options'].fileURL && HTM_script['options'].fileURL != "");
-        o['scriptUpdateURL'] = HTM_script['options'].fileURL;
-        o['version'] = HTM_request.version;
-        o['scriptHandler'] = "Tampermonkey";
-
-        return o;
-    };
-
     var GM_EMU = function() {
         this.GM_addStyle = function(css) {
             return TM_addStyle(css);
@@ -1057,9 +1057,7 @@ var HTM_runMyScript = function(HTM_request) {
             return TM_getTabs(callback);
         };
 
-        this.GM_info = function() {
-            return TM_info();
-        };
+        this.GM_info = HTM_getInfo();
     };
 
     var undefined = TMwin.undefined;
