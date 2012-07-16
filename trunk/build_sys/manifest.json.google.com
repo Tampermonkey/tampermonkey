@@ -1,16 +1,25 @@
 {
-   "manifest_version": 1,
+   "manifest_version": 2,
+   "content_security_policy": "script-src 'self'; object-src 'self'",
    "minimum_chrome_version": "17.0.0.0",
    "content_scripts": [ {
-      "js": [ "registry.js", "content.js" ],
+      "js": [ "registry.js",
+              "convert.js",
+              "helper.js",
+              "xmlhttprequest.js",
+              "content.js" ],
       "matches": [ "file://*", "http://*/*", "https://*/*" ],
       "run_at": "document_start",
       "all_frames": true
    } ],
+   "web_accessible_resources": [
+      "emulation.js",
+      "environment.js"
+   ],
    "browser_action": {
       "default_icon": "images/icon_grey.png",
       "default_title": "Tampermonkey",
-      "popup": "action.html"
+      "default_popup": "action.html"
    },
    "icons": { "32": "images/icon.png",
    	      "48": "images/icon48.png",

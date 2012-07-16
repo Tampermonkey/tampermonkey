@@ -10,17 +10,38 @@ var RD = false;
 
 var Registry = {
     objects : {},
+    callbacks: [],
+    loading: 0,
     init : function() {
+    },
+    onLoad: function() {
+        var cb = Registry.callbacks.pop();
+        if (cb) cb();
+    },
+    checkLoading : function() {
+        var l = false;
+        for (var k in Registry.objects) {
+            if (!Registry.objects.hasOwnProperty(k)) continue;
+            if (Registry.objects[k] === null) {
+                l = true;
+                break;
+            }
+        }
+        if (!l) {
+            Registry.onLoad();
+        }
     },
     register : function(name, obj, overwrite) {
         if (RD || RV || V) console.log("Registry.register " + name + " overwrite: " + overwrite);
         if (!Registry.objects[name] || overwrite) {
             Registry.objects[name] = obj;
+            Registry.checkLoading();
         }
     },
     require : function(name) {
         if (RD || RV || V) console.log("Registry.require " + name);
         if (Registry.objects[name] === undefined) {
+            console.log("Error: need " + name + ".js");
             Registry.objects[name] = null; // to avoid require loops
             Registry.loadFile(name + '.js');
         }
@@ -41,7 +62,7 @@ var Registry = {
         return content;
     },
     loadFile : function(file, ev) {
-        if (!ev) ev = window['eval']; // manifest_version: 1
+        // if (!ev) ev = window['eval']; // manifest_version: 1
         if (RV || V) console.log("Registry.loadFile " + file);
         try {
             if (ev) {
@@ -50,7 +71,7 @@ var Registry = {
             } else {
                 // TODO: we need a callback to continue when the script is executed
                 var s = document.createElement('script');
-                s.setAttribute('src', file);
+                s.setAttribute('src', chrome.extension.getURL(file));
                 (document.head || document.body || document.documentElement || document).appendChild(s);
             }
         } catch (e) {
@@ -64,6 +85,9 @@ var Registry = {
             console.log("Error: Registry.get " + name + " wasn't required or found!");
         }
         return o;
+    },
+    addLoadHandler : function(cb) {
+        Registry.callbacks.push(cb);
     }
 };
 

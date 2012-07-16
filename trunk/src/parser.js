@@ -8,7 +8,6 @@
 
 Registry.require('helper');
 Registry.require('convert');
-Registry.require('parser');
 Registry.require('compat');
 
 var Converter = Registry.get('convert');

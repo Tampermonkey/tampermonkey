@@ -22,13 +22,13 @@ var SV = false;
 var CV = false;
 var NV = false;
 
-(function() {
-
 Registry.require('convert');
 Registry.require('xmlhttprequest');
 Registry.require('compat');
 Registry.require('parser');
 Registry.require('helper');
+
+(function() {
 
 var adjustLogLevel = function(logLevel) {
     D |= (logLevel >= 60);
@@ -567,7 +567,7 @@ var TM_fire = {
             TM_fire.status.error = msg;
             if (cb) cb();
             notify.show('TamperFire',
-                        chrome.i18n.getMessage('TamperFire_update_failed___'), chrome.extension.getURL("images/icon128_3d.png"));
+                        chrome.i18n.getMessage('TamperFire_update_failed___'), chrome.extension.getURL("images/icon128.png"));
 
         };
 
@@ -658,7 +658,7 @@ var TM_fire = {
         };
 
         notify.show('TamperFire',
-                    chrome.i18n.getMessage('TamperFire_update_started'), chrome.extension.getURL("images/icon128_3d.png"));
+                    chrome.i18n.getMessage('TamperFire_update_started'), chrome.extension.getURL("images/icon128.png"));
 
         watchdog();
     },
@@ -845,7 +845,7 @@ var TM_fire = {
         var currentEID = 0;
 
         notify.show('TamperFire',
-                    chrome.i18n.getMessage('TamperFire_import_started'), chrome.extension.getURL("images/icon128_3d.png"));
+                    chrome.i18n.getMessage('TamperFire_import_started'), chrome.extension.getURL("images/icon128.png"));
 
         for (var k in json.scripts) {
             if (!json.scripts.hasOwnProperty(k)) continue;
@@ -924,7 +924,7 @@ var TM_fire = {
             var aDone = function() {
                 if (cb) cb(index.length);
                 notify.show('TamperFire',
-                            chrome.i18n.getMessage('TamperFire_is_up_to_date'), chrome.extension.getURL("images/icon128_3d.png"));
+                            chrome.i18n.getMessage('TamperFire_is_up_to_date'), chrome.extension.getURL("images/icon128.png"));
             };
             var siDone = function() {
                 j=0;
@@ -1674,7 +1674,7 @@ var configInit = function(callback, saveCallback) {
 
         if (oobj.values.notification_showTMUpdate && upNotification) {
             notify.show(chrome.i18n.getMessage('Welcome_'),
-                        chrome.i18n.getMessage('Have_fun_with_Tampermonkey', upNotification), chrome.extension.getURL("images/icon128_3d.png"));
+                        chrome.i18n.getMessage('Have_fun_with_Tampermonkey', upNotification), chrome.extension.getURL("images/icon128.png"));
         }
     }
 
@@ -2418,7 +2418,7 @@ var notifyOnScriptUpdates = function(force, showResult, id, callback) {
     if (showResult) {
         var t = chrome.i18n.getMessage('Script_Update');
         var msg = chrome.i18n.getMessage('Check_for_userscripts_updates') + '...';
-        notify.show(t, msg, chrome.extension.getURL("images/icon128_3d.png"), 5000);
+        notify.show(t, msg, chrome.extension.getURL("images/icon128.png"), 5000);
     }
 
     var last = getUpdateCheckCfg();
@@ -2447,7 +2447,7 @@ var notifyOnScriptUpdates = function(force, showResult, id, callback) {
                     if (Config.values.notification_silentScriptUpdate) {
                         install(true);
                     } else {
-                        notify.show(t, msg, chrome.extension.getURL("images/icon128_3d.png"), Config.values.scriptUpdateHideNotificationAfter, install);
+                        notify.show(t, msg, chrome.extension.getURL("images/icon128.png"), Config.values.scriptUpdateHideNotificationAfter, install);
                     }
                 } catch (e) {
                     console.log("bg: notification error " + e.message);
@@ -2509,7 +2509,7 @@ var updateUserscripts = function(tabid, showResult, scriptid, callback) {
                 if (D || V || UV) console.log("No update found");
                 notify.show('Narf!',
                             chrome.i18n.getMessage('No_update_found__sry_'),
-                            chrome.extension.getURL("images/icon128_3d.png"));
+                            chrome.extension.getURL("images/icon128.png"));
             }
             if (callback) {
                 window.setTimeout(callback, 1);
@@ -3321,7 +3321,7 @@ var requestHandler = function(request, sender, sendResponse) {
             done([], []);
         }
     } else if (request.method == "notification") {
-        var image = (request.image && request.image != "") ? request.image : chrome.extension.getURL("images/icon128_3d.png");
+        var image = (request.image && request.image != "") ? request.image : chrome.extension.getURL("images/icon128.png");
         var cb = function (clicked) {
             sendResponse({clicked : clicked});
         }
@@ -4023,7 +4023,7 @@ var extensions = {
 };
 exte = extensions;
 
-/* #### pimped icon ### */
+/* #### pimped icon, browser action ### */
 
 var PNG = {
     initCanvas : function(canvas) {
@@ -4128,6 +4128,12 @@ var PNG = {
     toPNG : function() {
         return this.canvas.toDataURL();
     }
+};
+
+var initBrowserAction = function() {
+   chrome.browserAction.setIcon(  {  path: chrome.extension.getURL("images/icon_grey.png") } );
+   chrome.browserAction.setPopup( { popup: "action.html" } );
+   chrome.browserAction.setTitle( { title: "Tampermomkey" });
 };
 
 var setBadge = function(tabId) {
@@ -4330,12 +4336,9 @@ var checkRequestForUserscript = function(details) {
         (qp == -1 || up < qp) &&           /* ignore user.js string in URL params */
         details.url.search(/\#bypass=true/) == -1) {
 
-        var redirect = function() {
-            chrome.tabs.update(details.tabId, { url:  chrome.extension.getURL("ask.html") + "?script=" + encodeURI(details.url) });
-        };
+        var url = chrome.extension.getURL("ask.html") + "?script=" + encodeURI(details.url);
 
-        window.setTimeout(redirect, 1);
-        return { cancel: true };
+        return { redirectUrl: url };
     }
 
     return {};
@@ -4540,6 +4543,7 @@ init = function() {
     scriptParser = Registry.get('parser');
     Helper = Registry.get('helper');
     
+    initBrowserAction();
     TM_storage.init();
     initScriptOptions();
 

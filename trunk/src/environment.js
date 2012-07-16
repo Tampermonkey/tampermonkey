@@ -1151,7 +1151,7 @@ var HTM_runMyScript = function(HTM_request) {
                     });
     }
     
-    if (V || D) console.log("env: eval script " + HTM_script.name + " now!");
+    if (V || D) console.log("env: execute script " + HTM_script.name + " now!");
     TM_mEval(HTM_script, HTM_request.code, HTM_request.requires, TMwin.props[HTM_script['namespace']]);
 
     window.addEventListener('unload', HTM_removeStorageListener, false);
