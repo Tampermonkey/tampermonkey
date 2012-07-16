@@ -237,6 +237,6 @@ chrome.extension.onRequest.addListener(
 var init = function() {
     modifyScriptOptions(null, false);
 };
- 
-window.setTimeout(init, 1);
+
+window.setTimeout(init, 50);
 })();

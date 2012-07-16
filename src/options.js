@@ -4,7 +4,14 @@
  * @licence GPL v3
  */
 
-// help scrambling...
+/* ########### include ############## */
+Registry.require('crcrc');
+Registry.require('curtain');
+Registry.require('tabview');
+Registry.require('htmlutil');
+Registry.require('helper');
+Registry.require('convert');
+
 (function() {
 
 var V = false;
@@ -19,13 +26,6 @@ var stCache = {};
 if (!window.requestFileSystem) window.requestFileSystem = window.webkitRequestFileSystem;
 if (!window.BlobBuilder) window.BlobBuilder = window.WebKitBlobBuilder;
 
-/* ########### include ############## */
-Registry.require('crcrc');
-Registry.require('curtain');
-Registry.require('tabview');
-Registry.require('htmlutil');
-Registry.require('helper');
-Registry.require('convert');
 
 var cr = Registry.get('crcrc').cr;
 var crc = Registry.get('crcrc').crc;

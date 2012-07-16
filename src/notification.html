@@ -2,48 +2,10 @@
 <html>
   <head>
     <link href="style.css" rel="stylesheet" type="text/css" />
-    <script>
-      function load() {
-      var params = window.location.search.split('&');
-      var t = 10000;
-      var notifyId = 0;
-      for (var k in params) {
-          var a = params[k].split('=');
-          if (a.length < 2) continue;
-          if (a[0] == "title" ||
-              a[0] == "text") {
-              var d = document.getElementById(a[0]);
-              d.innerHTML = decodeURIComponent(a[1]).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
-              d.setAttribute("style", "display:block;");
-          } else if (a[0] == "delay") {
-              t = Number(decodeURI(a[1]));
-          } else if (a[0] == "image") {
-              var d = document.getElementById(a[0]);
-              d.src = decodeURIComponent(a[1]);
-              d.setAttribute("style", "display:block; width: 48px; height: 48px;");
-          } else if (a[0] == "notifyId") {
-              notifyId = a[1];
-              document.body.addEventListener("click", function() {
-                       var bg = chrome.extension.getBackgroundPage();
-                       var customEvent = document.createEvent("MutationEvent");
-                       customEvent.initMutationEvent("notify_" + notifyId,
-                              false,
-                              false,
-                              null,
-                              null,
-                              null,
-                              null,
-                              null);
-                       bg.dispatchEvent(customEvent);
-                       window.close();
-                   });
-      }
-      }
-      if (t) window.setTimeout(function() { window.close(); }, t);
-      }
-    </script>
+    <script type="text/javascript" src="notification.js"></script>
+
   </head>
-  <body onload="load();">
+  <body>
     <div class="notify">
     <table><tr><td>
     <img id="image" style="display:none"/>
