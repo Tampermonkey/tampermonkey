@@ -13,7 +13,7 @@ var createImageText = function(src, name, id, append, title, oc, text) {
     image.setAttribute("height", "16px");
     image.setAttribute("src", src);
     wrap.setAttribute("style", "cursor: pointer;");
-    wrap.title = title;
+    if (title) wrap.title = title;
     wrap.key = id;
     wrap.name = name;
     wrap.alt = ' ?';
@@ -34,14 +34,14 @@ var createImageText = function(src, name, id, append, title, oc, text) {
     return wrap;
 }
 
-var createImage = function(src, name, id, append, title, oc, text) {
+var createImage = function(src, name, id, append, title, oc) {
     var image = cr('image', name, id, append);
 
     image.setAttribute("width", "16px");
     image.setAttribute("height", "16px");
     image.setAttribute("src", src);
     image.setAttribute("style", "cursor: pointer;");
-    image.title = title;
+    if (title) image.title = title;
     image.key = id;
     image.name = name;
     image.alt = ' ?';
