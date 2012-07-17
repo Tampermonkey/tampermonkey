@@ -41,11 +41,16 @@ var createActionsMenu = function(items) {
             table.appendChild(t);
         } else {
             var td1 = crc('td', 'imagetd actionimagetd');
+            var td2 = crc('td', 'actiontd');
+            var ai2 = crc('div', 'actionitem', i.name, i.id, 'ai', true);
+            td2.appendChild(ai2);
+
             if (i.image) {
                 if (i.id && i.userscript) {
                     var el = function() {
                         modifyScriptOptions(this.name, 'enabled', !this.oldvalue);
                     };
+                    
                     var pt = (i.position > 0) ? ((i.position < 10) ? " " + i.position  : i.position) : null
                     var g = HtmlUtil.createImageText(i.image,
                                         i.name,
@@ -56,14 +61,15 @@ var createActionsMenu = function(items) {
                                         pt);
                     g.oldvalue = i.enabled;
                     td1.appendChild(g);
+
+                    ai2.name = i.name;
+                    ai2.oldvalue = i.enabled;
+                    ai2.addEventListener("click", el);
                 } else {
                     image = HtmlUtil.createImage(i.image, i.name, i.id, null, "");
                     td1.appendChild(image);
                 }
             }
-            var td2 = crc('td', 'actiontd');
-            var ai2 = crc('div', 'actionitem', i.name, i.id, 'ai');
-            td2.appendChild(ai2);
             
             if (i.checkbox) {
                 var input = document.createElement('input');
@@ -82,34 +88,37 @@ var createActionsMenu = function(items) {
             } else if (i.url) {
                 span = document.createElement('a');
                 span.href = 'javascript://nop/';
-                span.url = i.url;
-                span.newtab = i.newtab;
+                td2.url = i.url;
+                td2.newtab = i.newtab;
                 var loc = function() {
                     loadUrl(this.url, this.newtab);
                 }
-                span.addEventListener("click", loc);
+                td2.addEventListener("click", loc);
+                td2.setAttribute('class', td2.setAttribute('class') + ' clickable');
                 span.textContent = i.name;
                 td2.setAttribute("colspan", "2");
                 ai2.appendChild(span);
             } else if (i.menucmd) {
                 var a = document.createElement('a');
                 a.href = 'javascript://nop/';
-                a.id = i.id;
+                td2.id = i.id;
                 var oc = function() {
                     execMenuCmd(this.id);
                 }
-                a.addEventListener("click", oc);
+                td2.addEventListener("click", oc);
+                td2.setAttribute('class', td2.setAttribute('class') + ' clickable');
                 a.textContent = i.name;
                 td2.setAttribute("colspan", "2");
                 ai2.appendChild(a);
             } else if (i.runUpdate) {
                 var a = document.createElement('a');
                 a.href = 'javascript://nop/';
-                a.id = i.id;
+                td2.id = i.id;
                 var uoc = function() {
                     runScriptUpdates(this.id);
                 }
-                a.addEventListener("click", uoc);
+                td2.addEventListener("click", uoc);
+                td2.setAttribute('class', td2.setAttribute('class') + ' clickable');
                 a.textContent = i.name;
                 td2.setAttribute("colspan", "2");
                 ai2.appendChild(a);
