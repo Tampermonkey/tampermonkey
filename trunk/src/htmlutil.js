@@ -40,7 +40,7 @@ var createImage = function(src, name, id, append, title, oc) {
     image.setAttribute("width", "16px");
     image.setAttribute("height", "16px");
     image.setAttribute("src", src);
-    image.setAttribute("style", "cursor: pointer;");
+    if (oc) image.setAttribute("style", "cursor: pointer;");
     if (title) image.title = title;
     image.key = id;
     image.name = name;
