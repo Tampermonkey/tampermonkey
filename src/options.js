@@ -1673,6 +1673,11 @@ var createImagesFromScript = function(i) {
         var d = 0;
         for (var o=0; o<i.includes.length;o++) {
             var inc = i.includes[o];
+            if (!inc) {
+                console.log("o: Warn: script '" + i.name + "' has invalid include (index: " + i + ")");
+                continue; // issue 93 ?!
+            }
+            
             if (inc.search(/htt(ps|p):\/\/(\*\/\*|\*)*$/) != -1 ||
                 inc == "*") {
                 var img = HtmlUtil.createImage(chrome.extension.getURL('images/web.png'),
