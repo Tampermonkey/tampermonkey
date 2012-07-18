@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<gupdate xmlns='http://www.google.com/update2/response' protocol='2.0'>
+  <app appid=bnimknkampfeeemccidiigealnpoheap>
+    <updatecheck codebase='http://tampermonkey.net/crx/tm_legacy.crx' version='2.5.41'/>
+  </app>
+</gupdate>

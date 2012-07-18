@@ -1,22 +1,41 @@
 #!/bin/bash
 
-m=0;
+b=0;
+e=1;
+l=0;
 
-if [ $# -eq 1 ]
-then
- if [ $1 == "-b" ]
- then
-  m=1;
- else
-   echo "'$1' is not supported!"
-   exit 1;
- fi
-fi
+USAGE="Usage: `basename $0` [-bl -e{0|1}]";
+
+# Parse command line options.
+while getopts be:l OPT; do
+    case "$OPT" in
+        b)
+	    b=1
+            ;;
+        e)
+	    e=$OPTARG
+            ;;
+        l)
+            l=1
+            ;;
+        \?)
+            # getopts issues an error message
+            echo $USAGE >&2
+            exit 1
+            ;;
+    esac
+done
 
 svn up
 rm -r rel
 mkdir rel
-./compress.sh -a src rel
+if [ $e -eq 1 ]
+then
+   ./compress.sh -a src rel
+else
+   tar c -C "src/" --exclude "*.svn" --exclude "*.*~" . | \
+	tar x -C "rel/"
+fi
 svn info | grep -r "Revision:" | sed "s/Revision: //g" > rev.tmp
 cd rel
 #cp ../build_sys/manifest.json.google.com manifest.json
@@ -55,8 +74,17 @@ cp ../i18n/zh_CN/* _locales/zh_CN/
 mkdir system
 cp ../src/system/* system/
 
-cat ../build_sys/manifest.json.google.com | sed "s/\(\"version\": \"\)\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)\"/\1\2\.\3\.`cat ../rev.tmp`\"/g" > manifest.json.tmp
-if [ $m -eq 1 ]
+if [ $l -eq 0 ]
+then
+    cat ../build_sys/manifest.json.google.com > manifest.tmp
+else
+    cat ../build_sys/manifest.json.legacy.com > manifest.tmp
+fi
+
+cat manifest.tmp | sed "s/\(\"version\": \"\)\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)\"/\1\2\.\3\.`cat ../rev.tmp`\"/g" > manifest.json.tmp
+rm manifest.tmp
+
+if [ $b -eq 1 ]
 then
  cat manifest.json.tmp | sed "s/\(\"name\":[ D\t]*\"\)\([A-Za-z0-9]*\)/\1\2 Beta/g" > manifest.json
  rm manifest.json.tmp
