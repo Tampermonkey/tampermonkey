@@ -1564,10 +1564,10 @@ var setIcon = function(tabId, obj) {
     if (obj == undefined) obj = Config;
 
     if (tabId != null && allURLs[tabId] && allURLs[tabId].stats.running) {
-        obj.images.icon = obj.values.appearance_3d_icons ? 'images/icon_3d.png' : 'images/icon.png';
+        obj.images.icon = 'images/icon.png';
         chrome.browserAction.setIcon( { tabId: tabId, path: chrome.extension.getURL( obj.images.icon) } );
     } else {
-        obj.images.icon = obj.values.appearance_3d_icons ? 'images/icon_3d_grey.png' : 'images/icon_grey.png';
+        obj.images.icon = 'images/icon_grey.png';
         var s = { path: chrome.extension.getURL( obj.images.icon) };
         if (tabId != null) s.tabId = tabId;
         chrome.browserAction.setIcon( s );
@@ -1612,7 +1612,6 @@ var configInit = function(callback, saveCallback) {
                      scriptUpdateHideNotificationAfter: 15 * 1000,
                      scriptUpdateCheckDisabled: false,
                      autoReload: false,
-                     appearance_3d_icons: false,
                      appearance_badges: 'running',
                      fire_enabled: false,
                      fire_sort_cache_enabled: true,
@@ -1666,7 +1665,7 @@ var configInit = function(callback, saveCallback) {
         }
 
         oobj.images = {};
-        oobj.images.icon = Config.values.appearance_3d_icons ? 'images/icon_3d.png' : 'images/icon.png';
+        oobj.images.icon = 'images/icon.png';
 
         oobj.initialized = true;
 
@@ -3623,15 +3622,7 @@ var createOptionItems = function(cb) {
                desc: '' });
 
 
-        optsa.push({ name: chrome.i18n.getMessage('Appearance'), section: true, level: 20 });
-
-    optsa.push({ name: chrome.i18n.getMessage('3D_Icon_Set'),
-               id: 'appearance_3d_icons',
-               level: 200, /* never */
-               option: true,
-               checkbox: true,
-               enabled: Config.values.appearance_3d_icons,
-               desc: '' });
+    optsa.push({ name: chrome.i18n.getMessage('Appearance'), section: true, level: 20 });
 
     optsa.push({ name: chrome.i18n.getMessage('Update_Notification'),
                id: 'notification_showTMUpdate',

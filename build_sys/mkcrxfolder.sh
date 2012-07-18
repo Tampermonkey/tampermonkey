@@ -4,7 +4,7 @@ b=0;
 e=1;
 l=0;
 
-USAGE="Usage: `basename $0` [-bl -e{0|1}]";
+USAGE="Usage: `basename $0` [-b|l -e{0|1}]";
 
 # Parse command line options.
 while getopts be:l OPT; do
@@ -84,26 +84,37 @@ fi
 cat manifest.tmp | sed "s/\(\"version\": \"\)\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)\"/\1\2\.\3\.`cat ../rev.tmp`\"/g" > manifest.json.tmp
 rm manifest.tmp
 
+cd images
+mv icon_grey.png icon_grey.png.bak
+if [ $l -eq 1 ]
+then
+    rm icon*.png
+    rm ricon*.png
+    mv licon.png icon.png
+    mv licon48.png icon48.png
+    mv licon128.png icon128.png
+else
+  if [ $b -eq 1 ]
+  then
+    rm icon*.png
+    rm licon*.png
+    mv ricon.png icon.png
+    mv ricon48.png icon48.png
+    mv ricon128.png icon128.png
+   else
+    rm ricon*.png
+    rm licon*.png
+   fi
+fi
+mv icon_grey.png.bak icon_grey.png
+cd ..
+
 if [ $b -eq 1 ]
 then
- cat manifest.json.tmp | sed "s/\(\"name\":[ D\t]*\"\)\([A-Za-z0-9]*\)/\1\2 Beta/g" > manifest.json
- rm manifest.json.tmp
- cd images
- mv icon_grey.png icon_grey.png.bak
- mv icon_3d_grey.png icon_3d_grey.png.bak
- rm icon*.png
- mv ricon.png icon.png
- mv ricon48.png icon48.png
- mv ricon128.png icon128.png
- mv ricon_3d.png icon_3d.png
- mv ricon48_3d.png icon48_3d.png
- mv ricon128_3d.png icon128_3d.png
- mv icon_grey.png.bak icon_grey.png
- mv icon_3d_grey.png.bak icon_3d_grey.png
- cd ..
+  cat manifest.json.tmp | sed "s/\(\"name\":[ D\t]*\"\)\([A-Za-z0-9]*\)/\1\2 Beta/g" > manifest.json
+  rm manifest.json.tmp
 else
- rm images/ricon*.png
- mv manifest.json.tmp manifest.json
+  mv manifest.json.tmp manifest.json
 fi
 
 rm *.*~
