@@ -535,7 +535,7 @@ var TM_fire = {
     },
 
     updateURL : function() {
-        // return "http://tampermonkey.net/fire/update_23x.php";
+        // return "http://tampermonkey.net/fire/update_23x.php?ts=0";
         return Config.values.fire_updateURL + "?ts=0"; // "?ts=" + (new Date()).getTime();
     },
 
