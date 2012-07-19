@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       tamperfireDB
 // @namespace  http://tampermonkey.net/
-// @version    0.1.13
+// @version    0.1.14
 // @description  creates a TamperFire DB
 // @include    http://fire.tampermonkey.net/*
 // @include    http://tampermonkey.net/fire/*
@@ -11,7 +11,7 @@
 var V = false;
 var D = true;
 var MIN = 1;
-var MAX = 118000;
+var MAX = 140000;
 var threads = 30;
 
 var wait = 1;
