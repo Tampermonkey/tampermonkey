@@ -8,12 +8,14 @@ var V = false;
 
 (function() {
 
+Registry.require('pingpong');
 Registry.require('crcrc');
 Registry.require('htmlutil');
 
 var cr = Registry.get('crcrc').cr;
 var crc = Registry.get('crcrc').crc;
 var HtmlUtil = Registry.get('htmlutil');
+var pp = Registry.get('pingpong');
  
 var createActionsMenu = function(items) {
     var action = document.getElementById('action');
@@ -243,9 +245,43 @@ chrome.extension.onRequest.addListener(
         }
     });
 
-var init = function() {
-    modifyScriptOptions(null, false);
-};
+var domListener = function() {
+    window.removeEventListener('DOMContentLoaded', domListener, false);
+    window.removeEventListener('load', domListener, false);
 
-window.setTimeout(init, 50);
+    var _loading = null;
+    var _img = null;
+    
+    var clear = function() {
+        if (_loading) window.clearTimeout(_loading);
+        _loading = null;
+        if (_img) _img.parentNode.remove(_img);
+        _img = null;
+    };
+
+    var addWait = function() {
+        _img = document.createElement('img');
+        _img.setAttribute('src', 'images/large-loading.gif')
+        document.getElementById('action').appendChild(_img);
+    };
+ 
+    var suc = function() {
+        clear();
+        modifyScriptOptions(null, false);
+    };
+
+    var fail = function() {
+        clear();
+        if (confirm(chrome.i18n.getMessage("An_internal_error_occured_Do_you_want_to_visit_the_forum_"))) {
+            window.open('http://tampermonkey.net/bug');
+        }
+    };
+
+    _loading = window.setTimeout(addWait, 500);
+    pp.ping(suc, fail);
+}
+
+window.addEventListener('DOMContentLoaded', domListener, false);
+window.addEventListener('load', domListener, false);
+
 })();

@@ -5,6 +5,7 @@
  */
 
 /* ########### include ############## */
+Registry.require('pingpong');
 Registry.require('crcrc');
 Registry.require('curtain');
 Registry.require('tabview');
@@ -34,6 +35,7 @@ var TabView = Registry.get('tabview');
 var HtmlUtil = Registry.get('htmlutil');
 var Helper = Registry.get('helper');
 var Converter = Registry.get('convert');
+var pp = Registry.get('pingpong');
 
 /* ########### main ############## */
  
@@ -1874,19 +1876,25 @@ chrome.extension.onRequest.addListener(
 
 if (V) console.log("Register request listener (options)");
 
-var listener = function() {
-    window.removeEventListener('DOMContentLoaded', listener, false);
-    window.removeEventListener('load', listener, false);
+var domListener = function() {
+    window.removeEventListener('DOMContentLoaded', domListener, false);
+    window.removeEventListener('load', domListener, false);
 
-    var delay = function() {
+    var suc = function() {
         modifyScriptOption(null, false);
     };
 
-    window.setTimeout(delay, 500);
+    var fail = function() {
+        if (confirm(chrome.i18n.getMessage("An_internal_error_occured_Do_you_want_to_visit_the_forum_"))) {
+            window.location.href = 'http://tampermonkey.net/bug'
+        }
+    };
+
+    pp.ping(suc, fail);
     Please.wait();
 };
 
-window.addEventListener('DOMContentLoaded', listener, false);
-window.addEventListener('load', listener, false);
+window.addEventListener('DOMContentLoaded', domListener, false);
+window.addEventListener('load', domListener, false);
 
 })();

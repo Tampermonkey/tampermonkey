@@ -25,6 +25,7 @@ if (!window.requestFileSystem) window.requestFileSystem = window.webkitRequestFi
 if (!window.BlobBuilder) window.BlobBuilder = window.WebKitBlobBuilder;
 
 /* ########### include ############## */
+Registry.require('pingpong');
 Registry.require('crcrc');
 Registry.require('curtain');
 Registry.require('helper');
@@ -39,6 +40,7 @@ var Helper = Registry.get('helper');
 var TabView = Registry.get('tabview');
 var Converter = Registry.get('convert');
 var HtmlUtil = Registry.get('htmlutil');
+var pp = Registry.get('pingpong');
 
 /* ########### main ############## */
 var gArgs = Helper.getUrlArgs();
@@ -1099,18 +1101,26 @@ chrome.extension.onRequest.addListener(
         }
     });
 
-var listener = function() {
-    window.removeEventListener('DOMContentLoaded', listener, false);
-    window.removeEventListener('load', listener, false);
-    var delay = function() {
+var domListener = function() {
+    window.removeEventListener('DOMContentLoaded', domListener, false);
+    window.removeEventListener('load', domListener, false);
+
+    var suc = function() {
         getFireItems(tabID, tabURL);
     };
-    window.setTimeout(delay, 500);
+
+    var fail = function() {
+        if (confirm(chrome.i18n.getMessage("An_internal_error_occured_Do_you_want_to_visit_the_forum_"))) {
+            window.location.href = 'http://tampermonkey.net/bug'
+        }
+    };
+
+    pp.ping(suc, fail);
     Please.wait();
 };
 
-window.addEventListener('DOMContentLoaded', listener, false);
-window.addEventListener('load', listener, false);
+window.addEventListener('DOMContentLoaded', domListener, false);
+window.addEventListener('load', domListener, false);
 
 tabID = determineTabID();
 tabURL = decodeURI(determineTabURL(encodeURI(tabURL)));
