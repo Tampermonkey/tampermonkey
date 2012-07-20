@@ -748,6 +748,10 @@
   "User_excludes": {
     "message": "User excludes"
   },
+  "An_internal_error_occured_Do_you_want_to_visit_the_forum_": {
+    "message": "An internal error occured. If this problem persist, please press OK and report this issue at the forum.\n\nDo you want to visit the Tampermonkey forum?"
+  },
+
   "EOF": {
     "message": "EOF"
   }

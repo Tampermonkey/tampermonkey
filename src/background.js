@@ -2933,7 +2933,10 @@ var requestHandler = function(request, sender, sendResponse) {
         return;
     }
     if (V || EV || MV) console.log("back: request.method " + request.method + " id " + request.id);
-    if (request.method == "openInTab") {
+
+    if (request.method == "ping") {
+        sendResponse({ pong: true });
+    } else if (request.method == "openInTab") {
         var done = function(tab) {
             closeableTabs[tab.id] = true;
             sendResponse({ tabId: tab.id });
@@ -3508,7 +3511,7 @@ var createActionMenuItems = function(tab) {
     var c = convertMenuCmdsToMenuItems(tab.id);
     if (c.length) c.push(createDivider());
     c.push({ name: chrome.i18n.getMessage('Check_for_userscripts_updates'), image: chrome.extension.getURL('images/update.png'), runUpdate: true});
-    c.push({ name: chrome.i18n.getMessage('Report_a_bug'), image: chrome.extension.getURL('images/bug.png'), url: 'http://forum.tampermonkey.net/posting.php?mode=post&f=17&subject=[BUG]', newtab: true });
+    c.push({ name: chrome.i18n.getMessage('Report_a_bug'), image: chrome.extension.getURL('images/bug.png'), url: 'http://tampermonkey.net/bug', newtab: true });
     c.push({ name: chrome.i18n.getMessage('Please_consider_a_donation'), image: chrome.extension.getURL('images/amor.png'), url: 'http://tampermonkey.net/donate.html', newtab: true });
     if (c.length) c.push(createDivider());
     c.push({ name: chrome.i18n.getMessage('Options'), image: chrome.extension.getURL('images/agt_utilities.png'), url: chrome.extension.getURL('options.html'), newtab: true });

@@ -96,7 +96,7 @@
     "message": "Exclude(s):"
   },
   "Note__A_recheck_of_the_GreaseMonkey_FF_compatibility_options_may_be_required_in_order_to_run_this_script_": {
-    "message": "Achtung: Bitte überprüfen sie die GreaseMonkey/FF       \n    Kompatibilitäts-Optionen um\n    Fehler im Script zu vermeiden."
+    "message": "Achtung: Bitte überprüfen Sie die GreaseMonkey/FF       \n    Kompatibilitäts-Optionen um\n    Fehler im Script zu vermeiden."
   },
   "Do_you_want_to_continue_": {
     "message": "Möchten Sie fortfahren?"
@@ -253,10 +253,10 @@
     "message": "Zurücksetzen"
   },
   "There_are_unsaved_changed_" : {
-    "message": "Die Änderungen wurden nicht gespeichert.\nMöchten sie den Dialog wirklich schließen?"
+    "message": "Die Änderungen wurden nicht gespeichert.\nMöchten Sie den Dialog wirklich schließen?"
   },
   "Do_you_really_want_to_store_fixed_code_": {
-    "message": "Die Option '$option$' ist aktiviert!\n\nMöchten sie wirklich den von TM modifizierten Quellcode speichern?",
+    "message": "Die Option '$option$' ist aktiviert!\n\nMöchten Sie wirklich den von TM modifizierten Quellcode speichern?",
     "placeholders": {
       "option": {
          "content": "$1"
@@ -714,6 +714,9 @@
   },
   "User_excludes": {
     "message": "Nutzer Exclude"
+  },
+  "An_internal_error_occured_Do_you_want_to_visit_the_forum_": {
+    "message": "Ein interner Fehler ist aufgetreten. Bitte melden Sie dieses Problem im Tampermonkey Forum, falls es weiterhin besteht.\n\nWollen Sie das Forum jetzt besuchen?"
   },
   "EOF": {
     "message": "EOF"
