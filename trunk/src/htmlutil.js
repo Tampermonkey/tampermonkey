@@ -82,6 +82,13 @@ var createTextarea = function(title, i, oc) {
     return { elem: s, textarea: input };
 };
 
+var createPassword = function(name, i, oc) {
+    var o = createInput(name, i, oc);
+    o.input.setAttribute("type", "password");
+
+    return o;
+};
+ 
 var createInput = function(name, i, oc) {
     var s = cr('div', i.name, i.id, 'input');
     var input = cr('input', i.name, i.id, 'input');
@@ -283,6 +290,7 @@ Registry.register('htmlutil', {
                           createFileInput : createFileInput,
                           createTextarea : createTextarea,
                           createInput : createInput,
+                          createPassword : createPassword,
                           createCheckbox : createCheckbox,
                           createDropDown : createDropDown,
                           createScriptStartDropDown : createScriptStartDropDown,

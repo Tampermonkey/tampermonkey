@@ -751,7 +751,24 @@
   "An_internal_error_occured_Do_you_want_to_visit_the_forum_": {
     "message": "An internal error occured. If this problem persist, please press OK and report this issue at the forum.\n\nDo you want to visit the Tampermonkey forum?"
   },
-
+  "Script_Syncer": {
+    "message": "Script Syncer"
+  },
+  "Enable_Script_Sync": {
+    "message": "Enable Script Sync"
+  },
+  "eMail": {
+    "message": "e-mail address"
+  },
+  "Password": {
+    "message": "Password"
+  },
+  "Account_is_verified": {
+    "message": "Account_is_verified"
+  },
+  "Credentials_are_submitted__Please_check_your_email_account_for_verification_details": {
+    "message": "Your credentials are submitted. Please check your email account for verification details."
+  },
   "EOF": {
     "message": "EOF"
   }
