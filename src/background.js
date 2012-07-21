@@ -1574,16 +1574,29 @@ var setIcon = function(tabId, obj) {
     }
 };
  
-var setOptions = function(obj) {
-    setIcon(null, obj);
-    if (Config.values.fire_enabled && !TM_fire.status.initialized) TM_fire.init();
+var addCfgCallbacks = function(obj) {
+    var checkSyncAccount = function(key, oldVal, newVal) {
+        debugger;
+        
+    };
 
-    adjustLogLevel(Config.values.logLevel);
+    Config.addChangeListener('sync_enabled', checkSyncAccount);
+    Config.addChangeListener('sync_username', checkSyncAccount);
+    Config.addChangeListener('sync_password', checkSyncAccount);
+
+    Config.addChangeListener('fire_enabled', function() {
+                                 if (TM_fire.status.initialized) {
+                                     TM_fire.init();
+                                 }
+                             });
+    Config.addChangeListener('logLevel', function() {
+                                 adjustLogLevel(Config.values.logLevel);
+                             });
 };
 
 /* ###### Config ####### */
 
-var configInit = function(callback, saveCallback) {
+var newConfig = function(initCallback) {
 
     var oobj = this;
 
@@ -1597,6 +1610,9 @@ var configInit = function(callback, saveCallback) {
     defltScript += '// @copyright  2012+, You\n';
     defltScript += '// ==/UserScript==\n\n';
 
+    this.changeListeners = {};
+    var _internal = {};
+    
     var defaults = {
                      configMode: 0,
                      safeUrls: true,
@@ -1624,10 +1640,22 @@ var configInit = function(callback, saveCallback) {
                      editor_enterMode : 'indent',
                      editor_electricChars : true,
                      editor_lineNumbers: true,
+                     sync_enabled: false,
+                     sync_email: "",
+                     sync_password: "",
+                     sync_valid: "",
                      forbiddenPages : [ '*.paypal.tld/*', 'https://*deutsche-bank-24.tld/*', 'https://*bankamerica.tld/*',
                                         '*://plusone.google.com/*/fastbutton*',
                                         '*://www.facebook.com/plugins/*',
                                         '*://platform.twitter.com/widgets/*' ]};
+
+    this.addChangeListener = function(name, cb) {
+        if (!oobj.changeListeners[name]) {
+            oobj.changeListeners[name] = [];
+        }
+
+        oobj.changeListeners[name].push(cb);
+    };
 
     this.load = function(cb) {
         var ds = defaultScripts();
@@ -1639,7 +1667,19 @@ var configInit = function(callback, saveCallback) {
         oobj.values = {};
         for (var r in defaults) {
             if (!defaults.hasOwnProperty(r)) continue;
-            oobj.values[r] = defaults[r];
+            (function wrap() {
+                var k = r;
+                var getter = function() {
+                    return _internal[k];
+                };
+                var setter = function(val) {
+                    setValue(k, val); // set and check for change listeners
+                };
+                oobj.values.__defineGetter__(k, getter);
+                oobj.values.__defineSetter__(k, setter);
+            })();
+            
+            _internal[r] = defaults[r];
         }
 
         var o = TM_storage.getValue("TM_config", oobj.defaults);
@@ -1651,12 +1691,35 @@ var configInit = function(callback, saveCallback) {
         cb();
     };
 
+    var setValue = function(name, value) {
+        if (oobj.changeListeners[name] &&
+            (_internal[name]) != value) {
+            
+            var n = name;
+            var c = function() {
+                for (var i=0; i<oobj.changeListeners[name].lenght; i++) {
+                    (function wrap() {
+                        var j = i;
+                        var n = name;
+                        var o = oobj.values[n];
+                        var e = value;
+                        var cb = function() {
+                            oobj.changeListeners[name][j](n, o, e);
+                        }
+                        window.setTimeout(cb, 1);
+                    })();
+                }
+            };
+        }
+        
+        _internal[name] = value;
+    };
+
     this.save = function(runCb) {
         if (runCb == undefined) runCb = true;
         var c = oobj.values;
         c.firstRun = false;
         TM_storage.setValue("TM_config", c);
-        if (runCb && saveCallback) saveCallback();
     };
 
     var afterload = function() {
@@ -1669,12 +1732,11 @@ var configInit = function(callback, saveCallback) {
 
         oobj.initialized = true;
 
-        if (callback) callback(oobj);
-
         if (oobj.values.notification_showTMUpdate && upNotification) {
             notify.show(chrome.i18n.getMessage('Welcome_'),
                         chrome.i18n.getMessage('Have_fun_with_Tampermonkey', upNotification), chrome.extension.getURL("images/icon128.png"));
         }
+        if (initCallback) initCallback();
     }
 
     var convert = function(cb) {
@@ -3588,7 +3650,8 @@ var createOptionItems = function(cb) {
     var optss = [];
     var opttf = [];
     var optns = [];
-
+    var optsy = [];
+        
     optsg.push({ name: chrome.i18n.getMessage('General'), section: true});
 
     optsg.push({ name:  chrome.i18n.getMessage('Config_Mode'),
@@ -3624,6 +3687,33 @@ var createOptionItems = function(cb) {
                value: Config.values.logLevel,
                desc: '' });
 
+        optsy.push({ name: chrome.i18n.getMessage('Script_Syncer'), section: true, level: 50, needsave: true });
+    optsy.push({ name: chrome.i18n.getMessage('Enable_Script_Sync'),
+                       id: 'sync_enabled',
+                       level: 50,
+                       option: true,
+                       checkbox: true,
+                       enabled: Config.values.sync_enabled,
+                       desc: '' });
+
+    var hint = "";
+    if (Config.values.sync_valid == "valid") {
+        hint = chrome.i18n.getMessage('Account_is_verified');
+    } else if (Config.values.sync_valid == "submitted") {
+        hint = chrome.i18n.getMessage('Credentials_are_submitted__Please_check_your_email_account_for_verification_details');
+    }
+        
+    optsy.push({ name: chrome.i18n.getMessage('eMail'), id: 'sync_mail',
+                       level: 50,
+                       mail: true,
+                       value: Config.values.sync_mail,
+                       hint: hint,
+                       option: true });
+    optsy.push({ name: chrome.i18n.getMessage('Password'), id: 'sync_password',
+                       level: 50,
+                       password: true,
+                       value: Config.values.sync_password,
+                       option: true });
 
     optsa.push({ name: chrome.i18n.getMessage('Appearance'), section: true, level: 20 });
 
@@ -3818,7 +3908,7 @@ var createOptionItems = function(cb) {
                  value: Config.values.scriptTemplate });
 
         
-    ret = ret.concat(optsg).concat(optsa).concat(optsu).concat(opttf).concat(optse).concat(optss).concat(optns);
+    ret = ret.concat(optsg).concat(optsa).concat(optsu).concat(optsy).concat(opttf).concat(optse).concat(optss).concat(optns);
 
     ret.push({ name: 'EOS', section: true, endsection: true});
 
@@ -4542,11 +4632,12 @@ init = function() {
     initScriptOptions();
 
     var cfgdone = function() {
-        setOptions();
+        addCfgCallbacks();
+        setIcon();
         alldone();
     };
 
-    Config = new configInit(cfgdone, setOptions);
+    Config = new newConfig(cfgdone);
 
     var waitForWebNav  = function() {
         if (!chrome.webNavigation || !chrome.webNavigation.onCommitted) {

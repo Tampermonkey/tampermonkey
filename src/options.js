@@ -151,6 +151,11 @@ var itemsToMenu = function(items, tabv) {
                         setOption(this.key, this.checked, this.reload);
                     }
                 }
+                if (section && section_need_save) {
+                    oc = null;
+                    oco = null;
+                }
+
                 var input = HtmlUtil.createCheckbox(i.name, i, i.option ? oco : oc);
                 if (section) {
                     section.appendChild(input.elem);
@@ -161,6 +166,26 @@ var itemsToMenu = function(items, tabv) {
                 input.elem.setAttribute('style', (i.level > gOptions.configMode) ? Helper.staticVars.invisible : Helper.staticVars.visible);
             } else if (i.input) {
                 var input = HtmlUtil.createTextarea(i.name, i);
+                if (section) {
+                    section.appendChild(input.elem);
+                    tr = null;
+                    section_need_save = true;
+                } else {
+                    td2.appendChild(input.elem);
+                }
+                input.elem.setAttribute('style', (i.level > gOptions.configMode) ? Helper.staticVars.invisible : Helper.staticVars.visible);
+            } else if (i.mail) {
+                var input = HtmlUtil.createInput(i.name, i);
+                if (section) {
+                    section.appendChild(input.elem);
+                    tr = null;
+                    section_need_save = true;
+                } else {
+                    td2.appendChild(input.elem);
+                }
+                input.elem.setAttribute('style', (i.level > gOptions.configMode) ? Helper.staticVars.invisible : Helper.staticVars.visible);
+            } else if (i.password) {
+                var input = HtmlUtil.createPassword(i.name, i);
                 if (section) {
                     section.appendChild(input.elem);
                     tr = null;
@@ -210,21 +235,35 @@ var itemsToMenu = function(items, tabv) {
                         b.type = 'button'
                         b.section = section;
                         b.value = chrome.i18n.getMessage('Save');
+
                         var s = function() {
-                            var elems = this.section.getElementsByTagName('textarea');
+                            var elems = Array.prototype.slice.call(this.section.getElementsByTagName('textarea'));
+                            var app = function(iterator) {
+                                var thisNode = iterator.iterateNext();
+                                while (thisNode) {
+                                    if (thisNode.key && thisNode.key.search('sync_') != -1) elems.push(thisNode); // dunno why!?!?!!
+                                    thisNode = iterator.iterateNext();
+                                }
+                            };
+                            app(document.evaluate('//input', this.section, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null));
+
+                            debugger;
                             for (var o=0; o<elems.length; o++) {
                                 var val = null;
-                                if (elems[o].array) {
-                                    var ar = elems[o].value.split("\n");
+                                var elem = elems[o];
+                                if (elem.tagName.toLowerCase() == "textarea") {
+                                    var ar = elem.value.split("\n");
                                     var nar = [];
                                     for (var u=0; u<ar.length; u++) {
                                         if (ar[u] && ar[u].trim() != "") nar.push(ar[u]);
                                     }
                                     val = nar;
+                                } else if (elem.getAttribute('type') == 'checkbox') {
+                                    val = elem.checked;
                                 } else {
-                                    val = elems[o].value;
+                                    val = elem.value;
                                 }
-                                setOption(elems[o].key, val);
+                                setOption(elem.key, val);
                             }
                         };
                         b.addEventListener('click', s, false);
@@ -253,6 +292,7 @@ var itemsToMenu = function(items, tabv) {
 
                 s.setAttribute('style', (i.level > gOptions.configMode) ? Helper.staticVars.invisible : Helper.staticVars.visible);
                 section = c;
+                if (i.needsave) section_need_save = true; // section is stored once
                 td1 = null;
             } else if (i.menucmd) {
                 var span = cr('span', i.name, i.id, false, true);
