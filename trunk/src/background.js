@@ -1576,12 +1576,15 @@ var setIcon = function(tabId, obj) {
  
 var addCfgCallbacks = function(obj) {
     var checkSyncAccount = function(key, oldVal, newVal) {
-        debugger;
-        
+        if (key == 'sync_email' ||
+            key == 'sync_password') {
+            Config.values.sync_valid = 'false';
+            // TODO: ...
+        }
     };
 
     Config.addChangeListener('sync_enabled', checkSyncAccount);
-    Config.addChangeListener('sync_username', checkSyncAccount);
+    Config.addChangeListener('sync_email', checkSyncAccount);
     Config.addChangeListener('sync_password', checkSyncAccount);
 
     Config.addChangeListener('fire_enabled', function() {
@@ -3703,10 +3706,10 @@ var createOptionItems = function(cb) {
         hint = chrome.i18n.getMessage('Credentials_are_submitted__Please_check_your_email_account_for_verification_details');
     }
         
-    optsy.push({ name: chrome.i18n.getMessage('eMail'), id: 'sync_mail',
+    optsy.push({ name: chrome.i18n.getMessage('eMail'), id: 'sync_email',
                        level: 50,
                        mail: true,
-                       value: Config.values.sync_mail,
+                       value: Config.values.sync_email,
                        hint: hint,
                        option: true });
     optsy.push({ name: chrome.i18n.getMessage('Password'), id: 'sync_password',
