@@ -27,6 +27,7 @@ Registry.require('xmlhttprequest');
 Registry.require('compat');
 Registry.require('parser');
 Registry.require('helper');
+Registry.require('syncer');
 
 (function() {
 
@@ -442,7 +443,7 @@ var escapeName = function(name) {
 
 var TM_fire = {
     fireDB : null,
-    status : {},
+    status : { initialized : false, action : "Initializing"},
 
     resetStatus : function(initialized) {
         if (initialized == undefined) initialized = true;
@@ -1573,7 +1574,7 @@ var setIcon = function(tabId, obj) {
         chrome.browserAction.setIcon( s );
     }
 };
- 
+
 var addCfgCallbacks = function(obj) {
     var checkSyncAccount = function(key, oldVal, newVal) {
         if (key == 'sync_email' ||
@@ -1587,8 +1588,8 @@ var addCfgCallbacks = function(obj) {
     Config.addChangeListener('sync_email', checkSyncAccount);
     Config.addChangeListener('sync_password', checkSyncAccount);
 
-    Config.addChangeListener('fire_enabled', function() {
-                                 if (TM_fire.status.initialized) {
+    Config.addChangeListener('fire_enabled', function(n, o, e) {
+                                 if (e && !TM_fire.status.initialized) {
                                      TM_fire.init();
                                  }
                              });
@@ -1644,6 +1645,7 @@ var newConfig = function(initCallback) {
                      editor_electricChars : true,
                      editor_lineNumbers: true,
                      sync_enabled: false,
+                     sync_URL: 'https://ssl-id.net/tampermonkey.net/sync/sync.php',
                      sync_email: "",
                      sync_password: "",
                      sync_valid: "",
@@ -3333,7 +3335,6 @@ var requestHandler = function(request, sender, sendResponse) {
         TM_fire.checkUpdate(true, request.force, done);
     } else if (request.method == "getFireItems") {
         var done = function(cnt, items, progress) {
-            if (progress == undefined) progress = null;
             if (items == undefined) items = null;
 
             var done2 = function(data) {
@@ -4616,12 +4617,38 @@ var removeListener = function(tabId, removeInfo) {
     if (allURLs[tabId]) delete allURLs[tabId];
 };
 
+var initObjects = function() {
+    if (Config.values.sync_enabled &&
+        Config.values.sync_URL &&
+        Config.values.sync_username &&
+        Config.values.sync_password) {
+
+        var cb = function(err, message) {
+            if (err) {
+                if (D) console.log("bg: init of Syncer failed: " + message);
+            } else {
+                if (D) console.log("bg: init of Syncer succed (user: " + Config.values.sync_username + " url: " + Config.values.sync_URL + ")");
+            }
+        };
+
+        Syncer.verifySettings(Config.values.sync_URL,
+                              Config.values.sync_username,
+                              Config.values.sync_password,
+                              cb);
+    }
+
+    if (Config.values.fire_enabled) {
+        TM_fire.init();
+    }
+};
+
 var Config;
 var Converter;
 var xmlhttpRequest;
 var compaMo;
 var scriptParser;
 var Helper;
+var Syncer;
 
 init = function() {
     Converter = Registry.get('convert');
@@ -4629,12 +4656,14 @@ init = function() {
     compaMo = Registry.get('compat');
     scriptParser = Registry.get('parser');
     Helper = Registry.get('helper');
+    Syncer = Registry.get('syncer');
     
     initBrowserAction();
     TM_storage.init();
     initScriptOptions();
 
     var cfgdone = function() {
+        initObjects();
         addCfgCallbacks();
         setIcon();
         alldone();
