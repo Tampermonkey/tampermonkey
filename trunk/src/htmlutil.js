@@ -1,3 +1,9 @@
+/**
+ * @filename htmlutil.js
+ * @author Jan Biniok <jan@biniok.net>
+ * @licence GPL v3
+ */
+
 (function() {
     Registry.require('crcrc');
     
