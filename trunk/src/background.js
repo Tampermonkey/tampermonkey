@@ -1577,6 +1577,13 @@ var setIcon = function(tabId, obj) {
 
 var addCfgCallbacks = function(obj) {
     var checkSyncAccount = function(key, oldVal, newVal) {
+        if (key == 'sync_enabled') {
+            if (Config.values.sync_valid == 'valid') {
+                // TODO: ...
+            } else {
+                // TODO: ...
+            };
+        }
         if (key == 'sync_email' ||
             key == 'sync_password') {
             Config.values.sync_valid = 'false';
@@ -1700,21 +1707,20 @@ var newConfig = function(initCallback) {
         if (oobj.changeListeners[name] &&
             (_internal[name]) != value) {
             
-            var n = name;
-            var c = function() {
-                for (var i=0; i<oobj.changeListeners[name].lenght; i++) {
-                    (function wrap() {
-                        var j = i;
-                        var n = name;
-                        var o = oobj.values[n];
-                        var e = value;
+            for (var i=0; i<oobj.changeListeners[name].length; i++) {
+                (function wrap() {
+                    var n = name;
+                    var o = oobj.values[n];
+                    var e = value;
+                    if (o != e) {
+                        var fn = oobj.changeListeners[n][i];
                         var cb = function() {
-                            oobj.changeListeners[name][j](n, o, e);
+                            fn(n, o, e);
                         }
                         window.setTimeout(cb, 1);
-                    })();
-                }
-            };
+                    }
+                })();
+            }
         }
         
         _internal[name] = value;
