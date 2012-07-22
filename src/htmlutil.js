@@ -289,7 +289,6 @@ var createSearchBox = function(tabURL) {
     return search;
 };
 
-    
 Registry.register('htmlutil', {
                           createImageText : createImageText,
                           createImage : createImage,
