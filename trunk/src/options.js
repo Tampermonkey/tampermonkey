@@ -152,6 +152,7 @@ var itemsToMenu = function(items, tabv) {
                     }
                 }
                 if (section && section_need_save) {
+                    // checkbox value will by stored by "Save" button
                     oc = null;
                     oco = null;
                 }
@@ -168,6 +169,11 @@ var itemsToMenu = function(items, tabv) {
                 var input = HtmlUtil.createTextarea(i.name, i);
                 if (section) {
                     section.appendChild(input.elem);
+                    if (i.hint) {
+                        var h = cr('span', i.name, i.id, 'hint');
+                        h.textContent = i.hint;
+                        input.elem.appendChild(h);
+                    }
                     tr = null;
                     section_need_save = true;
                 } else {
@@ -178,6 +184,11 @@ var itemsToMenu = function(items, tabv) {
                 var input = HtmlUtil.createInput(i.name, i);
                 if (section) {
                     section.appendChild(input.elem);
+                    if (i.hint) {
+                        var h = crc('span', 'hint', i.name, i.id, 'hint');
+                        h.textContent = i.hint;
+                        input.elem.appendChild(h);
+                    }
                     tr = null;
                     section_need_save = true;
                 } else {
@@ -232,7 +243,7 @@ var itemsToMenu = function(items, tabv) {
                 if (section && section_need_save) {
                     var b = cr('input', section.name, section.id, 'Save');
                     if (!b.inserted) {
-                        b.type = 'button'
+                        b.type = 'button';
                         b.section = section;
                         b.value = chrome.i18n.getMessage('Save');
 
@@ -241,13 +252,13 @@ var itemsToMenu = function(items, tabv) {
                             var app = function(iterator) {
                                 var thisNode = iterator.iterateNext();
                                 while (thisNode) {
+                                    // TODO: hack alert! -> 'sync_'
                                     if (thisNode.key && thisNode.key.search('sync_') != -1) elems.push(thisNode); // dunno why!?!?!!
                                     thisNode = iterator.iterateNext();
                                 }
                             };
                             app(document.evaluate('//input', this.section, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null));
 
-                            debugger;
                             for (var o=0; o<elems.length; o++) {
                                 var val = null;
                                 var elem = elems[o];

@@ -1559,6 +1559,107 @@ var defaultScripts = function() {
     return ret;
 };
 
+/* ###### Sync ####### */
+
+var SyncClient = {
+    enabled : false,
+    checkSyncAccount : function(key, oldVal, newVal) {
+        var et = null;
+        var scheduleEnable = function() {
+            if (et == null) {
+                var run = function() {
+                    SyncClient.enable();
+                    et = null;
+                }
+                et = window.setTimeout(run, 200);
+            }
+        };
+        if (key == 'sync_enabled' && newVal) {
+            if (Config.values.sync_valid == 'valid' ||
+                Config.values.sync_valid == 'unknown') {
+                // enable/create account
+                scheduleEnable();
+            } else if (Config.values.sync_valid == 'submitted' ||
+                       Config.values.sync_valid == 'invalid') {
+                // we can't do anything...
+                if (D) console.log("bg: sync enabled, credential state is -> " + Config.values.sync_valid);
+            } else {
+                console.log("bg: ambiguous sync state: " + Config.values.sync_valid);
+            };
+        }
+        if (key == 'sync_email' ||
+            key == 'sync_password') {
+            // mark account data not valid
+            Config.values.sync_valid = 'unknown';
+            Config.save();
+            scheduleEnable();
+        }
+    },
+    createAccount :  function(callback) {
+        var cb = function(err, msg) {
+            if (!callback) return;
+
+            if (err == 304) {
+                // already submitted, but hide this
+                callback(0);
+            } else {
+                callback(err, msg);
+            }
+        };
+        Syncer.createAccount(Config.values.sync_email,
+                             Config.values.sync_password,
+                             cb);
+    },
+    enable :  function(callback) {
+        if (!Config.values.sync_enabled) return;
+
+        if (Config.values.sync_valid != 'invalid') {
+            var done = function(err, msg) {
+                if (err == 401) {
+                    // account unknown
+                    var cb = function(err, msg) {
+                        if (!err) {
+                            Config.values.sync_valid = 'submitted';
+                            var resp = function(tab) {
+                                chrome.tabs.sendRequest(tab.id,
+                                                        { method: "showMsg",
+                                                          msg: chrome.i18n.getMessage('Credentials_are_submitted__Please_check_your_email_account_for_verification_details') },
+                                                        function(response) {});
+                            };
+                            chrome.tabs.getSelected(null, resp);
+                        } else {
+                            Config.values.sync_valid == 'invalid';
+                        }
+                        Config.save();
+                        if (callback) callback(err, msg);
+                    };
+                    SyncClient.createAccount(cb);
+                } else if (err) {
+                    // wrong password, ...
+                    if (D) console.log("bg: init of Syncer failed: " + msg);
+                    Config.values.sync_valid = 'invalid';
+                    Config.save();
+                } else {
+                if (D) console.log("bg: init of Syncer succed (user: " + Config.values.sync_email + " url: " + Config.values.sync_URL + ")");
+                    Config.values.sync_valid = 'valid';
+                    Config.save();
+                    if (callback) callback();
+                }
+            };
+            Syncer.verifySettings(Config.values.sync_URL,
+                                  Config.values.sync_email,
+                                  Config.values.sync_password, done);
+            SyncClient.enabled = true;
+        }
+    },
+    scriptAddedCb : function() {
+    },
+    scriptRemovedCb : function() {
+    },
+    scriptChangedCb : function() {
+    }
+};
+
 /* ###### UI ####### */
 
 var setIcon = function(tabId, obj) {
@@ -1576,24 +1677,9 @@ var setIcon = function(tabId, obj) {
 };
 
 var addCfgCallbacks = function(obj) {
-    var checkSyncAccount = function(key, oldVal, newVal) {
-        if (key == 'sync_enabled') {
-            if (Config.values.sync_valid == 'valid') {
-                // TODO: ...
-            } else {
-                // TODO: ...
-            };
-        }
-        if (key == 'sync_email' ||
-            key == 'sync_password') {
-            Config.values.sync_valid = 'false';
-            // TODO: ...
-        }
-    };
-
-    Config.addChangeListener('sync_enabled', checkSyncAccount);
-    Config.addChangeListener('sync_email', checkSyncAccount);
-    Config.addChangeListener('sync_password', checkSyncAccount);
+    Config.addChangeListener('sync_enabled', SyncClient.checkSyncAccount);
+    Config.addChangeListener('sync_email', SyncClient.checkSyncAccount);
+    Config.addChangeListener('sync_password', SyncClient.checkSyncAccount);
 
     Config.addChangeListener('fire_enabled', function(n, o, e) {
                                  if (e && !TM_fire.status.initialized) {
@@ -1607,7 +1693,7 @@ var addCfgCallbacks = function(obj) {
 
 /* ###### Config ####### */
 
-var newConfig = function(initCallback) {
+var ConfigObject = function(initCallback) {
 
     var oobj = this;
 
@@ -1655,7 +1741,7 @@ var newConfig = function(initCallback) {
                      sync_URL: 'https://ssl-id.net/tampermonkey.net/sync/sync.php',
                      sync_email: "",
                      sync_password: "",
-                     sync_valid: "",
+                     sync_valid: "unknown",
                      forbiddenPages : [ '*.paypal.tld/*', 'https://*deutsche-bank-24.tld/*', 'https://*bankamerica.tld/*',
                                         '*://plusone.google.com/*/fastbutton*',
                                         '*://www.facebook.com/plugins/*',
@@ -3711,6 +3797,10 @@ var createOptionItems = function(cb) {
         hint = chrome.i18n.getMessage('Account_is_verified');
     } else if (Config.values.sync_valid == "submitted") {
         hint = chrome.i18n.getMessage('Credentials_are_submitted__Please_check_your_email_account_for_verification_details');
+    } else if (Config.values.sync_valid == "invalid") {
+        hint = chrome.i18n.getMessage('Credentials_are_invalid_');
+    } else if (Config.values.sync_valid == "unknown") {
+        hint = chrome.i18n.getMessage('Please_enter_your_existing_credentials_or_use_new_ones_');
     }
         
     optsy.push({ name: chrome.i18n.getMessage('eMail'), id: 'sync_email',
@@ -4624,23 +4714,14 @@ var removeListener = function(tabId, removeInfo) {
 };
 
 var initObjects = function() {
+    adjustLogLevel(Config.values.logLevel);
+    
     if (Config.values.sync_enabled &&
         Config.values.sync_URL &&
-        Config.values.sync_username &&
+        Config.values.sync_email &&
         Config.values.sync_password) {
 
-        var cb = function(err, message) {
-            if (err) {
-                if (D) console.log("bg: init of Syncer failed: " + message);
-            } else {
-                if (D) console.log("bg: init of Syncer succed (user: " + Config.values.sync_username + " url: " + Config.values.sync_URL + ")");
-            }
-        };
-
-        Syncer.verifySettings(Config.values.sync_URL,
-                              Config.values.sync_username,
-                              Config.values.sync_password,
-                              cb);
+        SyncClient.enable();
     }
 
     if (Config.values.fire_enabled) {
@@ -4675,7 +4756,7 @@ init = function() {
         alldone();
     };
 
-    Config = new newConfig(cfgdone);
+    Config = new ConfigObject(cfgdone);
 
     var waitForWebNav  = function() {
         if (!chrome.webNavigation || !chrome.webNavigation.onCommitted) {

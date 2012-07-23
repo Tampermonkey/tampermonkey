@@ -758,16 +758,22 @@
     "message": "Enable Script Sync"
   },
   "eMail": {
-    "message": "e-mail address"
+    "message": "E-mail Address"
   },
   "Password": {
     "message": "Password"
   },
   "Account_is_verified": {
-    "message": "Account_is_verified"
+    "message": "Sync credentials are verified"
   },
   "Credentials_are_submitted__Please_check_your_email_account_for_verification_details": {
-    "message": "Your credentials are submitted. Please check your email account for verification details."
+    "message": "Your sync credentials are submitted. Please check your email account for verification details."
+  },
+  "Credentials_are_invalid_": {
+    "message": "The stored sync credentials are invalid!"
+  },
+  "Please_enter_your_existing_credentials_or_use_new_ones_": {
+    "message": "Please enter your existing sync credentials or use new ones."
   },
   "EOF": {
     "message": "EOF"

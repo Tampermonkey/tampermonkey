@@ -725,16 +725,22 @@
     "message": "Aktiviere Script Syncronistation"
   },
   "Username": {
-    "message": "e-Mail Adresse"
+    "message": "E-Mail Adresse"
   },
   "Password": {
     "message": "Passwort"
   },
   "Account_is_verified": {
-    "message": "Der Account ist gültig"
+    "message": "Die Sync Account Informationen sind gültig."
   },
   "Credentials_are_submitted__Please_check_your_email_account_for_verification_details": {
-    "message": "Die Account Informationen wurden übermittelt. Bitte verifizieren Sie ihre e-Mail Adresse."
+    "message": "Die Sync Account Informationen wurden übermittelt. Bitte prüfen Sie Ihr e-Mail Postfach für die Verifizierung."
+  },
+  "Credentials_are_invalid_": {
+    "message": "Die gespeicherten Sync Account Informationen sind ungültig!"
+  },
+  "Please_enter_your_existing_credentials_or_use_new_ones_": {
+    "message": "Bitte geben Sie Ihre Sync Account Informationen ein oder verwenden sie neue."
   },
   "EOF": {
     "message": "EOF"

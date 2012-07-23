@@ -16,7 +16,7 @@
 
     var Converter = Registry.get('convert');
     var Helper = Registry.get('helper');
-    var xmlhttpRequest = Registry.get('xmlhttprequest');
+    var xmlhttpRequest = Registry.get('xmlhttprequest').run;
     
     var _settings = {};
     var _accountState = eINIT;
@@ -27,7 +27,7 @@
         if (req.readyState == 4) {
             if (req.status == 200) {
                 try {
-                    var j = JSON.parse(req.textContent);
+                    var j = JSON.parse(req.responseText);
                     return j;
                 } catch (e) {
                     _accountState = eERROR;
@@ -128,12 +128,6 @@
         set(u, p, "touch", "", cb);
     };
     
-    var scriptChanged = function() {
-    };
-    var scriptInstalled = function() {
-    };
-    var scriptRemoved = function() {
-    };
     var isAccountOk = function() {
         return _accountState == eOK;
     };
@@ -141,9 +135,6 @@
     Registry.register('syncer', {
                               verifySettings: verifySettings,
                               createAccount: createAccount,
-                              isAccountOk : isAccountOk,
-                              scriptChanged : scriptChanged,
-                              scriptInstalled : scriptInstalled,
-                              scriptRemoved : scriptRemoved });
+                              isAccountOk : isAccountOk });
 })();
 
