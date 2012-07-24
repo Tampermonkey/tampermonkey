@@ -46,6 +46,8 @@ var Script = function() {
     this.excludes = [];
     this.resources = [];
     this.lastUpdated = 0;
+    this.sync = { fromRemote: false,
+                  seenOnServer: 0 },
     this.options = {
         compat_metadata : false,
         compat_foreach : false,
@@ -56,12 +58,13 @@ var Script = function() {
         noframes: false,
         awareOfChrome: false,
         run_at : '',
+        noSync: false,
         override: { includes: false, use_includes: [], orig_includes: [],
                     matches: false, use_matches: [], orig_matches: [],
                     excludes: false, use_excludes: [], orig_excludes: [] }
     };
 };
- 
+
 var scriptParser = {
     Script : Script,
     getScriptId : getScriptId,

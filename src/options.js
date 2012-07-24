@@ -20,6 +20,7 @@ var V = false;
 var initialized = false;
 var allItems = null;
 var gOptions = {};
+var doneListener = [];
 var version = '0.0.0';
 var gNoWarn = false;
 var stCache = {};
@@ -55,6 +56,8 @@ var itemsToMenu = function(items, tabv) {
             t2.textContent = chrome.i18n.getMessage('Name');
             var t25 = crc('th', "settingsth", i.name, i.id, 'thead_ver');
             t25.textContent = chrome.i18n.getMessage('Version');
+            var t26 = crc('th', "settingsth", i.name, i.id, 'thead_sync');
+            t26.textContent = "";
             var t3 = crc('th', "settingsth", i.name, i.id, 'thead_sites');
             t3.width = "25%";
             t3.textContent = chrome.i18n.getMessage('Sites');
@@ -69,7 +72,12 @@ var itemsToMenu = function(items, tabv) {
             var t8 = crc('th', "settingsth", i.name, i.id, 'thead_del');
             t8.textContent = chrome.i18n.getMessage('Delete');
 
-            r = r.concat([t1, t2, t25, t3, t4, t5, t6, t7, t8]);
+            var later = function() {
+                if (gOptions.sync_enabled) t26.textContent = chrome.i18n.getMessage('Sync');
+            };
+            doneListener.push(later);
+
+            r = r.concat([t1, t2, t25, t26, t3, t4, t5, t6, t7, t8]);
         } else {
             t = crc('table', "settingstable", i.name, i.id, 'main');
         }
@@ -673,6 +681,11 @@ var createOptionsMenu = function(items, noWarn) {
     gNoWarn = null;
     initialized = true;
     Please.hide();
+
+    while (doneListener.length) {
+        var f = doneListener.pop();
+        f();
+    }
 };
 
 var createCludesEditor = function(name, type, other_name) {
@@ -969,7 +982,7 @@ var createScriptSettingsTab = function(i, tabd) {
     var i_ra = HtmlUtil.createScriptStartDropDown(chrome.i18n.getMessage('Run_at'),
                               { id: 'run_at', name: i.name, value: i.run_at },
                               co);
-							  
+
     var e_oi = createCludesEditor(chrome.i18n.getMessage('Original_includes'),
                                   { id: 'includes', item: i },
                                   chrome.i18n.getMessage('User_excludes'));
@@ -988,6 +1001,9 @@ var createScriptSettingsTab = function(i, tabd) {
     var e_ue = createCludesEditor(chrome.i18n.getMessage('User_excludes'),
                                   { id: 'excludes', item: i });
 
+    var i_ds = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Disable_sync'),
+                              { id: 'noSync', name: i.name, enabled: i.noSync },
+                              co);
     var i_md = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Convert_CDATA_sections_into_a_chrome_compatible_format'),
                               { id: 'compat_metadata', name: i.name, enabled: i.compat_metadata },
                               co);
@@ -1014,6 +1030,14 @@ var createScriptSettingsTab = function(i, tabd) {
     section_opt.appendChild(section_opt_head);
     section_opt.appendChild(section_opt_content);
 
+    var section_cludes = crc('div', 'section', i.name, i.id, 'ta_cludes');
+    var section_cludes_head = crc('div', 'section_head', i.name, i.id, 'head_ta_cludes');
+    var section_cludes_content = crc('div', 'section_content', i.name, i.id, 'content_ta_cludes');
+
+    section_cludes_head.textContent = chrome.i18n.getMessage('Includes_Excludes');
+    section_cludes.appendChild(section_cludes_head);
+    section_cludes.appendChild(section_cludes_content);
+    
     var section_compat = crc('div', 'section', i.name, i.id, 'ta_compat');
     var section_compat_head = crc('div', 'section_head', i.name, i.id, 'head_ta_compat');
     var section_compat_content = crc('div', 'section_content', i.name, i.id, 'content_ta_compat');
@@ -1024,13 +1048,15 @@ var createScriptSettingsTab = function(i, tabd) {
 
     section_opt_content.appendChild(i_pos);
     section_opt_content.appendChild(i_ra);
-    section_opt_content.appendChild(e_oi.elem);
-    section_opt_content.appendChild(e_om.elem);
-    section_opt_content.appendChild(e_oe.elem);
-    section_opt_content.appendChild(clear_cludes);
-    section_opt_content.appendChild(e_ui.elem);
-    section_opt_content.appendChild(e_um.elem);
-    section_opt_content.appendChild(e_ue.elem);
+    section_opt_content.appendChild(i_ds.elem);
+    
+    section_cludes_content.appendChild(e_oi.elem);
+    section_cludes_content.appendChild(e_om.elem);
+    section_cludes_content.appendChild(e_oe.elem);
+    section_cludes_content.appendChild(clear_cludes);
+    section_cludes_content.appendChild(e_ui.elem);
+    section_cludes_content.appendChild(e_um.elem);
+    section_cludes_content.appendChild(e_ue.elem);
 
     for (var u=0; u<i_compats.length; u++) {
         section_compat_content.appendChild(i_compats[u].elem);
@@ -1047,6 +1073,7 @@ var createScriptSettingsTab = function(i, tabd) {
     h.textContent = chrome.i18n.getMessage('Settings');
     var content = cr('div', i.name, i.id, 'tab_content_settings');
     content.appendChild(section_opt);
+    content.appendChild(section_cludes);
     content.appendChild(section_compat);
     tabc.appendChild(content);
 
@@ -1316,7 +1343,7 @@ var createScriptItem = function(i, tr, tabv) {
     var use_icon = i.icon && !i.nativeScript;
 
     var sname = crc('span', 'script_name' + (i.nativeScript ? '' : ' clickable'), i.name, i.id, 'sname');
-    var sname_img = crc('img', 'nameNicon16', i.name, i.id, 'sname_img');
+    var sname_img = crc('img', 'nameNicon16 icon16', i.name, i.id, 'sname_img');
 
     var sname_name = crc('span', use_icon ? 'nameNname16': '', i.name, i.id, 'sname_name');
     var hp = i.homepage ? i.homepage : (i['namespace'] && i['namespace'].search('http://') == 0 ? i['namespace'] : null)
@@ -1506,6 +1533,37 @@ var createScriptItem = function(i, tr, tabv) {
     }
     last_updated.textContent = lUp;
 
+    var sync = crc('div', 'center p100100', i.name, i.id, 'sync');
+    var lSync = '';
+    var later = function() {
+        if (gOptions.sync_enabled) {
+            if (i.nativeScript || !i.id || i.system) {
+                lSync = '';
+            } else {
+                var change = function() {
+                    modifyScriptOption(this.name, "noSync", !this.oldvalue);
+                };
+
+                if (!sname_name.inserted) {
+                    sync.addEventListener('click', change);
+                    sync.style.cursor = "pointer";
+                    sync.name = i.name;
+                }
+                sync.oldvalue = i.noSync;
+
+                if (i.noSync) {
+                    sync.title = chrome.i18n.getMessage('Enable_sync');
+                    lSync = '<img src="images/no.png" class="icon16" />';
+                } else {
+                    sync.title = chrome.i18n.getMessage('Disable_sync');
+                    lSync = '<img src="images/update.png" class="icon16" />';
+                }
+            }
+            sync.innerHTML = lSync;
+        }
+    };
+    doneListener.push(later);
+
     if (i.file_url && i.file_url.trim() != "") {
         // "http://userscripts.org/scripts/source/44327.user.js".match(new RegExp("/http:\/\/userscripts\.org\/scripts\/source\/([0-9]{1,9})\.user\.js/"));
         var usoid = i.file_url.match(new RegExp("http:\/\/userscripts\.org\/scripts\/source\/([0-9]{1,9})\.user\.js"));
@@ -1556,6 +1614,7 @@ var createScriptItem = function(i, tr, tabv) {
 
     ret.push(sname_td);
     ret.push(getTD(i, sversion, 'script_td25', 'scripttd_version'));
+    ret.push(getTD(i, sync, 'script_td26', 'scripttd_sync'));
     ret.push(getTD(i, createImagesFromScript(i), 'script_td3'));
     ret.push(getTD(i, createFeatureImagesFromScript(i), 'script_td4'));
     ret.push(getTD(i, hp_script, 'script_td5'));

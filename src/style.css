@@ -45,6 +45,10 @@ textarea {
   margin: 4px;
 }
 
+.center {
+  text-align: center;
+}
+
 .hide {
   display: none;
 }
@@ -335,11 +339,14 @@ textarea {
   font-weight: bold;
 }
 
+.icon16 {
+  width: 16px;
+  height: 16px;
+}
+
 .nameNicon16 {
   margin-top: 3px;
   margin-right: 7px;
-  width: 16px;
-  height: 16px;
 }
 
 .nameNname16 {
@@ -775,7 +782,7 @@ textarea {
 
 div.cludes {
   display: inline-block;
-  margin: 5px;
+  margin: 15px 5px 0px 5px;
 }
 
 div.cludes select {

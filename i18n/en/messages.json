@@ -730,6 +730,9 @@
   "Remove": {
     "message": "Remove"
   },
+  "Includes_Excludes": {
+    "message": "Includes/Excludes"
+  },
   "Original_includes": {
     "message": "Original includes"
   },
@@ -774,6 +777,33 @@
   },
   "Please_enter_your_existing_credentials_or_use_new_ones_": {
     "message": "Please enter your existing sync credentials or use new ones."
+  },
+  "Import_Mode": {
+    "message": "Import Mode"
+  },
+  "Create_only": {
+    "message": "Create Only"
+  },
+  "Create_and_remove": {
+    "message": "Create and Remove"
+  },
+  "This_options_sets_up_how_to_handle_changes_from_the_sync_server_": {
+    "message": "This options sets up how to handle changes from the sync server. You can a) disable the import feature, b) set it to 'create only', so that TM installs all remote scripts, or c) set it 'create and remove' so that local scripts may be removed in case they are deleted at the server."
+  },
+  "This_options_sets_up_how_to_sync_local_changes_to_the_server_": {
+    "message": "This options sets up how to sync local changes to the server. You can a) disable the export feature, b) set it to 'create only', so that TM copies all local scripts to the server, or c) set it read-write so that a remote script is removed when it is deleted locally."
+  },
+  "Export_Mode": {
+    "message": "Export Mode"
+  },
+  "Disable_sync": {
+    "message": "Disable Sync"
+  },
+  "Enable_sync": {
+    "message": "Enable Sync"
+  },
+  "Sync": {
+    "message": "Sync"
   },
   "EOF": {
     "message": "EOF"
