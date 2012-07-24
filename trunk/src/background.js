@@ -1611,9 +1611,11 @@ var SyncClient = {
                              cb);
     },
     enable :  function(callback) {
-        if (!Config.values.sync_enabled) return;
-
-        if (Config.values.sync_valid != 'invalid') {
+        if (!Config.values.sync_enabled ||
+            Config.values.sync_valid == 'invalid') {
+            // disable sync :(
+            SyncClient.enabled = false;
+        } else {
             var done = function(err, msg) {
                 if (err == 401) {
                     // account unknown
@@ -1652,11 +1654,14 @@ var SyncClient = {
             SyncClient.enabled = true;
         }
     },
-    scriptAddedCb : function() {
+    scriptAddedCb : function(name, script) {
+        if (!SyncClient.enabled) return;
     },
-    scriptRemovedCb : function() {
+    scriptChangedCb : function(name, script) {
+        if (!SyncClient.enabled) return;
     },
-    scriptChangedCb : function() {
+    scriptRemovedCb : function(name) {
+        if (!SyncClient.enabled) return;
     }
 };
 
@@ -1710,8 +1715,7 @@ var ConfigObject = function(initCallback) {
     this.changeListeners = {};
     var _internal = {};
     
-    var defaults = {
-                     configMode: 0,
+    var defaults = { configMode: 0,
                      safeUrls: true,
                      tryToFixUrl: true,
                      debug: false,
@@ -1742,6 +1746,9 @@ var ConfigObject = function(initCallback) {
                      sync_email: "",
                      sync_password: "",
                      sync_valid: "unknown",
+                     sync_latest: 0,
+                     sync_import: "+",
+                     sync_export: "+",
                      forbiddenPages : [ '*.paypal.tld/*', 'https://*deutsche-bank-24.tld/*', 'https://*bankamerica.tld/*',
                                         '*://plusone.google.com/*/fastbutton*',
                                         '*://www.facebook.com/plugins/*',
@@ -2945,12 +2952,20 @@ var loadScriptByName = function(name) {
 
 var storeScript = function(name, script) {
     if (script) {
+        if (TM_storage.getValue(name)) {
+            SyncClient.scriptChangedCb(name, script);
+        } else {
+            SyncClient.scriptAddedCb(name, script);
+        }
+
         TM_storage.setValue(name + condAppendix, { inc: script.includes, match: script.matches, exc: script.excludes });
         TM_storage.setValue(name + scriptAppendix, script.textContent);
         var s = script;
         s.textContent = null;
         TM_storage.setValue(name, s);
     } else {
+        SyncClient.scriptRemoveCb(name);
+
         TM_storage.deleteValue(name + condAppendix);
         TM_storage.deleteValue(name + scriptAppendix);
         TM_storage.deleteValue(name);
@@ -3814,6 +3829,26 @@ var createOptionItems = function(cb) {
                        password: true,
                        value: Config.values.sync_password,
                        option: true });
+
+    optsy.push({ name: chrome.i18n.getMessage('Import_Mode'),
+               id: 'sync_import',
+               level: 60,
+               option: true,
+               select: [ { name: chrome.i18n.getMessage('Off'), value: '0' },
+                         { name: chrome.i18n.getMessage('Create_only'), value: '+' },
+                         { name: chrome.i18n.getMessage('Create_and_remove'), value: '+-' } ],
+               value: Config.values.sync_import,
+               desc: chrome.i18n.getMessage('This_options_sets_up_how_to_handle_changes_from_the_sync_server_') });
+
+    optsy.push({ name: chrome.i18n.getMessage('Export_Mode'),
+               id: 'sync_export',
+               level: 60,
+               option: true,
+               select: [ { name: chrome.i18n.getMessage('Off'), value: '0' },
+                         { name: chrome.i18n.getMessage('Create_only'), value: '+' },
+                         { name: chrome.i18n.getMessage('Create_and_remove'), value: '+-' } ],
+               value: Config.values.sync_export,
+               desc: chrome.i18n.getMessage('This_options_sets_up_how_to_sync_local_changes_to_the_server_') });
 
     optsa.push({ name: chrome.i18n.getMessage('Appearance'), section: true, level: 20 });
 

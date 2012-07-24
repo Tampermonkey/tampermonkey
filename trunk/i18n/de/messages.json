@@ -697,6 +697,9 @@
   "Remove": {
     "message": "Entfernen"
   },
+  "Includes_Excludes": {
+    "message": "Includes/Excludes"
+  },
   "Original_includes": {
     "message": "Original Include"
   },
@@ -741,6 +744,33 @@
   },
   "Please_enter_your_existing_credentials_or_use_new_ones_": {
     "message": "Bitte geben Sie Ihre Sync Account Informationen ein oder verwenden sie neue."
+  },
+  "Import_Mode": {
+    "message": "Import Modus"
+  },
+  "Create_only": {
+    "message": "Nur Erstellen"
+  },
+  "Create_and_remove": {
+    "message": "Erstellen und Entfernen"
+  },
+  "This_options_sets_up_how_to_handle_changes_from_the_sync_server_": {
+   "message": "Diese Option stellt ein, wie mit Scripts vom Server umgegangen wird: a) Feature deaktiviert, b) es werden Scripts vom Server lokal erstellt, c) wird ein Script vom Server gelöscht, wird es auch lokal entfernt"
+  },
+  "This_options_sets_up_how_to_sync_local_changes_to_the_server_": {
+    "message": "Diese Option stellt ein, wie lokale Änderungen verarbeitet werden: a) Feature deaktiviert, b) es werden nur lokale Scripts zum Server gesendet, c) wird ein lokales Script gelöscht, wird es auch auf dem Server gelöscht."
+  },
+  "Export_Mode": {
+    "message": "Export Modus"
+  },
+  "Disable_sync": {
+    "message": "Deaktiviere Synchronisation"
+  },
+  "Enable_sync": {
+    "message": "Aktiviere Synchronisation"
+  },
+  "Sync": {
+    "message": "Sync"
   },
   "EOF": {
     "message": "EOF"
