@@ -58,8 +58,8 @@
                 e = eERROR;
                 callback(j.error, j.message);
             } else {
-                _settings.username = u;
-                _settings.password = p;
+                _settings.user = u;
+                _settings.pass = p;
                 callback(0);
             }
         };
@@ -67,12 +67,12 @@
         xmlhttpRequest(details, cb);
     };
 
-    var set = function(u, p, k, v, callback) {
+    var set = function(k, v, callback) {
         var details = {
             method: 'POST',
             retries: _retries,
             url: _settings.url,
-            data: JSON.stringify( { method: "set", id: _id++, params : { "username" : u, "password": p, "key": k, "value" : v }} )
+            data: JSON.stringify( { method: "set", id: _id++, params : { "username" : _settings.user, "password": _settings.pass, "key": k, "data" : v }} )
         };
 
         var cb = function(req) {
@@ -89,12 +89,12 @@
         xmlhttpRequest(details, cb);
     };
 
-    var get = function(u, p, k, callback) {
+    var get = function(k, callback) {
         var details = {
             method: 'POST',
             retries: _retries,
             url: _settings.url,
-            data: JSON.stringify( { method: "get", id: _id++, params : { "username" : u, "password": p, "key": k }} )
+            data: JSON.stringify( { method: "get", id: _id++, params : { "username" : _settings.user, "password": _settings.pass, "key": k }} )
         };
 
         var cb = function(req) {
@@ -104,7 +104,51 @@
             if (j.error) {
                 callback(j.error, j.message);
             } else {
-                callback(0, value);
+                callback(0, k, j.result);
+            }
+        };
+
+        xmlhttpRequest(details, cb);
+    };
+
+    var md5 = function(k, callback) {
+        var details = {
+            method: 'POST',
+            retries: _retries,
+            url: _settings.url,
+            data: JSON.stringify( { method: "md5", id: _id++, params : { "username" : _settings.user, "password": _settings.pass, "key": k }} )
+        };
+
+        var cb = function(req) {
+            var j = extractJSON(req, callback);
+            if (!j) return;
+            
+            if (j.error) {
+                callback(j.error, j.message);
+            } else {
+                callback(0, k, j.result);
+            }
+        };
+
+        xmlhttpRequest(details, cb);
+    };
+
+    var list = function(callback) {
+        var details = {
+            method: 'POST',
+            retries: _retries,
+            url: _settings.url,
+            data: JSON.stringify( { method: "list", id: _id++, params : { "username" : _settings.user, "password": _settings.pass }} )
+        };
+
+        var cb = function(req) {
+            var j = extractJSON(req, callback);
+            if (!j) return;
+            
+            if (j.error) {
+                callback(j.error, j.message);
+            } else {
+                callback(0, j.result);
             }
         };
 
@@ -112,20 +156,23 @@
     };
     
     var verifySettings = function(url, u, p, callback) {
+        var os = _settings;
+
         _settings.url = url;
+        _settings.user = u;
+        _settings.pass = p;
 
         var cb = function(ret, msg) {
             if (ret == 0) {
                 _accountState = eOK;
-                _settings.username = u;
-                _settings.password = p;
             } else {
+                _settings = os;
                 _accountState = eERROR;
             }
             callback(ret, msg);
         };
         
-        set(u, p, "touch", "", cb);
+        set("touch", "", cb);
     };
     
     var isAccountOk = function() {
@@ -135,6 +182,10 @@
     Registry.register('syncer', {
                               verifySettings: verifySettings,
                               createAccount: createAccount,
-                              isAccountOk : isAccountOk });
+                              isAccountOk : isAccountOk,
+                              md5 : md5,
+                              set : set,
+                              get : get,
+                              list: list });
 })();
 

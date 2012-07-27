@@ -11,6 +11,7 @@ var init = null;
 var fire = null;
 var exte = null;
 var lfgs = null;
+var sycl = null;
 
 var D = false;
 var V = false;
@@ -385,11 +386,11 @@ var localFile = {
         var i = document.createElement('iframe');
         i.src = url + "?gimmeSource=1";
         document.getElementsByTagName('body')[0].appendChild(i);
-    
+
         var post = function() {
             var d = JSON.stringify({ id: localFile.id });
             localFile.callbacks[localFile.id] = { cb: cb, ts: (new Date()).getTime(), iframe: i };
-            
+
             var wrap = function() {
                 var cbi = localFile.id;
                 var notfound = function() {
@@ -1654,6 +1655,77 @@ var SyncClient = {
             SyncClient.enabled = true;
         }
     },
+    getLocalScriptList : function() {
+        var ret = {};
+        var names = getAllScriptNames();
+        for (var k in names) {
+            var n = names[k];
+            var r = loadScriptByName(n);
+            if (!r.script || !r.cond || !r.script.options.sync) {
+                continue;
+            }
+            var s = [];
+            s[0] = r.script.textContent;
+
+            var j = JSON.stringify(s);
+            var md5 = MD5(j);
+            var id = r.script.id || scriptParser.getScriptId(r.script.name);
+            ret[id] = { md5: md5, type: "script", data: j, sync: r.script.sync };
+        }
+
+        return ret;
+    },
+    getRemoteMd5List : function(cb) {
+        var error = function(msg) {
+            if (D) console.log("sync: err " + msg);
+            cb(null, msg);
+        };
+
+        var goterr = false;
+        var keys = [];
+        var list = [];
+        var gotList = function(err, res) {
+            if (err) {
+                error(res);
+                return;
+            }
+            keys = res;
+            iterate();
+        };
+
+        var running = 1;
+        var iterate = function() {
+            for (var k in keys) {
+                running++;
+                Sync.md5(k, fill);
+            }
+
+            check();
+        };
+
+        var check = function() {
+            if (--running == 0) {
+                if (goterr) {
+                    error(goterr);
+                    return;
+                } else {
+                    cb(list);
+                }
+            }
+        };
+
+        var fill = function(err, k, v) {
+            if (err) {
+                goterr = v;
+            } else {
+                list[k] = { md5 : v };
+            }
+
+            check();
+        };
+
+        Syncer.list(gotList);
+    },
     scriptAddedCb : function(name, script) {
         if (!SyncClient.enabled) return;
     },
@@ -1662,8 +1734,120 @@ var SyncClient = {
     },
     scriptRemovedCb : function(name) {
         if (!SyncClient.enabled) return;
+    },
+    exportScript: function(id, o) {
+
+    },
+    syncAll : function() {
+        var latest = Config.values.sync_latest;
+        var remote_version = 0;
+        var local = SyncClient.getLocalScriptList();
+        var remote = null;
+
+        var got1 = function(err, k, v) {
+            if (err) {
+                console.log("sync: Error: " + k);
+            } else {
+                remote_version = Number(v);
+                SyncClient.getRemoteMd5List(got2);
+            }
+        };
+
+        var got2 = function(l) {
+            remote = l;
+
+            if (remote) {
+                run_sync();
+            } else {
+                if (D) console.log("sync: unable to get remotelist!");
+            }
+        };
+
+        var impo = function(cb) {
+            if (Config.values.sync_import == '+') {
+                for (var r in remote) {
+                    var drin = false;
+                    var different = false;
+                    if (local[r]) {
+                        drin = true;
+                        if (remote[r].md5 != local[r].md5) different = true;
+                    }
+
+                    if (!drin || different) {
+                        console.log("would like to install " + r);
+                    }
+                }
+            } else {
+                console.log("sync: Err: +- Import Mode not supported!");
+            }
+            if (cb) cb();
+        };
+
+        var expo_add = function(cb) {
+            for (var r in local) {
+                var drin = false;
+                var different = false;
+                if (remote[r]) {
+                    drin = true;
+                    if (remote[r].md5 != local[r].md5) different = true;
+                }
+
+                if (!drin || different) {
+                    console.log("would like to export " + r);
+                }
+            }
+            if (cb) cb();
+        };
+
+        var expo_rm = function(cb) {
+            for (var r in remote) {
+                var drin = false;
+                if (local[r]) {
+                    drin = true;
+                }
+                if (!drin) {
+                    console.log("would like to remove " + r + " from server");
+                }
+            }
+            if (cb) cb();
+        };
+
+        var run_sync = function() {
+            impo(import_done);
+        };
+
+        var import_done = function() {
+            expo_add(sync_fin);
+        };
+
+        var expo_add_done = function() {
+            if (Config.values.sync_export == '+-') {
+                expo_rm(sync_fin);
+            } else {
+                sync_fin();
+            }
+        };
+
+        var set_done = function(err, msg) {
+            if (err) {
+                if (D) console.log("sync: err " + msg);
+            }
+        };
+            
+        var sync_fin = function() {
+            remote_version++;
+            
+            Syncer.set('version', "" + remote_version, set_done);
+            // TODO: set sync entry of all scripts
+            Config.values.sync_latest = remote_version;
+            Config.save();
+            if (D) console.log("sync: done, new version " + remote_version);
+        };
+
+        Syncer.get('version', got1);
     }
 };
+sycl = SyncClient;
 
 /* ###### UI ####### */
 
@@ -1714,7 +1898,7 @@ var ConfigObject = function(initCallback) {
 
     this.changeListeners = {};
     var _internal = {};
-    
+
     var defaults = { configMode: 0,
                      safeUrls: true,
                      tryToFixUrl: true,
@@ -1783,7 +1967,7 @@ var ConfigObject = function(initCallback) {
                 oobj.values.__defineGetter__(k, getter);
                 oobj.values.__defineSetter__(k, setter);
             })();
-            
+
             _internal[r] = defaults[r];
         }
 
@@ -1799,7 +1983,7 @@ var ConfigObject = function(initCallback) {
     var setValue = function(name, value) {
         if (oobj.changeListeners[name] &&
             (_internal[name]) != value) {
-            
+
             for (var i=0; i<oobj.changeListeners[name].length; i++) {
                 (function wrap() {
                     var n = name;
@@ -1815,7 +1999,7 @@ var ConfigObject = function(initCallback) {
                 })();
             }
         }
-        
+
         _internal[name] = value;
     };
 
@@ -1865,7 +2049,7 @@ var xmlhttpRequestInternal = function(details, callback, onreadychange, onerr, d
     return xmlhttpRequest(details, callback, onreadychange, onerr, done, true);
 };
 
-    
+
 /* ###### Runtime ####### */
 
 var runtimeInit = function() {
@@ -1981,13 +2165,13 @@ var runtimeInit = function() {
                         fillRequire(req, r);
                         oobj.getRequires(script, cb);
                     };
-                    
+
                     if (r.url.search('^file://') == 0) {
                         var c = function(s) {
                             onResp({readyState: 4, status: s ? 0 : 404, responseText: s});
                         };
                         localFile.getSource(r.url, c);
-                    } else { 
+                    } else {
                         var details = {
                             method: 'GET',
                             retries: _retries,
@@ -2100,7 +2284,7 @@ var ts_ify = function(u) {
     if (u) u += (u.search('\\?') == -1 ? '?' : '&') + 'ts=' + (new Date()).getTime();
     return u;
 };
- 
+
 var determineSourceURL = function(o, add_ts) {
     if (!o) return null;
 
@@ -2112,7 +2296,7 @@ var determineSourceURL = function(o, add_ts) {
 
     return f;
 };
- 
+
 var determineMetaURL = function(o, add_ts) {
     if (!o) return null;
 
@@ -2123,7 +2307,7 @@ var determineMetaURL = function(o, add_ts) {
     if (o.updateURL && o.updateURL.search('^file://' == -1)) u = o.updateURL;
 
     if (u) return add_ts ? ts_ify(u) : u;
-    
+
     if (f) {
         var murl = null;
 
@@ -2136,7 +2320,7 @@ var determineMetaURL = function(o, add_ts) {
 
     return null;
 };
- 
+
 var getMetaData = function(o, callback) {
     var murl = determineMetaURL(o, true);
 
@@ -2171,7 +2355,7 @@ var getMetaData = function(o, callback) {
 //merge original and user-defined *cludes and matches
 var mergeCludes = function(script){
     var n, cludes = script.options.override;
-	
+
     //clone the original cludes as a starting point
     script.includes = cludes.orig_includes.slice();
     script.excludes = cludes.orig_excludes.slice();
@@ -2258,7 +2442,7 @@ var addNewUserScript = function(o) {
         script.updateURL = null;
         script.downloadURL = o.force_url;
     }
-    
+
     script.position = oldscript ? oldscript.position : determineLastScriptPosition() + 1;
 
     if (script.name.search('@') != -1) {
@@ -2364,7 +2548,7 @@ var addNewUserScript = function(o) {
     }
     incls += '\n';
     var k=0, q=0;
-    
+
     for (k=0;k<script.includes.length;k++,q++) {
         incls += '    ' + script.includes[k];
         incls += (g < 15) ? '\n' : (c < m) ? ';' : '\n';
@@ -2448,7 +2632,7 @@ var addNewUserScript = function(o) {
             extensions.getUserscriptByName(script.name, disableNative);
         }
     };
-    
+
     if (!o.ask ||
        (allowSilent && Config.values.notification_silentScriptUpdate)) {
         doit();
@@ -2532,8 +2716,8 @@ var getValidTabId = function(ignore, cb) {
     };
     chrome.tabs.getSelected(null, resp);
 };
- 
-/******** notify *******/ 
+
+/******** notify *******/
 var notify = {
     responses : {},
     getNotifyId : function(callback) {
@@ -2742,7 +2926,7 @@ var updateUserscripts = function(tabid, showResult, scriptid, callback) {
                 hash_different || // hash has changed
                 !version_found || // meta data does not contain version info
                 version_newer) { // we noticed a newer version
-                
+
                 if (V || UV) console.log("bg: hash of script " + r.script.name + " has changed or does not exist! running version check!");
                 r.meta = o.meta;
                 r.metasrc = o.metasrc;
@@ -2758,7 +2942,7 @@ var updateUserscripts = function(tabid, showResult, scriptid, callback) {
     };
 
     var one = false;
-    
+
     for (var k in names) {
         var n = names[k];
         var r = loadScriptByName(n);
@@ -2964,7 +3148,7 @@ var storeScript = function(name, script) {
         s.textContent = null;
         TM_storage.setValue(name, s);
     } else {
-        SyncClient.scriptRemoveCb(name);
+        SyncClient.scriptRemovedCb(name);
 
         TM_storage.deleteValue(name + condAppendix);
         TM_storage.deleteValue(name + scriptAppendix);
@@ -3368,7 +3552,7 @@ var requestHandler = function(request, sender, sendResponse) {
             if (contextId &&
                 allURLs[sender.tab.id] &&
                 allURLs[sender.tab.id].stats.executed[contextId]) {
-                
+
                 allURLs[sender.tab.id].stats.running -= allURLs[sender.tab.id].stats.executed[contextId].running;
                 allURLs[sender.tab.id].stats.disabled -= allURLs[sender.tab.id].stats.executed[contextId].disabled;
 
@@ -3762,7 +3946,7 @@ var createOptionItems = function(cb) {
     var opttf = [];
     var optns = [];
     var optsy = [];
-        
+
     optsg.push({ name: chrome.i18n.getMessage('General'), section: true});
 
     optsg.push({ name:  chrome.i18n.getMessage('Config_Mode'),
@@ -3817,7 +4001,7 @@ var createOptionItems = function(cb) {
     } else if (Config.values.sync_valid == "unknown") {
         hint = chrome.i18n.getMessage('Please_enter_your_existing_credentials_or_use_new_ones_');
     }
-        
+
     optsy.push({ name: chrome.i18n.getMessage('eMail'), id: 'sync_email',
                        level: 50,
                        mail: true,
@@ -3835,8 +4019,8 @@ var createOptionItems = function(cb) {
                level: 60,
                option: true,
                select: [ { name: chrome.i18n.getMessage('Off'), value: '0' },
-                         { name: chrome.i18n.getMessage('Create_only'), value: '+' },
-                         { name: chrome.i18n.getMessage('Create_and_remove'), value: '+-' } ],
+                         { name: chrome.i18n.getMessage('Create_only'), value: '+' } /*,
+                         { name: chrome.i18n.getMessage('Create_and_remove'), value: '+-' }*/ ],
                value: Config.values.sync_import,
                desc: chrome.i18n.getMessage('This_options_sets_up_how_to_handle_changes_from_the_sync_server_') });
 
@@ -3949,7 +4133,7 @@ var createOptionItems = function(cb) {
                value: Config.values.editor_tabMode,
                      desc: '' });
 
-        
+
     /* optse.push({ name: chrome.i18n.getMessage('EnterMode'),
                id: 'editor_enterMode',
                level: 50,
@@ -4008,7 +4192,7 @@ var createOptionItems = function(cb) {
                checkbox: true,
                enabled: Config.values.notification_silentScriptUpdate,
                desc: '' });
-                        
+
     optsu.push({ name: chrome.i18n.getMessage('Hide_notification_after'),
                id: 'scriptUpdateHideNotificationAfter',
                level: 50,
@@ -4042,7 +4226,7 @@ var createOptionItems = function(cb) {
                  input: true,
                  value: Config.values.scriptTemplate });
 
-        
+
     ret = ret.concat(optsg).concat(optsa).concat(optsu).concat(optsy).concat(opttf).concat(optse).concat(optss).concat(optns);
 
     ret.push({ name: 'EOS', section: true, endsection: true});
@@ -4263,11 +4447,11 @@ var PNG = {
 
         this.initCanvas(c);
     },
-    
+
     initFromImage : function(img, x, y, xp, yp, s, cb) {
         var objImg = document.createElement('img');
         if (D) document.body.appendChild(objImg);
-        
+
         var gy = this;
         var done = function() {
             gy.init(x, y);
@@ -4278,7 +4462,7 @@ var PNG = {
             if (cb) cb();
             objImg = null;
         };
-        
+
         objImg.onload = done;
         objImg.src = img;
     },
@@ -4288,7 +4472,7 @@ var PNG = {
         this.context.fillStyle = "rgba(" + color.join(',') + ", 1)";
         this.context.fillText(nr, x, y);
     },
-    
+
     circle : function (x, y, r, color) {
         var c = "rgba(" + color.join(',') + ", 1)";
         this.context.fillStyle = c;
@@ -4337,7 +4521,7 @@ var PNG = {
             var rand = 3;
             PNG.rrect(x + rand, 0 + rand, h - rand, rh - rand, 4, [190,0,0]);
             PNG.printNr(x + 4, rh - 3, nr, [240, 250, 240]);
-            
+
             // if (cb) cb(gy.context.getImageData(0, 0, 19, 19));
             if (cb) cb(gy.canvas.toDataURL());
         };
@@ -4464,7 +4648,7 @@ var headerFix = function(details) {
     if (!_webRequest.verified) {
         f[_webRequest.testprefix] = 'true';
     }
-    
+
     var d = [];
     for (var k in f) {
         if (!f.hasOwnProperty(k)) continue;
@@ -4562,7 +4746,7 @@ var checkRequestForUserscript = function(details) {
 
     return {};
 };
- 
+
 var removeWebRequestListeners = function() {
     if (_webRequest.use) {
         try {
@@ -4674,7 +4858,7 @@ var removeFromAllURLs = function(tabid, url) {
     if (allURLs[tabid].urls[url]) {
         delete allURLs[tabid].urls[url];
         allURLs[tabid].empty = true;
-        
+
         for (var k in allURLs[tabid].urls) {
             if (!allURLs[tabid].urls.hasOwnProperty(k)) continue;
             allURLs[tabid].empty = false;
@@ -4705,7 +4889,7 @@ var updateListener = function(tabID, changeInfo, tab, request, length_cb, allrun
             var runners = [];
             var disabled = 0;
             var script_map = {};
-            
+
             for (var k=0; k<scripts.length; k++) {
                 var script = scripts[k];
 
@@ -4750,7 +4934,7 @@ var removeListener = function(tabId, removeInfo) {
 
 var initObjects = function() {
     adjustLogLevel(Config.values.logLevel);
-    
+
     if (Config.values.sync_enabled &&
         Config.values.sync_URL &&
         Config.values.sync_email &&
@@ -4779,7 +4963,7 @@ init = function() {
     scriptParser = Registry.get('parser');
     Helper = Registry.get('helper');
     Syncer = Registry.get('syncer');
-    
+
     initBrowserAction();
     TM_storage.init();
     initScriptOptions();
@@ -4802,7 +4986,7 @@ init = function() {
 
         chrome.webNavigation.onCommitted.addListener(onCommitedListener);
     };
-    
+
     var alldone = function() {
         window.setTimeout(notifyOnScriptUpdates, 10000);
 

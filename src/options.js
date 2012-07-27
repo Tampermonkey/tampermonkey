@@ -1001,8 +1001,8 @@ var createScriptSettingsTab = function(i, tabd) {
     var e_ue = createCludesEditor(chrome.i18n.getMessage('User_excludes'),
                                   { id: 'excludes', item: i });
 
-    var i_ds = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Disable_sync'),
-                              { id: 'noSync', name: i.name, enabled: i.noSync },
+    var i_ds = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Enable_sync'),
+                              { id: 'sync', name: i.name, enabled: i.sync },
                               co);
     var i_md = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Convert_CDATA_sections_into_a_chrome_compatible_format'),
                               { id: 'compat_metadata', name: i.name, enabled: i.compat_metadata },
@@ -1541,7 +1541,7 @@ var createScriptItem = function(i, tr, tabv) {
                 lSync = '';
             } else {
                 var change = function() {
-                    modifyScriptOption(this.name, "noSync", !this.oldvalue);
+                    modifyScriptOption(this.name, "sync", !this.oldvalue);
                 };
 
                 if (!sname_name.inserted) {
@@ -1549,9 +1549,9 @@ var createScriptItem = function(i, tr, tabv) {
                     sync.style.cursor = "pointer";
                     sync.name = i.name;
                 }
-                sync.oldvalue = i.noSync;
+                sync.oldvalue = i.sync;
 
-                if (i.noSync) {
+                if (!i.sync) {
                     sync.title = chrome.i18n.getMessage('Enable_sync');
                     lSync = '<img src="images/no.png" class="icon16" />';
                 } else {
