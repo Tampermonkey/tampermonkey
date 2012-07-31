@@ -1564,6 +1564,19 @@ var defaultScripts = function() {
 
 var SyncClient = {
     enabled : false,
+    remoteVersion : 0,
+    syncing : 0,
+    period : null,
+    schedulePeriodicalCheck : function() {
+        if (SyncClient.period) return;
+        SyncClient.period = window.setInterval(SyncClient.syncAll, 18000000 /* 5h */);
+    },
+    disablePeriodicalCheck : function() {
+        if (SyncClient.period) {
+            window.clearInterval(SyncClient.period);
+            SyncClient.period = null;
+        }
+    },
     checkSyncAccount : function(key, oldVal, newVal) {
         var et = null;
         var scheduleEnable = function() {
@@ -1583,9 +1596,9 @@ var SyncClient = {
             } else if (Config.values.sync_valid == 'submitted' ||
                        Config.values.sync_valid == 'invalid') {
                 // we can't do anything...
-                if (D) console.log("bg: sync enabled, credential state is -> " + Config.values.sync_valid);
+                if (D) console.log("sync: enabled, credential state is -> " + Config.values.sync_valid);
             } else {
-                console.log("bg: ambiguous sync state: " + Config.values.sync_valid);
+                console.log("sync: ambiguous sync state: " + Config.values.sync_valid);
             };
         }
         if (key == 'sync_email' ||
@@ -1639,11 +1652,11 @@ var SyncClient = {
                     SyncClient.createAccount(cb);
                 } else if (err) {
                     // wrong password, ...
-                    if (D) console.log("bg: init of Syncer failed: " + msg);
+                    if (D) console.log("sync: init of Syncer failed: " + msg);
                     Config.values.sync_valid = 'invalid';
                     Config.save();
                 } else {
-                if (D) console.log("bg: init of Syncer succed (user: " + Config.values.sync_email + " url: " + Config.values.sync_URL + ")");
+                if (D) console.log("sync: init of Syncer succed (user: " + Config.values.sync_email + " url: " + Config.values.sync_URL + ")");
                     Config.values.sync_valid = 'valid';
                     Config.save();
                     if (callback) callback();
@@ -1661,16 +1674,17 @@ var SyncClient = {
         for (var k in names) {
             var n = names[k];
             var r = loadScriptByName(n);
-            if (!r.script || !r.cond || !r.script.options.sync) {
+            if (!r.script || !r.cond) {
                 continue;
             }
             var s = [];
             s[0] = r.script.textContent;
+            s[1] = r.script.fileURL;
 
             var j = JSON.stringify(s);
             var md5 = MD5(j);
-            var id = r.script.id || scriptParser.getScriptId(r.script.name);
-            ret[id] = { md5: md5, type: "script", data: j, sync: r.script.sync };
+            var id = (r.script.id || scriptParser.getScriptId(r.script.name)) + scriptAppendix;
+            ret[id] = { id: id, md5: md5, md5data: j, script: r.script };
         }
 
         return ret;
@@ -1683,7 +1697,7 @@ var SyncClient = {
 
         var goterr = false;
         var keys = [];
-        var list = [];
+        var list = {};
         var gotList = function(err, res) {
             if (err) {
                 error(res);
@@ -1695,9 +1709,12 @@ var SyncClient = {
 
         var running = 1;
         var iterate = function() {
-            for (var k in keys) {
-                running++;
-                Sync.md5(k, fill);
+            for (var i = 0; i < keys.length; i++) {
+                var k = keys[i];
+                if (k.search(scriptAppendix) != -1) {
+                    running++;
+                    Syncer.md5(k, fill);
+                }
             }
 
             check();
@@ -1718,7 +1735,7 @@ var SyncClient = {
             if (err) {
                 goterr = v;
             } else {
-                list[k] = { md5 : v };
+                list[k] = { id: k, md5 : v };
             }
 
             check();
@@ -1727,43 +1744,126 @@ var SyncClient = {
         Syncer.list(gotList);
     },
     scriptAddedCb : function(name, script) {
-        if (!SyncClient.enabled) return;
+        if (!SyncClient.enabled || !script.options.sync) return;
+        SyncClient.syncAll(true);
     },
     scriptChangedCb : function(name, script) {
-        if (!SyncClient.enabled) return;
+        if (!SyncClient.enabled || !script.options.sync) return;
+        SyncClient.syncAll(true);
     },
-    scriptRemovedCb : function(name) {
-        if (!SyncClient.enabled) return;
+    scriptRemovedCb : function(name, script) {
+        if (!SyncClient.enabled || !script.options.sync) return;
+        var id = (script.id || scriptParser.getScriptId(script.name)) + scriptAppendix;
+        SyncClient.removeScript(id);
     },
-    exportScript: function(id, o) {
+    removeScript : function(id, cb) {
+        if (D) console.log("sync: removeScript " + id);
+        var done = function() {
+            if (cb) cb();
+        };
+        Syncer.set(id, null, done);
+    },
+    markScriptSeen: function(r, v) {
+        if (!r.script.sync) r.script.sync = {};
+        r.script.sync.seenOnServer = v;
+        storeScript(r.script.name, r.script);
+    },
+    importScript: function(r, cb) {
+        if (D) console.log("sync: import " + r.id);
+
+        var get_done = function(err, k, value) {
+            if (err) {
+                console.log("sync: Error: importScript -> " + k);
+            } else {
+                var s = null;
+                try {
+                    s = JSON.parse(value);
+                } catch (e) {
+                    console.log("sync: Parse error: importScript -> " + k);
+                }
+                if (s) { 
+                    var src = s[0];
+                    var url = s[1];
+                    console.log("sync: import script " + k + " with script url " + url);
+                    var sync = { fromRemote: true, seenOnServer: SyncClient.remoteVersion };
+                    addNewUserScript({ url: url, src: src, ask: false, sync: sync, cb : cb });
+                    return;
+                }
+            }
+            if (cb) cb();
+        }
+        Syncer.get(r.id, get_done);
 
     },
-    syncAll : function() {
+    exportScript: function(r, cb) {
+        if (D) console.log("sync: export " + r.script.name);
+
+        var sc_done = function(err, k) {
+            if (err) {
+                console.log("sync: Error: exportScript -> " + k);
+            }
+            if (cb) cb();
+        }
+        Syncer.set(r.id, r.md5data, sc_done);
+    },
+    syncAll : function(force) {
+        if (SyncClient.syncing && !force) return;
+
+        SyncClient.syncing++;
         var latest = Config.values.sync_latest;
-        var remote_version = 0;
-        var local = SyncClient.getLocalScriptList();
+        var local = null;
         var remote = null;
+        var mark = [];
+        var change = false;
+        var run = [];
 
+        var next = function() {
+            if (run.length > 0) {
+                var fn = run.splice(0, 1);
+                window.setTimeout(fn[0], 1);
+            }
+        };
+
+        var get_version = function() {
+            Syncer.get('version', got1);
+        };
+        run.push(get_version);
+        
         var got1 = function(err, k, v) {
             if (err) {
                 console.log("sync: Error: " + k);
             } else {
-                remote_version = Number(v);
-                SyncClient.getRemoteMd5List(got2);
+                SyncClient.remoteVersion = Number(v);
+                next();
             }
         };
+
+        var compare = function() {
+            if (SyncClient.remoteVersion != latest || force) {
+                SyncClient.getRemoteMd5List(got2);
+                local = SyncClient.getLocalScriptList();
+            } else {
+                if (D) console.log("sync: remote version == local version");
+            }
+        }
+        run.push(compare);
 
         var got2 = function(l) {
             remote = l;
 
             if (remote) {
-                run_sync();
+                next();
             } else {
                 if (D) console.log("sync: unable to get remotelist!");
             }
         };
 
-        var impo = function(cb) {
+        var impo = function() {
+            var running = 1;
+            var check = function() {
+                if (--running == 0) next();
+            };
+
             if (Config.values.sync_import == '+') {
                 for (var r in remote) {
                     var drin = false;
@@ -1774,77 +1874,101 @@ var SyncClient = {
                     }
 
                     if (!drin || different) {
-                        console.log("would like to install " + r);
+                        change = true;
+                        running++;
+                        SyncClient.importScript(remote[r], check);
                     }
                 }
             } else {
                 console.log("sync: Err: +- Import Mode not supported!");
             }
-            if (cb) cb();
+            check();
         };
+        run.push(impo);
 
-        var expo_add = function(cb) {
+        var expo_add = function() {
+            var running = 1;
+            var check = function() {
+                if (--running == 0) next();
+            };
+
             for (var r in local) {
                 var drin = false;
                 var different = false;
+                if (!local[r].script.options.sync) continue;
+
                 if (remote[r]) {
                     drin = true;
                     if (remote[r].md5 != local[r].md5) different = true;
                 }
 
                 if (!drin || different) {
-                    console.log("would like to export " + r);
+                    running++;
+                    mark.push(local[r]);
+                    SyncClient.exportScript(local[r], check);
+                    remote[r] = local[r]; // shortcut to update remote informations
+                    change = true;
+                } else {
+                    mark.push(local[r]);
                 }
             }
-            if (cb) cb();
+            check();
         };
+        run.push(expo_add);
 
-        var expo_rm = function(cb) {
+        var expo_rm = function() {
+            if (Config.values.sync_export == '+-') {
+            /* skip for now! remove scripts by installing and than deleting them!
             for (var r in remote) {
                 var drin = false;
                 if (local[r]) {
                     drin = true;
                 }
                 if (!drin) {
+                    // change = true;
                     console.log("would like to remove " + r + " from server");
                 }
+            } */
             }
-            if (cb) cb();
-        };
 
-        var run_sync = function() {
-            impo(import_done);
+            next();
         };
-
-        var import_done = function() {
-            expo_add(sync_fin);
-        };
-
-        var expo_add_done = function() {
-            if (Config.values.sync_export == '+-') {
-                expo_rm(sync_fin);
+        run.push(expo_rm);
+        
+        var sync_fin = function() {
+            if (change) {
+                SyncClient.remoteVersion++;
+                Syncer.set('version', "" + SyncClient.remoteVersion, set_done);
             } else {
-                sync_fin();
+                if (D) console.log("sync: done, known version " + SyncClient.remoteVersion);
+                next();
             }
         };
+        run.push(sync_fin);
 
         var set_done = function(err, msg) {
             if (err) {
                 if (D) console.log("sync: err " + msg);
             }
-        };
-            
-        var sync_fin = function() {
-            remote_version++;
-            
-            Syncer.set('version', "" + remote_version, set_done);
-            // TODO: set sync entry of all scripts
-            Config.values.sync_latest = remote_version;
+
+            for (var i=0; i<mark.length; i++) {
+                SyncClient.markScriptSeen(mark[i], SyncClient.remoteVersion);
+            }
+
+            Config.values.sync_latest = SyncClient.remoteVersion;
             Config.save();
-            if (D) console.log("sync: done, new version " + remote_version);
+            notifyOptionsTab();
+
+            if (D) console.log("sync: done, new version " + SyncClient.remoteVersion);
+            next();
         };
 
-        Syncer.get('version', got1);
+        var all_done = function() {
+            SyncClient.syncing--;
+        };
+        run.push(all_done);
+
+        next();
     }
 };
 sycl = SyncClient;
@@ -1867,6 +1991,13 @@ var setIcon = function(tabId, obj) {
 
 var addCfgCallbacks = function(obj) {
     Config.addChangeListener('sync_enabled', SyncClient.checkSyncAccount);
+    Config.addChangeListener('sync_enabled', function(n, o, e) {
+                                 if (e) {
+                                     SyncClient.schedulePeriodicalCheck();
+                                 } else {
+                                     SyncClient.disablePeriodicalCheck();
+                                 }
+                             });
     Config.addChangeListener('sync_email', SyncClient.checkSyncAccount);
     Config.addChangeListener('sync_password', SyncClient.checkSyncAccount);
 
@@ -1932,7 +2063,7 @@ var ConfigObject = function(initCallback) {
                      sync_valid: "unknown",
                      sync_latest: 0,
                      sync_import: "+",
-                     sync_export: "+",
+                     sync_export: "+-",
                      forbiddenPages : [ '*.paypal.tld/*', 'https://*deutsche-bank-24.tld/*', 'https://*bankamerica.tld/*',
                                         '*://plusone.google.com/*/fastbutton*',
                                         '*://www.facebook.com/plugins/*',
@@ -2389,8 +2520,19 @@ var mergeCludes = function(script){
     return script;
 };
 
+var notifyOptionsTab = function() {
+    reorderScripts();
+    var done = function(allitems) {
+        chrome.extension.sendRequest({ method: "updateOptions",
+                                             items: allitems },
+                                     function(response) {});
+        
+    };
+    createOptionItems(done);
+};
+
 var addNewUserScript = function(o) {
-    // { tabid: tabid, force_url: durl, url: url, src: src, ask: ask, defaultscript:defaultscript, noreinstall : noreinstall, save : save, cb : cb }
+    // { tabid: tabid, force_url: durl, url: url, src: src, ask: ask, defaultscript:defaultscript, noreinstall : noreinstall, save : save, sync: sync, cb : cb }
     var reset = false;
     var allowSilent = false;
 
@@ -2500,7 +2642,8 @@ var addNewUserScript = function(o) {
     if (!reset && !o.clean && oldscript) {
         // don't change some settings in case it's a system script or an update
         script.enabled = oldscript.enabled;
-
+        script.sync = oldscript.sync;
+        
         if (!script.options.awareOfChrome) {
             script.options.compat_forvarin = oldscript.options.compat_forvarin;
             if (script.options.run_at == '') {
@@ -2515,6 +2658,12 @@ var addNewUserScript = function(o) {
             msg += '\n' + chrome.i18n.getMessage('The_update_url_has_changed_from_0oldurl0_to__0newurl0', [ouu, nuu]);
             allowSilent = false;
         }
+    }
+
+    if (!o.clean && o.sync) {
+        script.sync = o.sync;
+        // TODO: a little bit ugly, maybe the callback should get the name of the installed script to be able to modify some things later on?!
+        script.options.sync = true;
     }
 
     if (!script.includes.length && !script.matches.length) {
@@ -2613,14 +2762,7 @@ var addNewUserScript = function(o) {
         storeScript(script.name, script);
         if (!oldscript || o.clean) storeScriptStorage(script.name, { ts: (new Date()).getTime() });
         if (!o.cb) {
-            reorderScripts();
-            var done = function(allitems) {
-                chrome.extension.sendRequest({ method: "updateOptions",
-                                                     items: allitems },
-                                             function(response) {});
-
-            };
-            createOptionItems(done);
+            notifyOptionsTab();
         }
 
         if (false) { // add user option
@@ -3136,23 +3278,28 @@ var loadScriptByName = function(name) {
 
 var storeScript = function(name, script) {
     if (script) {
-        if (TM_storage.getValue(name)) {
-            SyncClient.scriptChangedCb(name, script);
-        } else {
-            SyncClient.scriptAddedCb(name, script);
-        }
-
         TM_storage.setValue(name + condAppendix, { inc: script.includes, match: script.matches, exc: script.excludes });
         TM_storage.setValue(name + scriptAppendix, script.textContent);
         var s = script;
         s.textContent = null;
         TM_storage.setValue(name, s);
+
+        if (TM_storage.getValue(name)) {
+            // TODO: don't call this in case i.e. the script pos was changed
+            SyncClient.scriptChangedCb(name, script);
+        } else {
+            SyncClient.scriptAddedCb(name, script);
+        }
     } else {
-        SyncClient.scriptRemovedCb(name);
+        var r = loadScriptByName(name);
 
         TM_storage.deleteValue(name + condAppendix);
         TM_storage.deleteValue(name + scriptAppendix);
         TM_storage.deleteValue(name);
+
+        if (r.script && r.cond) {
+            SyncClient.scriptRemovedCb(name, r.script);
+        }
     }
 };
 
@@ -3338,9 +3485,7 @@ var requestHandler = function(request, sender, sendResponse) {
             if (optionstab) {
                 sendResponse({items: items});
             } else {
-                chrome.extension.sendRequest({ method: "updateOptions",
-                                                     items: items },
-                                             function(response) {});
+                notifyOptionsTab();
                 sendResponse({});
             }
         };
@@ -3355,14 +3500,6 @@ var requestHandler = function(request, sender, sendResponse) {
                 reorderScripts();
             }
 
-            var updateOptionsPage = function() {
-                var done = function(allitems) {
-                    chrome.extension.sendRequest({ method: "updateOptions",
-                                                         items: allitems },
-                                                 function(response) {});
-                };
-                createOptionItems(done);
-            }
             if (V) console.log("modifyScriptOptions " + optionstab);
             if (reload) {
                 if (optionstab) { // options page
@@ -3372,7 +3509,7 @@ var requestHandler = function(request, sender, sendResponse) {
                     createOptionItems(done);
                 } else { // action page
                     // update options page, in case a script was en/disabled
-                    if (request.name) window.setTimeout(updateOptionsPage, 100);
+                    if (request.name) window.setTimeout(notifyOptionsTab, 100);
 
                     var resp = function(tab) {
                         // TODO: use allURLs[tid].scripts instead of getting them again?
@@ -3482,13 +3619,7 @@ var requestHandler = function(request, sender, sendResponse) {
                 if (found) {
                     // update options page after script installation
                     if (installed) {
-                        reorderScripts();
-                        var done = function(allitems) {
-                            chrome.extension.sendRequest({ method: "updateOptions",
-                                                                 items: allitems },
-                                                         function(response) {});
-                        }
-                        createOptionItems(done);
+                        notifyOptionsTab();
                     }
                 } else {
                     chrome.tabs.sendRequest(sender.tab.id,
@@ -4029,7 +4160,7 @@ var createOptionItems = function(cb) {
                level: 60,
                option: true,
                select: [ { name: chrome.i18n.getMessage('Off'), value: '0' },
-                         { name: chrome.i18n.getMessage('Create_only'), value: '+' },
+                      /* { name: chrome.i18n.getMessage('Create_only'), value: '+' } , */
                          { name: chrome.i18n.getMessage('Create_and_remove'), value: '+-' } ],
                value: Config.values.sync_export,
                desc: chrome.i18n.getMessage('This_options_sets_up_how_to_sync_local_changes_to_the_server_') });
@@ -4941,6 +5072,8 @@ var initObjects = function() {
         Config.values.sync_password) {
 
         SyncClient.enable();
+        window.setTimeout(SyncClient.syncAll, 1000);
+        SyncClient.schedulePeriodicalCheck();
     }
 
     if (Config.values.fire_enabled) {
