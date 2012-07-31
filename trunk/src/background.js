@@ -1567,6 +1567,21 @@ var SyncClient = {
     remoteVersion : 0,
     syncing : 0,
     period : null,
+    scheduled : { to: null, force: null, t: 0 },
+    scheduleSync : function(t, force) {
+        force = SyncClient.scheduled['force'] || force;
+        if (SyncClient.scheduled.to) {
+            window.clearTimeout(SyncClient.scheduled.to);
+        }
+        var run = function() {
+            SyncClient.syncAll(SyncClient.scheduled.force);
+            SyncClient.scheduled.to = null;
+            SyncClient.scheduled.force = null;
+        };
+        SyncClient.scheduled.to = window.setTimeout(run, t);
+        SyncClient.scheduled.force = force;
+        SyncClient.scheduled.ts = (new Date()).getTime() + t;
+    },
     schedulePeriodicalCheck : function() {
         if (SyncClient.period) return;
         SyncClient.period = window.setInterval(SyncClient.syncAll, 18000000 /* 5h */);
@@ -1745,11 +1760,11 @@ var SyncClient = {
     },
     scriptAddedCb : function(name, script) {
         if (!SyncClient.enabled || !script.options.sync) return;
-        SyncClient.syncAll(true);
+        SyncClient.scheduleSync(50, true);
     },
     scriptChangedCb : function(name, script) {
         if (!SyncClient.enabled || !script.options.sync) return;
-        SyncClient.syncAll(true);
+        SyncClient.scheduleSync(50, true);
     },
     scriptRemovedCb : function(name, script) {
         if (!SyncClient.enabled || !script.options.sync) return;
@@ -1781,7 +1796,7 @@ var SyncClient = {
                 } catch (e) {
                     console.log("sync: Parse error: importScript -> " + k);
                 }
-                if (s) { 
+                if (s) {
                     var src = s[0];
                     var url = s[1];
                     console.log("sync: import script " + k + " with script url " + url);
@@ -1828,7 +1843,7 @@ var SyncClient = {
             Syncer.get('version', got1);
         };
         run.push(get_version);
-        
+
         var got1 = function(err, k, v) {
             if (err) {
                 console.log("sync: Error: " + k);
@@ -1934,7 +1949,7 @@ var SyncClient = {
             next();
         };
         run.push(expo_rm);
-        
+
         var sync_fin = function() {
             if (change) {
                 SyncClient.remoteVersion++;
@@ -2526,7 +2541,7 @@ var notifyOptionsTab = function() {
         chrome.extension.sendRequest({ method: "updateOptions",
                                              items: allitems },
                                      function(response) {});
-        
+
     };
     createOptionItems(done);
 };
@@ -2643,7 +2658,7 @@ var addNewUserScript = function(o) {
         // don't change some settings in case it's a system script or an update
         script.enabled = oldscript.enabled;
         script.sync = oldscript.sync;
-        
+
         if (!script.options.awareOfChrome) {
             script.options.compat_forvarin = oldscript.options.compat_forvarin;
             if (script.options.run_at == '') {
@@ -5072,7 +5087,7 @@ var initObjects = function() {
         Config.values.sync_password) {
 
         SyncClient.enable();
-        window.setTimeout(SyncClient.syncAll, 1000);
+        SyncClient.scheduleSync(1000, true);
         SyncClient.schedulePeriodicalCheck();
     }
 
