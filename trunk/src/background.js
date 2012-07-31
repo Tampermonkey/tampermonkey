@@ -1760,11 +1760,11 @@ var SyncClient = {
     },
     scriptAddedCb : function(name, script) {
         if (!SyncClient.enabled || !script.options.sync) return;
-        SyncClient.scheduleSync(50, true);
+        SyncClient.scheduleSync(500, true);
     },
     scriptChangedCb : function(name, script) {
         if (!SyncClient.enabled || !script.options.sync) return;
-        SyncClient.scheduleSync(50, true);
+        SyncClient.scheduleSync(500, true);
     },
     scriptRemovedCb : function(name, script) {
         if (!SyncClient.enabled || !script.options.sync) return;
