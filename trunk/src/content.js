@@ -71,8 +71,8 @@ Registry.require("xmlhttprequest");
 Registry.require("convert");
 Registry.require("helper");
 
-var emu = Registry.getRaw("emulation.js");
-var env = Registry.getRaw("environment.js");
+var emu = null;
+var env = null;
 
 var xmlhttpRequest = Registry.get('xmlhttprequest').run;
 var Helper = Registry.get('helper');
@@ -820,7 +820,7 @@ function runHlp(arg) {
 }
 
 function run() {
-    if (!allReady) {
+    if (!allReady && env && emu) {
         var debug  = "var V = " + (V ? "true" : "false")+ ";\n";
         debug += "var EV = " + (EV ? "true" : "false")+ ";\n";
         debug += "var ENV = " + (ENV ? "true" : "false")+ ";\n";
@@ -955,6 +955,8 @@ var forceTestXhr = function() {
 };
  
 var init = function() {
+    var Femu = "emulation.js";
+    var Fenv = "environment.js";
 
     var updateResponse = function(resp) {
         logLevel = resp.logLevel;
@@ -966,6 +968,10 @@ var init = function() {
             if (V || D) console.log('content: start event processing for ' + contextId + ' (' + resp.enabledScriptsCount + ' to run)');
             wannaRun = true;
 
+            /* TODO: remove raw stuff */
+            emu = resp.raw[Femu] || Registry.getRaw(Femu);
+            env = resp.raw[Fenv] || Registry.getRaw(Fenv);
+            
             if (resp.webRequest) {
                 _webRequest = resp.webRequest;
                 if (_webRequest.use && !_webRequest.verified && xhrRetryCnt-- > 0) {
@@ -985,9 +991,11 @@ var init = function() {
 
     ConverterInit = Helper.serialize(Converter);
 
+    /* TODO: remove raw stuff and add # to manifest when the chrome store allows this to be uploaded gain... :(
+       # = "web_accessible_resources": [ "emulation.js", "environment.js" ], */
     var req = { method: "prepare",
                 id: contextId,
-                raw: [],
+                raw: [ Femu, Fenv ],
                 topframe: window.self == window.top,
                 url: window.location.origin + window.location.pathname,
                 params: window.location.search + window.location.hash };
