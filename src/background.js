@@ -1822,7 +1822,7 @@ var SyncClient = {
         Syncer.set(r.id, r.md5data, sc_done);
     },
     syncAll : function(force) {
-        if (SyncClient.syncing && !force) return;
+        if (SyncClient.syncing) return;
 
         SyncClient.syncing++;
         var latest = Config.values.sync_latest;
@@ -2062,7 +2062,7 @@ var ConfigObject = function(initCallback) {
                      appearance_badges: 'running',
                      fire_enabled: false,
                      fire_sort_cache_enabled: true,
-                     fire_updateURL: 'http://tampermonkey.net/fire/update.php',
+                     fire_updateURL: 'http://fire.tampermonkey.net/update.php',
                      fire_updatePeriod: 14 * 24 * 60 * 60 * 1000,
                      editor_enabled: true,
                      editor_indentUnit: 4,
@@ -2072,7 +2072,7 @@ var ConfigObject = function(initCallback) {
                      editor_electricChars : true,
                      editor_lineNumbers: true,
                      sync_enabled: false,
-                     sync_URL: 'https://ssl-id.net/tampermonkey.net/sync/sync.php',
+                     sync_URL: 'https://ssl-id.net/sync.tampermonkey.net/sync.php',
                      sync_email: "",
                      sync_password: "",
                      sync_valid: "unknown",
