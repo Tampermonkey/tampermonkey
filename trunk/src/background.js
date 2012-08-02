@@ -1650,7 +1650,10 @@ var SyncClient = {
         var scheduleEnable = function() {
             if (et == null) {
                 var run = function() {
-                    SyncClient.enable();
+                    SyncClient.enable(function() {
+                                          notifyOptionsTab();
+                                          SyncClient.scheduleSync(3000);
+                                      });
                     et = null;
                 }
                 et = window.setTimeout(run, 200);
@@ -1723,8 +1726,9 @@ var SyncClient = {
                     if (D) console.log("sync: init of Syncer failed: " + msg);
                     Config.values.sync_valid = 'invalid';
                     Config.save();
+                    if (callback) callback();
                 } else {
-                if (D) console.log("sync: init of Syncer succed (user: " + Config.values.sync_email + " url: " + Config.values.sync_URL + ")");
+                    if (D) console.log("sync: init of Syncer succed (user: " + Config.values.sync_email + " url: " + Config.values.sync_URL + ")");
                     Config.values.sync_valid = 'valid';
                     Config.save();
                     if (callback) callback();
