@@ -802,6 +802,9 @@
   "Enable_sync": {
     "message": "Enable Sync"
   },
+  "Conflict_remove_or_disable_sync": {
+    "message": "Conflicting remote version was found. Please remove the local version or disable sync for this script."
+  },
   "Sync": {
     "message": "Sync"
   },

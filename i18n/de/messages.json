@@ -769,6 +769,9 @@
   "Enable_sync": {
     "message": "Aktiviere Synchronisation"
   },
+  "Conflict_remove_or_disable_sync": {
+    "message": "Es wurde in Konflikt mit der Server-Version festgestellt. Bitte löschen Sie das lokale Script oder deaktivieren sie die Synchronisation für dieses Userscript"
+  },
   "Sync": {
     "message": "Sync"
   },

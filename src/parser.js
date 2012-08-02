@@ -58,7 +58,7 @@ var Script = function() {
         noframes: false,
         awareOfChrome: false,
         run_at : '',
-        sync: false,
+        do_sync: false,
         override: { includes: false, use_includes: [], orig_includes: [],
                     matches: false, use_matches: [], orig_matches: [],
                     excludes: false, use_excludes: [], orig_excludes: [] }

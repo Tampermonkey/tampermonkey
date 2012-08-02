@@ -1002,7 +1002,7 @@ var createScriptSettingsTab = function(i, tabd) {
                                   { id: 'excludes', item: i });
 
     var i_ds = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Enable_sync'),
-                              { id: 'sync', name: i.name, enabled: i.sync },
+                              { id: 'do_sync', name: i.name, enabled: i.do_sync },
                               co);
     var i_md = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Convert_CDATA_sections_into_a_chrome_compatible_format'),
                               { id: 'compat_metadata', name: i.name, enabled: i.compat_metadata },
@@ -1533,7 +1533,7 @@ var createScriptItem = function(i, tr, tabv) {
     }
     last_updated.textContent = lUp;
 
-    var sync = crc('div', 'center p100100', i.name, i.id, 'sync');
+    var sync = crc('div', 'center p100100', i.name, i.id, 'do_sync');
     var lSync = '';
     var later = function() {
         if (gOptions.sync_enabled) {
@@ -1541,7 +1541,7 @@ var createScriptItem = function(i, tr, tabv) {
                 lSync = '';
             } else {
                 var change = function() {
-                    modifyScriptOption(this.name, "sync", !this.oldvalue);
+                    modifyScriptOption(this.name, "do_sync", !this.oldvalue);
                 };
 
                 if (!sname_name.inserted) {
@@ -1549,14 +1549,23 @@ var createScriptItem = function(i, tr, tabv) {
                     sync.style.cursor = "pointer";
                     sync.name = i.name;
                 }
-                sync.oldvalue = i.sync;
+                sync.oldvalue = i.do_sync;
 
-                if (!i.sync) {
+                if (!i.do_sync) {
                     sync.title = chrome.i18n.getMessage('Enable_sync');
                     lSync = '<img src="images/no.png" class="icon16" />';
                 } else {
-                    sync.title = chrome.i18n.getMessage('Disable_sync');
-                    lSync = '<img src="images/update.png" class="icon16" />';
+                    if (i.sync && i.sync.seenOnServer == -1) {
+                        sync.title = chrome.i18n.getMessage('Conflict_remove_or_disable_sync');
+                        lSync = '<img src="images/critical.png" class="icon16" />';
+                    } else  {
+                        sync.title = chrome.i18n.getMessage('Disable_sync');
+                        if (i.sync && i.sync.seenOnServer == 0) {
+                            lSync = '<img src="images/download.gif" class="icon16" />';
+                        } else {
+                            lSync = '<img src="images/update.png" class="icon16" />';
+                        }
+                    }
                 }
             }
             sync.innerHTML = lSync;
