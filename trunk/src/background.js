@@ -188,7 +188,7 @@ var convertData = function(convertCB) {
                 addNewUserScript(ss);
             } else {
                 r.script.id = scriptParser.getScriptId(r.script.name);
-                storeScript(r.script.name, r.script);
+                storeScript(r.script.name, r.script, false);
             }
         }
     };
@@ -277,6 +277,39 @@ var convertData = function(convertCB) {
                 console.log("Update config from " + version + " to 2.3.2660");
                 // not needed anymore
                 removeUserScript('TamperScript');
+                window.setTimeout(cb, _setTimeout);
+            }
+        },
+        { cond: isNewVersion && versionCmp("2.5.61", version) == eNEWER,
+          fn : function(cb) {
+                console.log("Update config from " + version + " to 2.5.61");
+
+                var names = getAllScriptNames();
+                for (var k in names) {
+                    var n = names[k];
+                    var r = loadScriptByName(n);
+                    if (!r.script || !r.cond) {
+                        console.log(chrome.i18n.getMessage("fatal_error") + " (" + n + ")" +"!!!");
+                        continue;
+                    }
+                    r.script.options.do_sync = r.script.options.sync;
+                    delete r.script.options.sync;
+                    r.script.id = scriptParser.getScriptId(r.script.name);
+                    storeScript(r.script.name, r.script, false);
+                }
+
+                var o = TM_storage.getValue("TM_config", null);
+                if (o) {
+                    for (var r in o) {
+                        if (!o.hasOwnProperty(r)) continue;
+                        if (r == 'fire_updateURL') {
+                            o[r] = 'http://fire.tampermonkey.net/update.php';
+                        } else if (r == 'sync_URL') {
+                            o[r] = 'https://ssl-id.net/sync.tampermonkey.net/sync.php';
+                        }
+                    }
+                    TM_storage.setValue("TM_config", o);
+                }
                 window.setTimeout(cb, _setTimeout);
             }
         },
@@ -1352,13 +1385,13 @@ var TM_storage = {
     cacheDB : null,
     localDB : null,
     init : function(cb) {
-        if (V) console.log("TM_storage.init() " + _use_localdb);
+        if (V) console.log("bg: TM_storage.init() " + _use_localdb);
         if (_use_localdb) {
             var fill = function(tx, vars) {
                 TM_storage.cacheDB = {};
                 if (vars) {
                     for (var i=0; i<vars.rows.length; i++) {
-                        // if (V) console.log("fill: " + vars.rows.item(i).name + " -> " +vars.rows.item(i).value);
+                        // if (SV) console.log("fill: " + vars.rows.item(i).name + " -> " +vars.rows.item(i).value);
                         TM_storage.cacheDB[vars.rows.item(i).name] = vars.rows.item(i).value;
                     }
                 }
@@ -1366,7 +1399,7 @@ var TM_storage = {
                 if (cb) cb();
             };
             var initCache = function() {
-                if (V) console.log("init cache");
+                if (SV) console.log("bg: init storage cache");
                 TM_storage.localDB.db.transaction(function(tx) {
                                            tx.executeSql("SELECT * FROM config",
                                                          [],
@@ -1376,8 +1409,8 @@ var TM_storage = {
             };
             TM_storage.localDB = {
                 db: openDatabase('tmStorage', '1.0', 'TM Storage', 30 * 1024 * 1024),
-                onSuccess : function(tx, result) { if (V) console.log("localDB Success "); },
-                onError : function(tx, e) { console.log("localDB Error " + JSON.stringify(e)); },
+                onSuccess : function(tx, result) { if (SV) console.log("bg: storage: localDB Success "); },
+                onError : function(tx, e) { console.log("bg: storage: localDB Error " + JSON.stringify(e)); },
                 createTable : function(aftercreate) {
                     TM_storage.localDB.db.transaction(function(tx) {
                                                tx.executeSql("CREATE TABLE IF NOT EXISTS " +
@@ -1393,7 +1426,7 @@ var TM_storage = {
     },
 
     setValue : function(uename, value, cb) {
-        if (V) console.log("TM_storage.setValue");
+        if (SV) console.log("TM_storage.setValue -> " + uename);
         var type = (typeof value)[0];
         var name = escapeName(uename);
         switch (type) {
@@ -1401,7 +1434,7 @@ var TM_storage = {
               try {
                   value = type + JSON.stringify(value);
               } catch (e) {
-                  console.log("setValue: " + e);
+                  console.log("bg: storage: setValue ERROR: " + e.message);
                   return;
               }
               break;
@@ -1432,7 +1465,7 @@ var TM_storage = {
     },
 
     getValue : function(uename, defaultValue) {
-        if (V) console.log("TM_storage.getValue");
+        if (SV) console.log("TM_storage.getValue -> " + uename);
         var name = escapeName(uename);
         var get = function(value, dV) {
             if (!value) {
@@ -1449,7 +1482,7 @@ var TM_storage = {
                   try {
                       return JSON.parse(value);
                   } catch (e) {
-                      console.log(e);
+                      console.log("bg: storage: getValue ERROR: " + e.message);
                       return dV;
                   }
               default:
@@ -1477,7 +1510,7 @@ var TM_storage = {
         }
     },
     deleteAll : function(cb) {
-        if (V) console.log("TM_storage.deleteAll");
+        if (SV) console.log("TM_storage.deleteAll()");
         if (_use_localdb) {
             TM_storage.cacheDB[name] = null;
             TM_storage.localDB.db.transaction(function(tx) {
@@ -1495,7 +1528,7 @@ var TM_storage = {
     },
 
     deleteValue : function(uename, cb) {
-        if (V) console.log("TM_storage.deleteValue");
+        if (SV) console.log("TM_storage.deleteValue -> " + uename);
         var name = escapeName(uename);
         if (_use_localdb) {
             TM_storage.cacheDB[name] = null;
@@ -1512,7 +1545,7 @@ var TM_storage = {
     },
 
     listValues : function() {
-        if (V) console.log("TM_storage.listValues");
+        if (SV) console.log("TM_storage.listValues");
         if (_use_localdb) {
             /*
               var callback = function(vars) {
@@ -1567,30 +1600,50 @@ var SyncClient = {
     remoteVersion : 0,
     syncing : 0,
     period : null,
+    syncDoneListener: [],
     scheduled : { to: null, force: null, t: 0 },
     scheduleSync : function(t, force) {
+        var n = (new Date()).getTime();
+
         force = SyncClient.scheduled['force'] || force;
         if (SyncClient.scheduled.to) {
             window.clearTimeout(SyncClient.scheduled.to);
+            if (SyncClient.scheduled.ts < (n + t)) {
+                // run as early as possible
+                t = SyncClient.scheduled.ts - n;
+                if (t < 1) t = 1;
+                if (V) console.log("sync: re-schedule sync for run in " + t + " ms");
+            }
+        } else {
+            if (D) console.log("sync: schedule sync for run in " + t + " ms");
         }
+
         var run = function() {
             SyncClient.syncAll(SyncClient.scheduled.force);
             SyncClient.scheduled.to = null;
             SyncClient.scheduled.force = null;
         };
+
         SyncClient.scheduled.to = window.setTimeout(run, t);
         SyncClient.scheduled.force = force;
-        SyncClient.scheduled.ts = (new Date()).getTime() + t;
+        SyncClient.scheduled.ts = n + t;
     },
     schedulePeriodicalCheck : function() {
         if (SyncClient.period) return;
-        SyncClient.period = window.setInterval(SyncClient.syncAll, 18000000 /* 5h */);
+        var t = 18000000 /* 5h */;
+        if (D) console.log("sync: schedule sync for periodical run every " + t + " ms");
+        SyncClient.period = window.setInterval(SyncClient.syncAll, t);
     },
     disablePeriodicalCheck : function() {
         if (SyncClient.period) {
+            if (D) console.log("sync: disable periodical sync");
             window.clearInterval(SyncClient.period);
             SyncClient.period = null;
         }
+    },
+    addSyncDoneListener : function (cb) {
+        SyncClient.syncDoneListener.push(cb);
+        if (V) console.log("sync: addSyncDoneListener() -> " + SyncClient.syncDoneListener.length);
     },
     checkSyncAccount : function(key, oldVal, newVal) {
         var et = null;
@@ -1759,15 +1812,18 @@ var SyncClient = {
         Syncer.list(gotList);
     },
     scriptAddedCb : function(name, script) {
-        if (!SyncClient.enabled || !script.options.sync) return;
+        if (!SyncClient.enabled || !script.options.do_sync) return;
+        if (V) console.log("sync: scriptAddedCb()");
         SyncClient.scheduleSync(500, true);
     },
     scriptChangedCb : function(name, script) {
-        if (!SyncClient.enabled || !script.options.sync) return;
+        if (!SyncClient.enabled || !script.options.do_sync || (script.sync && script.sync.seenOnServer < 0)) return;
+        if (V) console.log("sync: scriptChangedCb()");
         SyncClient.scheduleSync(500, true);
     },
     scriptRemovedCb : function(name, script) {
-        if (!SyncClient.enabled || !script.options.sync) return;
+        if (!SyncClient.enabled || !script.options.do_sync || (script.sync && script.sync.seenOnServer < 0)) return;
+        if (V) console.log("sync: scriptRemovedCb()");
         var id = (script.id || scriptParser.getScriptId(script.name)) + scriptAppendix;
         SyncClient.removeScript(id);
     },
@@ -1780,8 +1836,17 @@ var SyncClient = {
     },
     markScriptSeen: function(r, v) {
         if (!r.script.sync) r.script.sync = {};
-        r.script.sync.seenOnServer = v;
-        storeScript(r.script.name, r.script);
+        if (r.script.sync.seenOnServer != v) {
+            if (V) console.log("sync: mark script '" + r.script.name + "' seen on version " + v);
+            r.script.sync.seenOnServer = v;
+            storeScript(r.script.name, r.script, false);
+        }
+    },
+    markScriptConflict: function(r) {
+        if (!r.script.sync) r.script.sync = {};
+        console.log("sync: warn: conflict in script " + r.script.name + " local " + r.script.sync.seenOnServer + " remote " + SyncClient.remoteVersion);
+        r.script.sync.seenOnServer = -1;
+        storeScript(r.script.name, r.script, false);
     },
     importScript: function(r, cb) {
         if (D) console.log("sync: import " + r.id);
@@ -1801,7 +1866,7 @@ var SyncClient = {
                     var url = s[1];
                     console.log("sync: import script " + k + " with script url " + url);
                     var sync = { fromRemote: true, seenOnServer: SyncClient.remoteVersion };
-                    addNewUserScript({ url: url, src: src, ask: false, sync: sync, cb : cb });
+                    addNewUserScript({ url: url, src: src, ask: false, sync: sync, save: true, cb : cb });
                     return;
                 }
             }
@@ -1822,15 +1887,28 @@ var SyncClient = {
         Syncer.set(r.id, r.md5data, sc_done);
     },
     syncAll : function(force) {
-        if (SyncClient.syncing) return;
+        if (SyncClient.syncing > 0) {
+            if (force) {
+                var sched = function() {
+                    // schedule maybe a lot of sync runs, but do only one
+                    SyncClient.scheduleSync(50, true);
+                };
+                // wait for sync end
+                SyncClient.addSyncDoneListener(sched);
+            }
+            return;
+        }
 
         SyncClient.syncing++;
+        if (V) console.log("sync: syncAll() syncing = " + SyncClient.syncing);
+
         var latest = Config.values.sync_latest;
         var local = null;
         var remote = null;
         var mark = [];
         var change = false;
         var run = [];
+        var conflict = false;
 
         var next = function() {
             if (run.length > 0) {
@@ -1883,12 +1961,31 @@ var SyncClient = {
                 for (var r in remote) {
                     var drin = false;
                     var different = false;
+
+                    var sso = 0;
+
                     if (local[r]) {
+                        sso = local[r].script.sync ? Number(local[r].script.sync.seenOnServer) : 0;
+                        if (!local[r].script.options.do_sync || sso < 0) continue;
+
                         drin = true;
                         if (remote[r].md5 != local[r].md5) different = true;
                     }
 
-                    if (!drin || different) {
+                    var local_change = drin && different && SyncClient.remoteVersion > 0 && sso == SyncClient.remoteVersion;
+                    var local_and_remote_change = drin && different && SyncClient.remoteVersion > 0 && sso < SyncClient.remoteVersion;
+
+                    if (local_and_remote_change) {
+                        SyncClient.markScriptConflict(local[r]);
+                        conflict = true;
+                        continue;
+                    }
+                    if (local_change && V) {
+                        console.log("sync: script " + local[r].script.name + " different but locally modified -> do not re-import");
+                    }
+
+                    // do not import in case the script is locally modified, export in this case instead ;)
+                    if (!drin || (different && !local_change)) {
                         change = true;
                         running++;
                         SyncClient.importScript(remote[r], check);
@@ -1910,7 +2007,7 @@ var SyncClient = {
             for (var r in local) {
                 var drin = false;
                 var different = false;
-                if (!local[r].script.options.sync) continue;
+                if (!local[r].script.options.do_sync || local[r].script.sync.seenOnServer < 0) continue;
 
                 if (remote[r]) {
                     drin = true;
@@ -1966,10 +2063,6 @@ var SyncClient = {
                 if (D) console.log("sync: err " + msg);
             }
 
-            for (var i=0; i<mark.length; i++) {
-                SyncClient.markScriptSeen(mark[i], SyncClient.remoteVersion);
-            }
-
             Config.values.sync_latest = SyncClient.remoteVersion;
             Config.save();
             notifyOptionsTab();
@@ -1978,12 +2071,34 @@ var SyncClient = {
             next();
         };
 
+        var mark_scripts = function() {
+            for (var i=0; i<mark.length; i++) {
+                SyncClient.markScriptSeen(mark[i], SyncClient.remoteVersion);
+            }
+            next();
+        };
+        run.push(mark_scripts);
+
         var all_done = function() {
-            SyncClient.syncing--;
+            if (V) console.log("sync: syncAll:all_done() syncing = " + (SyncClient.syncing-1));
+            if (--SyncClient.syncing == 0) {
+                SyncClient.runAllSyncDoneListeners();
+            }
+            if (conflict) {
+                notifyOptionsTab();
+            }
+            next();
         };
         run.push(all_done);
 
         next();
+    },
+    runAllSyncDoneListeners : function() {
+        if (V) console.log("sync: runAllSyncDoneListeners() -> " + SyncClient.syncDoneListener.length);
+        while (SyncClient.syncDoneListener.length) {
+            var e = SyncClient.syncDoneListener.splice(0, 1);
+            e[0]();
+        }
     }
 };
 sycl = SyncClient;
@@ -2654,11 +2769,17 @@ var addNewUserScript = function(o) {
     script.options.override.orig_matches = script.matches;
     script = mergeCludes(script);
 
+    if (oldscript) {
+        // sync options and info
+        if (oldscript.sync) script.sync = oldscript.sync;
+        script.options.do_sync = oldscript.options.do_sync;
+    }
+
     if (!reset && !o.clean && oldscript) {
         // don't change some settings in case it's a system script or an update
         script.enabled = oldscript.enabled;
-        script.sync = oldscript.sync;
 
+        // compatibility
         if (!script.options.awareOfChrome) {
             script.options.compat_forvarin = oldscript.options.compat_forvarin;
             if (script.options.run_at == '') {
@@ -2666,6 +2787,7 @@ var addNewUserScript = function(o) {
             }
         }
 
+        // update URL change notification
         var ouu = determineMetaURL(oldscript);
         var nuu = determineMetaURL(script);
 
@@ -2678,7 +2800,7 @@ var addNewUserScript = function(o) {
     if (!o.clean && o.sync) {
         script.sync = o.sync;
         // TODO: a little bit ugly, maybe the callback should get the name of the installed script to be able to modify some things later on?!
-        script.options.sync = true;
+        script.options.do_sync = true;
     }
 
     if (!script.includes.length && !script.matches.length) {
@@ -3221,7 +3343,7 @@ var reorderScripts = function(name, pos) {
     for (var i=0;i<scripts.length;i++) {
         var s = scripts[i];
         s.position = p++;
-        storeScript(s.name, s);
+        storeScript(s.name, s, false);
     }
 };
 
@@ -3255,11 +3377,9 @@ var determineScriptsToRun = function(href) {
             continue;
         }
 
-        if (V) console.log("schedule script " + n);
+        if (V) console.log("bg: determineScriptsToRun: found script " + n);
         ret.push(r.script);
     }
-
-    if (V) console.log("determineScriptsToRun sort");
 
     return sortScripts(ret);
 };
@@ -3291,19 +3411,24 @@ var loadScriptByName = function(name) {
              cond: TM_storage.getValue(name + condAppendix, null) };
 };
 
-var storeScript = function(name, script) {
+var storeScript = function(name, script, triggerSync) {
+    if (triggerSync === undefined) triggerSync = true;
+
     if (script) {
+        var changed = !!TM_storage.getValue(name);
+
         TM_storage.setValue(name + condAppendix, { inc: script.includes, match: script.matches, exc: script.excludes });
         TM_storage.setValue(name + scriptAppendix, script.textContent);
         var s = script;
         s.textContent = null;
         TM_storage.setValue(name, s);
 
-        if (TM_storage.getValue(name)) {
-            // TODO: don't call this in case i.e. the script pos was changed
-            SyncClient.scriptChangedCb(name, script);
-        } else {
-            SyncClient.scriptAddedCb(name, script);
+        if (triggerSync) { /* TODO: avoid sync in case only i.e. position was changed! */
+            if (changed) {
+                SyncClient.scriptChangedCb(name, script);
+            } else {
+                SyncClient.scriptAddedCb(name, script);
+            }
         }
     } else {
         var r = loadScriptByName(name);
@@ -3312,6 +3437,7 @@ var storeScript = function(name, script) {
         TM_storage.deleteValue(name + scriptAppendix);
         TM_storage.deleteValue(name);
 
+        // triggerSync... removal always triggers sync
         if (r.script && r.cond) {
             SyncClient.scriptRemovedCb(name, r.script);
         }
@@ -4451,6 +4577,8 @@ var convertScriptsToMenuItems = function(scripts, options) {
         }
         if (options) {
             item.code = script.textContent;
+            item.sync = script.sync;
+
             if (Config.values.showFixedSrc) {
                 item.code = compaMo.mkCompat(script.textContent, script);
             }
@@ -4969,9 +5097,12 @@ var loadListener = function(tabID, changeInfo, tab) {
             loadListenerTimeout = window.setTimeout(sere, 5000);
         }
     } else if (changeInfo.status == 'complete') {
-        chrome.tabs.sendRequest(tabID,
-                                { method: "onLoad" },
-                                function(response) {});
+        if (allURLs[tabID] &&
+            !allURLs[tabID].empty) {
+            chrome.tabs.sendRequest(tabID,
+                                    { method: "onLoad" },
+                                    function(response) {});
+        }
     }
 };
 
