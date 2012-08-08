@@ -2011,7 +2011,7 @@ var SyncClient = {
             for (var r in local) {
                 var drin = false;
                 var different = false;
-                if (!local[r].script.options.do_sync || local[r].script.sync.seenOnServer < 0) continue;
+                if (!local[r].script.options.do_sync || (local[r].script.sync && local[r].script.sync.seenOnServer < 0)) continue;
 
                 if (remote[r]) {
                     drin = true;
