@@ -57,7 +57,7 @@ const cUSOSCRIPT = 'uso:script';
 var _use_localdb = true;
 var _retries = 5; // global xmlHttpRequest retry var
 var _setTimeout = 1;
-var _webRequest = { use: true, delay: false, verified: false, verifyCnt : 20, id: 0, prefix: 'TM_', testprefix: 'foobar' };
+var _webRequest = { use: true, headers: true, verified: false, verifyCnt : 20, id: 0, prefix: 'TM_', testprefix: 'foobar' };
 
 var TM_tabs = {};
 var TM_storageListener = [];
@@ -2171,6 +2171,8 @@ var ConfigObject = function(initCallback) {
                      logLevel: 0,
                      showFixedSrc: false,
                      firstRun: true,
+                     webrequest_use : 'yes',
+                     webrequest_modHeaders : 'yes',
                      notification_showTMUpdate: false,
                      notification_silentScriptUpdate: true,
                      scriptTemplate : defltScript,
@@ -3585,7 +3587,15 @@ var requestHandler = function(request, sender, sendResponse) {
     if (V || EV || MV) console.log("back: request.method " + request.method + " id " + request.id);
 
     if (request.method == "ping") {
-        sendResponse({ pong: true });
+        var sendPong = function() {
+            if (ginit) {
+                if (D) console.log("bg: send pong!");
+                sendResponse({ pong: true });
+            } else {
+                window.setTimeout(sendPong, 100);
+            }
+        };
+        sendPong();
     } else if (request.method == "openInTab") {
         var done = function(tab) {
             closeableTabs[tab.id] = true;
@@ -4484,6 +4494,16 @@ var createOptionItems = function(cb) {
 
     optss.push({ name: chrome.i18n.getMessage('Security'), section: true, level: 50 });
 
+    optss.push({ name: chrome.i18n.getMessage('Allow_headers_to_be_modified_by_scripts'),
+               id: 'webrequest_modHeaders',
+               level: 0,
+               option: true,
+               select: [ { name: chrome.i18n.getMessage('Yes'), value: 'yes' },
+                         { name: chrome.i18n.getMessage('Auto'), value: 'auto' },
+                         { name: chrome.i18n.getMessage('No'), value: 'no' } ],
+               value: Config.values.webrequest_modHeaders,
+               desc: '' });
+        
     optss.push({ name: chrome.i18n.getMessage('Forbidden_Pages'),
                id: 'forbiddenPages',
                level: 50,
@@ -4859,212 +4879,170 @@ var setBadge = function(tabId) {
 };
 
 /* ### web requests ### */
-var headerCheck = function(details) {
-    if (_webRequest.verified == false) {
-        if (D || UV) console.log('bg: verify that webRequest is working at ' + details.type + ' to ' + details.url);
+var webRequest = {
+    infoChanged : [],
+    addInfoChangedListener : function(fn) {
+        webRequest.infoChanged.push(fn);
+    },
+    runInfoChangedListener : function() {
+        for (var i=0; i<webRequest.infoChanged.length; i++) {
+            webRequest.infoChanged[i](_webRequest);
+        }
+    },
+    headerCheck : function(details) {
+        if (details.tabId >= 0 && _webRequest.verified == false) {
+            if (D || UV) console.log('bg: verify that webRequest is working at ' + details.type + ' to ' + details.url);
 
-        if (true) {
+            var found = false;
+            var r = new RegExp('^' + _webRequest.testprefix);
             for (var i = 0; i < details.requestHeaders.length; i++) {
                 var item = details.requestHeaders[i];
                 if (UV) console.log(" #: " + item.name + " -> " + item.value);
+                if (item.name.search(r) == 0) {
+                    if (D) console.log('bg: found ' + item.name + ' @webRequest :)');
+                    found = true;
+                }
+            }
+
+            if (!found && _webRequest.verifyCnt-- > 0) return;
+
+            _webRequest.headers = found;
+            _webRequest.verified = true;
+
+            webRequest.runInfoChangedListener();
+            if (D) console.log('bg: verified webRequest ' + (_webRequest.headers ? '' : 'not ') + 'being working');
+
+            try {
+                if (!_webRequest.headers) {
+                    // chrome.webRequest.onBeforeSendHeaders.removeListener(webRequest.headerFix);
+                }
+                chrome.webRequest.onSendHeaders.removeListener(webRequest.headerCheck);
+            } catch(ex) {
+                _webRequest.headers = false;
+                _webRequest.verified = true;
+                webRequest.runInfoChangedListener();
             }
         }
+    },
 
-        var found = false;
-        var r = new RegExp('^' + _webRequest.testprefix);
+    headerFix : function(details) {
+        if (V || UV) console.log(details.type);
+
+        var f = {};
+        var t = [];
+        var r = new RegExp('^' + _webRequest.prefix);
+
+        if (V || UV) {
+            console.log("bg: process request to " + details.url);
+            console.log(details.requestHeaders);
+        }
         for (var i = 0; i < details.requestHeaders.length; i++) {
             var item = details.requestHeaders[i];
             if (item.name.search(r) == 0) {
-                if (D) console.log('bg: found ' + item.name + ' @webRequest :)');
-                found = true;
-            }
-        }
-
-        if (!found && _webRequest.verifyCnt-- > 0) return;
-
-        _webRequest.use = found;
-        _webRequest.verified = true;
-        if (D) console.log('bg: verified webRequest ' + (_webRequest.use ? '' : 'not ') + 'being working');
-
-        try {
-            if (!_webRequest.use) {
-                chrome.webRequest.onBeforeSendHeaders.removeListener(headerFix);
-            }
-            chrome.webRequest.onSendHeaders.removeListener(headerCheck);
-        } catch(ex) {
-            _webRequest.use = false;
-            _webRequest.verified = true;
-        }
-    }
-};
-
-var headerFix = function(details) {
-    if (V || UV) console.log(details.type);
-
-    var f = {};
-    var t = [];
-    var r = new RegExp('^' + _webRequest.prefix);
-
-    if (V || UV) {
-        console.log("bg: process request to " + details.url);
-        console.log(details.requestHeaders);
-    }
-    for (var i = 0; i < details.requestHeaders.length; i++) {
-        var item = details.requestHeaders[i];
-        if (item.name.search(r) == 0) {
-            t.push(item);
-        } else {
-            f[item.name] = item.value;
-        }
-    }
-
-    for (var i = 0; i < t.length; i++) {
-        var item = t[i];
-        f[item.name.replace(r, '')] = item.value;
-    }
-
-    if (!_webRequest.verified) {
-        f[_webRequest.testprefix] = 'true';
-    }
-
-    var d = [];
-    for (var k in f) {
-        if (!f.hasOwnProperty(k)) continue;
-        if (k != "") d.push({ name: k, value: f[k]});
-    }
-
-    if (V || UV) console.log(d);
-    return { requestHeaders: d };
-};
-
-var sucRequest = function(details) {
-    if (details.tabId > 0) {
-        console.log("bg: " + details.requestId + " print " + details.type + " request of tabId " + details.tabId + " to " + details.url);
-    }
-};
-
-var delayRequest = function(details) {
-
-    if (details.tabId > 0) {
-        if (V || UV) console.log("bg: " + details.requestId + " check " + details.type + " request of tabId " + details.tabId + " to " + details.url);
-
-        // TODO: this still allows a iframe to load in case the parent documents content script is running
-        if (details.type == "main_frame") {
-            if (!allURLs[details.tabId] ||
-                allURLs[details.tabId].allow_requests) {
-                if (V || UV) console.log("bg: detected inital navigation");
-                initAllURLsByTabId(details.tabId);
-            }
-        } else if (details.type == "sub_frame") {
-            // TODO: somehow get frame id and check if script is running!
-        } else {
-            if (allURLs[details.tabId]) {
-                if (allURLs[details.tabId].allow_requests) {
-                    if (V || UV) console.log("bg: tab content script is running");
-                    return {};
-                } else {
-                    if (V || UV) console.log("bg: tab content script is NOT running -> delay " + details.url);
-                    var doit = function() {
-                        var delay = function(d, v) {
-                            if (V || UV) console.log("bg: (" + v + ")" + d.requestId + " delay " + d.type + " request of tabId " + d.tabId + " to " + d.url);
-
-                            var remove = null;
-                            var delayer = function(dets) {
-                                remove();
-                                v++;
-                                // if (dets.requestId == d.requestId) {
-                                    if (!allURLs[d.tabId] || !allURLs[d.tabId].allow_requests) {
-                                        delay(d, v);  // third and fourth delay, this is all we can do...
-                                        return { redirectUrl: d.url };  // second delay
-                                    } else {
-                                        if (V || UV) console.log('bg: ' + d.requestId + ' stop delaying of ' + d.url);
-                                    }
-                                // } else {
-                                    //     if (V || UV) console.log('bg: ### ' + dets.requestId + " " +  d.requestId + '');
-                                // }
-                                return { };
-                            };
-
-                            remove = function() {
-                                if (delayer) chrome.webRequest.onBeforeRequest.removeListener(delayer);
-                                delayer = null;
-                            };
-                            var rreqFilter = { urls: [ "http://*/*", "https://*/*", "file://*/*" ] };
-                            chrome.webRequest.onBeforeRequest.addListener(delayer, rreqFilter, ["blocking"]);
-                            window.setTimeout(remove, 100);
-                        };
-                        delay(details, 0);
-                    };
-                    doit();
-                    return { redirectUrl: details.url }; // first delay
-                }
+                t.push(item);
             } else {
-                if (D) console.log("bg: delayRequest -> allURLs[" + details.tabId + "] is not defined!");
+                f[item.name] = item.value;
             }
         }
+
+        for (var i = 0; i < t.length; i++) {
+            var item = t[i];
+            f[item.name.replace(r, '')] = item.value;
+        }
+
+        if (!_webRequest.verified) {
+            f[_webRequest.testprefix] = 'true';
+        }
+
+        var d = [];
+        for (var k in f) {
+            if (!f.hasOwnProperty(k)) continue;
+            if (k != "") d.push({ name: k, value: f[k]});
+        }
+
+        if (V || UV) console.log(d);
+        return { requestHeaders: d };
+    },
+
+    sucRequest : function(details) {
+        if (details.tabId > 0) {
+            console.log("bg: " + details.requestId + " print " + details.type + " request of tabId " + details.tabId + " to " + details.url);
+        }
+    },
+
+    checkRequestForUserscript : function(details) {
+        var up = details.url.search(/\.user\.[js\#|js\?|js$]/);
+        var qp = details.url.search(/\?/);
+
+        if (details.tabId > 0 &&
+            details.type == "main_frame" &&    /* ignore URLs from frames, xmlhttprequest, ... */
+            details.method != 'POST' &&        /* i.e. github script modification commit */
+            up != -1 &&
+            (qp == -1 || up < qp) &&           /* ignore user.js string in URL params */
+            details.url.search(/\#bypass=true/) == -1) {
+
+            var url = chrome.extension.getURL("ask.html") + "?script=" + encodeURI(details.url);
+
+            return { redirectUrl: url };
+        }
+
+        return {};
+    },
+
+    removeWebRequestListeners : function() {
+        if (_webRequest.use) {
+            try {
+                chrome.webRequest.onBeforeRequest.removeListener(webRequest.checkRequestForUserscript);
+                if (_webRequest.headers) {
+                    chrome.webRequest.onBeforeSendHeaders.removeListener(webRequest.headerFix);
+                    if (_webRequest.verified == false) chrome.webRequest.onSendHeaders.removeListener(webRequest.headerCheck);
+                    if (V || UV) chrome.webRequest.onCompleted.removeListener(webRequest.sucRequest);
+                }
+            } catch(ex) {}
+        }
+
+        _webRequest.headers = false;
+        _webRequest.verified = true;
+        webRequest.runInfoChangedListener();
+    },
+
+    init : function(verified, headers) {
+        if (_webRequest.use) {
+            try {
+                var reqFilter = { urls: [ "http://*/*", "https://*/*" ], types : [ "xmlhttprequest" ] };
+                var rreqFilter = { urls: [ "http://*/*", "https://*/*", "file://*/*" ] };
+                chrome.webRequest.onBeforeRequest.addListener(webRequest.checkRequestForUserscript, rreqFilter, ["blocking"]);
+
+                if (headers) {
+                    chrome.webRequest.onBeforeSendHeaders.addListener(webRequest.headerFix, reqFilter, ["requestHeaders", "blocking"]);
+                    if (!verified) chrome.webRequest.onSendHeaders.addListener(webRequest.headerCheck, reqFilter, ["requestHeaders"]);
+                    if (V || UV) chrome.webRequest.onCompleted.addListener(webRequest.sucRequest, reqFilter, []);
+                }
+
+                chrome.webRequest.handlerBehaviorChanged();
+                _webRequest.verified = verified;
+                _webRequest.headers = headers;
+                _webRequest.id = ((new Date()).getTime() + Math.floor ( Math.random ( ) * 6121983 + 1 )).toString();
+                _webRequest.testprefix = _webRequest.prefix + (Math.floor ( Math.random ( ) * 6121983 + 1 )).toString();
+                _webRequest.prefix = _webRequest.prefix + _webRequest.id + '_';
+                webRequest.runInfoChangedListener();
+
+            } catch (e) {
+                if (D) console.log("bg: error initializing webRequests " + e.message);
+                webRequest.removeWebRequestListeners();
+            }
+        }
+    },
+
+    finalize : function() {
+        webRequest.removeWebRequestListeners();
     }
-    return {};
 };
-
-var checkRequestForUserscript = function(details) {
-    var up = details.url.search(/\.user\.[js\#|js\?|js$]/);
-    var qp = details.url.search(/\?/);
-
-    if (details.tabId > 0 &&
-        details.type == "main_frame" &&    /* ignore URLs from frames, xmlhttprequest, ... */
-        details.method != 'POST' &&        /* i.e. github script modification commit */
-        up != -1 &&
-        (qp == -1 || up < qp) &&           /* ignore user.js string in URL params */
-        details.url.search(/\#bypass=true/) == -1) {
-
-        var url = chrome.extension.getURL("ask.html") + "?script=" + encodeURI(details.url);
-
-        return { redirectUrl: url };
-    }
-
-    return {};
-};
-
-var removeWebRequestListeners = function() {
-    if (_webRequest.use) {
-        try {
-            chrome.webRequest.onBeforeSendHeaders.removeListener(headerFix);
-            chrome.webRequest.onBeforeRequest.removeListener(checkRequestForUserscript);
-            if (_webRequest.verified == false) chrome.webRequest.onSendHeaders.removeListener(headerCheck);
-            if (V || UV) chrome.webRequest.onCompleted.removeListener(sucRequest);
-        } catch(ex) {}
-    }
-
-    _webRequest.use = false;
-    _webRequest.verified = true;
-};
-
-if (_webRequest.use) {
-    try {
-        var reqFilter = { urls: [ "http://*/*", "https://*/*" ], types : [ "xmlhttprequest" ] };
-        var rreqFilter = { urls: [ "http://*/*", "https://*/*", "file://*/*" ] };
-        chrome.webRequest.onBeforeSendHeaders.addListener(headerFix, reqFilter, ["requestHeaders", "blocking"]);
-        if (_webRequest.delay) chrome.webRequest.onBeforeRequest.addListener(delayRequest, rreqFilter, ["blocking"]);
-        chrome.webRequest.onSendHeaders.addListener(headerCheck, reqFilter, ["requestHeaders"]);
-        chrome.webRequest.onBeforeRequest.addListener(checkRequestForUserscript, rreqFilter, ["blocking"]);
-        if (V || UV) chrome.webRequest.onCompleted.addListener(sucRequest, reqFilter, []);
-
-        chrome.webRequest.handlerBehaviorChanged();
-        _webRequest.use = true;
-        _webRequest.verified = false;
-        _webRequest.id = ((new Date()).getTime() + Math.floor ( Math.random ( ) * 6121983 + 1 )).toString();
-        _webRequest.testprefix = _webRequest.prefix + (Math.floor ( Math.random ( ) * 6121983 + 1 )).toString();
-        _webRequest.prefix = _webRequest.prefix + _webRequest.id + '_';
-    } catch (e) {
-        if (D) console.log("bg: error initializing webRequests " + e.message);
-        removeWebRequestListeners();
-    }
- }
 
 /* ### Cleanup ### */
 function cleanup() {
     if (D) console.log("bg: cleanup!");
-    removeWebRequestListeners();
+    webRequest.finalize();
 }
 
 window.addEventListener("unload", cleanup, false);
@@ -5229,6 +5207,16 @@ var initObjects = function() {
     if (Config.values.fire_enabled) {
         TM_fire.init();
     }
+
+    if (Config.values.webrequest_use != 'no') {
+        var infoChanged = function(wr) {
+            if (V) console.log("bg: webRequest changed " + JSON.stringify(wr));
+        };
+        webRequest.addInfoChangedListener(infoChanged);
+
+        webRequest.init(Config.values.webrequest_modHeaders != 'auto',
+                        Config.values.webrequest_modHeaders != 'no');
+    }
 };
 
 var Config;
@@ -5242,6 +5230,7 @@ var Syncer;
 init = function() {
     Converter = Registry.get('convert');
     xmlhttpRequest = Registry.get('xmlhttprequest').run;
+
     compaMo = Registry.get('compat');
     scriptParser = Registry.get('parser');
     Helper = Registry.get('helper');

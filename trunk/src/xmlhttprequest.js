@@ -7,7 +7,8 @@
 (function() {
     Registry.require('helper');
     var Helper = Registry.get('helper');
-
+    var _webRequest = {};
+    
     var validScheme = function(url) {
         var extimg = Helper.isLocalImage(url);
         return (url && url.length > 4 && url.substr(0,4) == 'http') || extimg;
@@ -137,5 +138,9 @@
         }
     };
 
-    Registry.register('xmlhttprequest', { run : xmlhttpRequest });
+    var setWebRequest = function(wr) {
+        _webRequest = wr;
+    };
+        
+    Registry.register('xmlhttprequest', { run : xmlhttpRequest, setWebRequest: setWebRequest });
  })();

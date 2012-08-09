@@ -50,7 +50,7 @@ var eDOMATTRMODIFIED = "DOMAttrModified";
 var XMLHttpRequest = window.XMLHttpRequest;
 
 var use = { safeContext: true };
-var logLevel;
+var logLevel = null;
 var allReady = false;
 var wannaRun = false;
 var domLoaded = false;
@@ -74,7 +74,8 @@ Registry.require("helper");
 var emu = null;
 var env = null;
 
-var xmlhttpRequest = Registry.get('xmlhttprequest').run;
+var xmlhttpRequestHelper = Registry.get('xmlhttprequest');
+var xmlhttpRequest = xmlhttpRequestHelper.run;
 var Helper = Registry.get('helper');
 var ConverterInit = null;
 Converter = Registry.get('convert');
@@ -940,7 +941,10 @@ var forceTestXhr = function() {
     }
 
     var res = function(r) {
-        if (r.webRequest) _webRequest = r.webRequest;
+        if (r.webRequest) {
+            _webRequest = r.webRequest;
+            xmlhttpRequestHelper.setWebRequest(_webRequest);
+        }
         if (V) console.log("content: updated webRequest info");
     };
     
@@ -974,7 +978,8 @@ var init = function() {
             
             if (resp.webRequest) {
                 _webRequest = resp.webRequest;
-                if (_webRequest.use && !_webRequest.verified && xhrRetryCnt-- > 0) {
+                xmlhttpRequestHelper.setWebRequest(_webRequest);
+                if (_webRequest.headers && !_webRequest.verified && xhrRetryCnt-- > 0) {
                     forceTestXhr();
                 }
             }
