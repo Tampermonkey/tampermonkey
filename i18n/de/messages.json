@@ -775,6 +775,18 @@
   "Sync": {
     "message": "Sync"
   },
+  "Allow_headers_to_be_modified_by_scripts": {
+    "message": "Erlaube Modifikation der HTTP-Header durch Scripte"
+  },
+  "Yes": {
+    "message": "Yes"
+  },
+  "No": {
+    "message": "No"
+  },
+  "Auto": {
+    "message": "Auto"
+  },
   "EOF": {
     "message": "EOF"
   }

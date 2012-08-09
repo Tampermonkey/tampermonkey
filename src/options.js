@@ -2000,7 +2000,7 @@ var domListener = function() {
     window.removeEventListener('load', domListener, false);
 
     var suc = function() {
-        modifyScriptOption(null, false);
+        modifyScriptOption(null, false, null, true);
     };
 
     var fail = function() {

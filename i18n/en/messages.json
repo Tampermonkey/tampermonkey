@@ -808,6 +808,18 @@
   "Sync": {
     "message": "Sync"
   },
+  "Allow_headers_to_be_modified_by_scripts": {
+    "message": "Allow HTTP headers to be modified by scripts"
+  },
+  "Yes": {
+    "message": "Yes"
+  },
+  "No": {
+    "message": "No"
+  },
+  "Auto": {
+    "message": "Auto"
+  },
   "EOF": {
     "message": "EOF"
   }
