@@ -972,10 +972,11 @@ var init = function() {
             if (V || D) console.log('content: start event processing for ' + contextId + ' (' + resp.enabledScriptsCount + ' to run)');
             wannaRun = true;
 
-            /* TODO: remove raw stuff */
-            emu = resp.raw[Femu] || Registry.getRaw(Femu);
-            env = resp.raw[Fenv] || Registry.getRaw(Fenv);
-            
+            if (!emu || !env) {
+                emu = resp.raw[Femu] || emu;
+                env = resp.raw[Fenv] || env;
+            }
+
             if (resp.webRequest) {
                 _webRequest = resp.webRequest;
                 xmlhttpRequestHelper.setWebRequest(_webRequest);
@@ -996,11 +997,20 @@ var init = function() {
 
     ConverterInit = Helper.serialize(Converter);
 
-    /* TODO: remove raw stuff and add # to manifest when the chrome store allows this to be uploaded gain... :(
-       # = "web_accessible_resources": [ "emulation.js", "environment.js" ], */
+    var raw = [];
+    try { 
+        emu = Registry.getRaw(Femu);
+        env = Registry.getRaw(Fenv);
+    } catch (e) {}
+
+    if (!emu || !env) {
+        if (V) console.log("content: getRaw unsupported!");
+        raw = [ Femu, Fenv ];
+    }
+
     var req = { method: "prepare",
                 id: contextId,
-                raw: [ Femu, Fenv ],
+                raw: raw,
                 topframe: window.self == window.top,
                 url: window.location.origin + window.location.pathname,
                 params: window.location.search + window.location.hash };

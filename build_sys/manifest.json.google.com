@@ -12,6 +12,10 @@
       "run_at": "document_start",
       "all_frames": true
    } ],
+   "web_accessible_resources": [
+      "emulation.js",
+      "environment.js"
+   ],
    "browser_action": {
       "default_icon": "images/icon_grey.png",
       "default_title": "Tampermonkey",
