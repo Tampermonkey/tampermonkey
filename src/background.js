@@ -22,6 +22,7 @@ var UV = false;
 var SV = false;
 var CV = false;
 var NV = false;
+var RV = false;
 
 Registry.require('convert');
 Registry.require('xmlhttprequest');
@@ -35,6 +36,7 @@ Registry.require('syncer');
 var adjustLogLevel = function(logLevel) {
     D |= (logLevel >= 60);
     V |= (logLevel >= 80);
+    RV |= (logLevel >= 80);
     EV |= (logLevel >= 100);
     MV |= (logLevel >= 100);
     UV |= (logLevel >= 100);
@@ -4981,8 +4983,9 @@ var webRequest = {
             (qp == -1 || up < qp) &&           /* ignore user.js string in URL params */
             details.url.search(/\#bypass=true/) == -1) {
 
-            var url = chrome.extension.getURL("ask.html") + "?script=" + encodeURI(details.url);
-
+            var url = chrome.extension.getURL("ask.html") + "?script=" + Converter.Base64.encode(details.url);
+            if (RV) console.log("bg: user script detected @ " + details.url + " -> redirect to " + url);
+                
             return { redirectUrl: url };
         }
 

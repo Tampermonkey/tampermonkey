@@ -35,6 +35,7 @@ Registry.require('tabview');
 
 var cr = Registry.get('crcrc').cr;
 var crc = Registry.get('crcrc').crc;
+var Converter = Registry.get('convert');
 var Please = Registry.get('curtain');
 var Helper = Registry.get('helper');
 var TabView = Registry.get('tabview');
@@ -118,6 +119,8 @@ var main = function() {
     };
 
     if (gArgs.script) {
+        gArgs.script = Converter.Base64.decode(gArgs.script);
+        
         gTabName = chrome.i18n.getMessage('Install');
         var url = gArgs.script;
         var content;
