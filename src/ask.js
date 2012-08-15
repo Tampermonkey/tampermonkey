@@ -162,7 +162,7 @@ var main = function() {
                 if (req.status == 200 || req.status == 0) {
                     var script = Registry.get('parser').createScriptFromSrc(req.responseText);
                     if (!script.name || script.name == '' || (script.version == undefined)) {
-                        installNatively(url);
+                        window.close();
                         return;
                     }
 
