@@ -4973,20 +4973,24 @@ var webRequest = {
     },
 
     checkRequestForUserscript : function(details) {
-        var up = details.url.search(/\.user\.[js\#|js\?|js$]/);
+        var up = details.url.search(/\.user\.(js\#|js\?|js$)/);
         var qp = details.url.search(/\?/);
+        var hp = details.url.search(/\#/);
 
         if (details.tabId > 0 &&
             details.type == "main_frame" &&    /* ignore URLs from frames, xmlhttprequest, ... */
             details.method != 'POST' &&        /* i.e. github script modification commit */
             up != -1 &&
             (qp == -1 || up < qp) &&           /* ignore user.js string in URL params */
+            (hp == -1 || up < hp) &&           /* ignore user.js string in URL params */
             details.url.search(/\#bypass=true/) == -1) {
 
             var url = chrome.extension.getURL("ask.html") + "?script=" + Converter.Base64.encode(details.url);
-            if (RV) console.log("bg: user script detected @ " + details.url + " -> redirect to " + url);
-                
-            return { redirectUrl: url };
+            if (RV) console.log("bg: user script detected @ " + details.url + " -> open tab with " + url);
+
+            chrome.tabs.create({ url: url}, function() {});
+
+            return { redirectUrl: "javascript:history.back()" };
         }
 
         return {};
