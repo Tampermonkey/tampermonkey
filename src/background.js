@@ -4976,10 +4976,12 @@ var webRequest = {
         var up = details.url.search(/\.user\.(js\#|js\?|js$)/);
         var qp = details.url.search(/\?/);
         var hp = details.url.search(/\#/);
+        var fi = details.url.search(/^file:\/\//);
 
         if (details.tabId > 0 &&
             details.type == "main_frame" &&    /* ignore URLs from frames, xmlhttprequest, ... */
             details.method != 'POST' &&        /* i.e. github script modification commit */
+            fi == -1 &&
             up != -1 &&
             (qp == -1 || up < qp) &&           /* ignore user.js string in URL params */
             (hp == -1 || up < hp) &&           /* ignore user.js string in URL params */
