@@ -56,6 +56,9 @@
    "About_Tampermonkey": {
       "message": "O Tampermonkey"
    },
+   "Account_is_verified": {
+      "message": "Dane do logowania dla synchronizacji potwierdzone"
+   },
    "Add": {
       "message": "Dodaj"
    },
@@ -71,7 +74,7 @@
       "message": "Dodaj nowy skrypt..."
    },
    "Add_toSource_function_to_Object_Prototype": {
-      "message": "Dodaj opcje zgodno\u015Bci dla Object and Array"
+      "message": "Dodaj opcje zgodno\u0105Bci dla Object and Array"
    },
    "Advanced": {
       "message": "dla zaawansowanych"
@@ -81,6 +84,9 @@
    },
    "An_error_occured_during_import_": {
       "message": "Wyst\u0105pi\u0142 problem podczas importu. Prosz\u0119 sprawdzi\u0107 informacje wy\u015Bwietlane na konsoli! (CTRL+SHIFT+J)"
+   },
+   "An_internal_error_occured_Do_you_want_to_visit_the_forum_": {
+      "message": "Wyst\u0105pi\u0142 problem wewn\u0119trzny. Je\u015Bli problem b\u0119dzie si\u0119 powtarza\u0142, prosz\u0119 nacisn\u0105\u0107 OK i zg\u0142osi\u0107 problem na forum.\n\nCzy chcesz przej\u015B\u0107 do forum Tampermonkey?"
    },
    "Appearance": {
       "message": "Wygl\u0105d"
@@ -133,11 +139,26 @@
    "Config_Mode": {
       "message": "Tryb konfiguracji"
    },
+   "Conflict_remove_or_disable_sync": {
+      "message": "Wystapi\u0142 konflikt z wersj\u0105 skryptu na serwerze. Prosz\u0119 usun\u0105\u0107 wersj\u0119 lokaln\u0105 lub wy\u0142\u0105czy\u0107 synchronizacj\u0119 dla tego skryptu."
+   },
    "Convert_Array_Assignements": {
       "message": "Zamie\u0144 wyra\u017Cenie [blub, bla] = s.split(':')"
    },
    "Convert_CDATA_sections_into_a_chrome_compatible_format": {
       "message": "Zamie\u0144 sekcje CDATA na format zgodny z Chrone"
+   },
+   "Create_and_remove": {
+      "message": "utw\u00F3rz i usu\u0144"
+   },
+   "Create_only": {
+      "message": "tylko utw\u00F3rz"
+   },
+   "Credentials_are_invalid_": {
+      "message": "Zapisane dane do logowania dla synchronizacji s\u0105 niew\u0142a\u015Bciwe!"
+   },
+   "Credentials_are_submitted__Please_check_your_email_account_for_verification_details": {
+      "message": "Twoje dane do logowania dla synchronizacji zosta\u0142y przes\u0142ane. Sprawd\u017A swoj\u0105 poczt\u0119 email w celu potwierdzenia szczeg\u00F3\u0142\u00F3w."
    },
    "Current_Index_": {
       "message": "Szczeg\u00F3\u0142y aktualnego indeksu:"
@@ -150,6 +171,9 @@
    },
    "Delete": {
       "message": "Usu\u0144"
+   },
+   "Disable_sync": {
+      "message": "Wy\u0142\u0105cz synchronizacj\u0119"
    },
    "Disabled": {
       "message": "Wy\u0142\u0105czone"
@@ -198,11 +222,17 @@
    "Enable_Editor": {
       "message": "W\u0142\u0105cz edytor zaawansowany"
    },
+   "Enable_Script_Sync": {
+      "message": "W\u0142\u0105cz synchronizacj\u0119 skrypt\u00F3w"
+   },
    "Enable_Sort_Cache": {
       "message": "W\u0142\u0105cz pami\u0119\u0107 podr\u0119czn\u0105 dla sortowania (du\u017Ce zu\u017Cycie pami\u0119ci)"
    },
    "Enable_TamperFire": {
       "message": "W\u0142\u0105cz TamperFire"
+   },
+   "Enable_sync": {
+      "message": "W\u0142\u0105cz synchronizacj\u0119"
    },
    "Enabled": {
       "message": "W\u0142\u0105czone"
@@ -239,6 +269,9 @@
    },
    "Exclude_s__": {
       "message": "Lista @exclude:"
+   },
+   "Export_Mode": {
+      "message": "Tryb eksportu"
    },
    "Export_to_SandboxFS": {
       "message": "Eksportuj do SandboxFS"
@@ -305,6 +338,9 @@
    "Icon_badge_info": {
       "message": "Plakietka przy ikonie"
    },
+   "Import_Mode": {
+      "message": "Tryb importu"
+   },
    "Import_from_SandboxFS": {
       "message": "Importuj z SandboxFS"
    },
@@ -313,6 +349,9 @@
    },
    "Include_s__": {
       "message": "Lista @include:"
+   },
+   "Includes_Excludes": {
+      "message": "Listy @include/@exclude"
    },
    "Includes_more_safe_example": {
       "message": "(np. 'http://*google.*/*' zostanie zinterpretowany jako 'http://*google.tld/*' aby unikn\u0105\u0107 aktywacji skryptu dla adresu np.  'http://www.google.myevilpage.com/')"
@@ -402,7 +441,7 @@
       "message": "dla nowucjuszy"
    },
    "Off": {
-      "message": "wy\u0142\u0105czona"
+      "message": "wy\u0142\u0105czone"
    },
    "One_or_more_compatibility_options_are_set": {
       "message": "Ustawione s\u0105 opcje zgodno\u015Bci. Prosze o r\u0119czne sprawdzenie."
@@ -428,8 +467,14 @@
    "Overwrite_matches": {
       "message": "Nadpisz regu\u0142y @match"
    },
+   "Password": {
+      "message": "Has\u0142o"
+   },
    "Please_consider_a_donation": {
       "message": "Weprzyj projekt darowizn\u0105"
+   },
+   "Please_enter_your_existing_credentials_or_use_new_ones_": {
+      "message": "Wprowad\u017A swoje aktualne dane do logowania dla synchronizacji b\u0105d\u017A podaj nowe."
    },
    "Please_wait___": {
       "message": "Prosz\u0119 czeka\u0107..."
@@ -491,6 +536,9 @@
    "Save": {
       "message": "Zapisz"
    },
+   "Script_Syncer": {
+      "message": "Synchronizacja skrypt\u00F3w"
+   },
    "Script_Update": {
       "message": "Aktualizacja skrypt\u00F3w"
    },
@@ -523,6 +571,9 @@
    },
    "Spaces": {
       "message": "Spacja"
+   },
+   "Sync": {
+      "message": "Synchronizacja"
    },
    "TabMode": {
       "message": "Rodzaj wci\u0119cia"
@@ -586,6 +637,12 @@
    },
    "This_is_a_system_script": {
       "message": "To jest skrypt systemowy."
+   },
+   "This_options_sets_up_how_to_handle_changes_from_the_sync_server_": {
+      "message": "Ta opcja okre\u015Bla w jaki spos\u00F3b traktowa\u0107 zmiany na serwerze synchronizacji. Mo\u017Cesz a) wy\u0142\u0105czy\u0107 import, b) ustawi\u0107 'tylko utw\u00F3rz', aby Tmapermonkay instalowa\u0142 wszystkie zdalne skrypty, lub c) ustawi\u0107 'utw\u00F3rz i usu\u0144' aby umo\u017Cliwi\u0107 tak\u017Ce usuwanie skrypt\u00F3w kiedy zostan\u0105 one usuni\u0119te z serwera."
+   },
+   "This_options_sets_up_how_to_sync_local_changes_to_the_server_": {
+      "message": "Ta opcja okre\u015Bla w jaki spos\u00F3b traktowa\u0107 zmiany lokalne. Mo\u017Cesz a) wy\u0142\u0105czyc eksport, b) ustawi\u0107 'tylko uw\u00F3rz', aby Tampermonkey kopiowa\u0142 wszystkie lokalne skrypty na serwer, lub or c) ustawi\u0107 'utw\u00F3rz i usu\u0144' aby umo\u017Cliwi\u0107 tak\u017Ce usuwanie skrypt\u00F3w na serwerze kiedy zostan\u0105 one usuni\u0119te lokalnie."
    },
    "This_page_is_blacklisted_at_the_security_settings": {
       "message": "Zablokowano na podstawie ustawie\u0144 bezpiecze\u0144stwa"
@@ -726,6 +783,9 @@
    },
    "_0_scripts_found": {
       "message": "Dost\u0119pnych skrypt\u00F3w: ?"
+   },
+   "eMail": {
+      "message": "Adres e-mail"
    },
    "env_option__debug_scripts": {
       "message": "Env option: debug scripts"
