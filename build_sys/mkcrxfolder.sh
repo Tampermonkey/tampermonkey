@@ -52,6 +52,8 @@ cp ../../src/saveas/*.* .
 rm *.*~
 cd ..
 
+cp ../README .
+cp ../COPYING .
 cp ../src/*.html .
 cp ../src/*.css .
 mkdir images
