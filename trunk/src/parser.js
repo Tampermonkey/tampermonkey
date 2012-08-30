@@ -59,9 +59,9 @@ var Script = function() {
         awareOfChrome: false,
         run_at : '',
         do_sync: false,
-        override: { includes: false, use_includes: [], orig_includes: [],
-                    matches: false, use_matches: [], orig_matches: [],
-                    excludes: false, use_excludes: [], orig_excludes: [] }
+        override: { includes: false, merge_includes: true, use_includes: [], orig_includes: [],
+                    matches : false, merge_matches : true, use_matches : [], orig_matches : [],
+                    excludes: false, merge_excludes: true, use_excludes: [], orig_excludes: [] }
     };
 };
 
