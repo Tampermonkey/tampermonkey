@@ -25,7 +25,7 @@
    	      "48": "images/icon48.png",
        	     "128": "images/icon128.png" },
    "name": "Tampermonkey",
-   "version": "2.5.0",
+   "version": "2.6.0",
    "description": "the most popular userscript manager for Google Chrome",
    "default_locale": "en",
    "background": {

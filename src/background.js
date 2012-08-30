@@ -73,18 +73,9 @@ var storeAppendix = '@st';
 var scriptAppendix = '@source';
 
 var allURLs = {};
-var scriptOptions = [];
 var requireCache = {};
 
 /* ###### Helpers ####### */
-
-var initScriptOptions = function() {
-    var d = new scriptParser.Script();
-    for (var k in d.options) {
-        if (!d.options.hasOwnProperty(k)) continue;
-        scriptOptions.push(k);
-    }
-};
 
 var versionCmp = function(v1, v2) {
     // return:
@@ -175,12 +166,22 @@ var convertData = function(convertCB) {
                 console.log(chrome.i18n.getMessage("fatal_error") + " (" + n + ")" +"!!!");
                 continue;
             }
-            for (var i=0; i<scriptOptions.length;i++) {
-                if (r.script.options[scriptOptions[i]] == undefined) {
-                    console.log("set option " + scriptOptions[i] + " to " + JSON.stringify(d.options[scriptOptions[i]]));
-                    r.script.options[scriptOptions[i]] = d.options[scriptOptions[i]];
+            for (var kk in d.options) {
+                if (!d.options.hasOwnProperty(kk)) continue;
+
+                if (r.script.options[kk] === undefined) {
+                    console.log("set option " + kk + " to " + JSON.stringify(d.options[kk]));
+                    r.script.options[kk] = d.options[kk];
                 }
             }
+            for (var e in d.options.override) {
+                if (r.script.options.override[e] === undefined) {
+                    console.log("set option.override." + e + " to " + JSON.stringify(d.options.override[e]));
+                    r.script.options.override[e] = d.options.override[e];
+                }
+            }
+            r.script = mergeCludes(r.script);
+
             if (processSource) {
                 var ss = { url: r.script.fileURL,
                            src: r.script.textContent,
@@ -312,6 +313,13 @@ var convertData = function(convertCB) {
                     }
                     TM_storage.setValue("TM_config", o);
                 }
+                window.setTimeout(cb, _setTimeout);
+            }
+        },
+        { cond: isNewVersion && versionCmp("2.6", version) == eNEWER,
+          fn : function(cb) {
+                console.log("Update config from " + version + " to 2.6");
+                restoreAllScriptsEx();
                 window.setTimeout(cb, _setTimeout);
             }
         },
@@ -2626,9 +2634,9 @@ var mergeCludes = function(script){
     var n, cludes = script.options.override;
 
     //clone the original cludes as a starting point
-    script.includes = cludes.orig_includes.slice();
-    script.excludes = cludes.orig_excludes.slice();
-    script.matches = cludes.orig_matches ? cludes.orig_matches.slice() : [];
+    script.includes = cludes.merge_includes && cludes.orig_includes ? cludes.orig_includes.slice() : [];
+    script.excludes = cludes.merge_excludes && cludes.orig_excludes ? cludes.orig_excludes.slice() : [];
+    script.matches =  cludes.merge_matches  && cludes.orig_matches  ? cludes.orig_matches.slice() : [];
 
     //add user includes (and remove them from original excludes if they exist)
     for (n=0; n<cludes.use_includes.length; n++){
@@ -3688,8 +3696,21 @@ var requestHandler = function(request, sender, sendResponse) {
         if (request.name && request.method == "modifyScriptOptions") {
             var r = loadScriptByName(request.name);
             if (r.script && r.cond) {
-                for (var i=0; i<scriptOptions.length;i++) {
-                    if (typeof request[scriptOptions[i]] !== 'undefined') r.script.options[scriptOptions[i]] = request[scriptOptions[i]];
+                var do_merge = false;
+                var dns = new scriptParser.Script();
+                
+                for (var k in dns.options) {
+                    if (!dns.options.hasOwnProperty(k)) continue;
+                    if (typeof request[k] !== 'undefined') r.script.options[k] = request[k];
+                }
+                for (var k in dns.options.override) {
+                    if (!dns.options.override.hasOwnProperty(k) ||
+                        k.search("merge_") == -1) continue;
+
+                    if (typeof request[k] !== 'undefined') {
+                        r.script.options.override[k] = request[k];
+                        do_merge = true;
+                    }
                 }
 
                 if (typeof request.enabled !== 'undefined') r.script.enabled = request.enabled;
@@ -3698,6 +3719,10 @@ var requestHandler = function(request, sender, sendResponse) {
                     r.script.options.override.use_includes = request.includes;
                     r.script.options.override.use_excludes = request.excludes;
                     r.script.options.override.use_matches = request.matches;
+                    do_merge = true;
+                }
+
+                if (do_merge) {
                     r.script = mergeCludes(r.script);
                 }
 
@@ -4597,8 +4622,10 @@ var convertScriptsToMenuItems = function(scripts, options) {
         item.userscript = true;
 
         if (script.options) {
-            for (var i=0; i<scriptOptions.length;i++) {
-                item[scriptOptions[i]] = script.options[scriptOptions[i]];
+            var dns = new scriptParser.Script();
+            for (var kk in dns.options) {
+                if (!dns.options.hasOwnProperty(kk)) continue;
+                item[kk] = script.options[kk];
             }
         }
         if (options) {
@@ -5247,7 +5274,6 @@ init = function() {
 
     initBrowserAction();
     TM_storage.init();
-    initScriptOptions();
 
     var cfgdone = function() {
         initObjects();

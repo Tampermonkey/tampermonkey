@@ -701,9 +701,24 @@ var createCludesEditor = function(name, type, other_name) {
     if (document.getElementById(selId(key))) return { elem: s };
     
     var span = cr('span', i.name, id, 'cb2');
-    span.textContent = name;
+    if (other_name) {
+        var co = function() {
+            if (this.type == 'checkbox') {
+                modifyScriptOption(this.name, this.key, !this.oldvalue);
+            }
+        };
+        var kk = 'merge_' + type.id;
+        var vv = (i.options && i.options.override && i.options.override[kk]) ? true : false;
+        
+        var cbs = HtmlUtil.createCheckbox(name,
+                              { id: kk, name: i.name, enabled: vv },
+                              co);
+        span.appendChild(cbs.elem);
+    } else {
+        span.textContent = name;
+    }
     s.title = i.desc ? i.desc : '';
-
+    
     var values = (i.options && i.options.override && i.options.override[key]) ? i.options.override[key] : [];
     var sel = crc('select', 'cludes', key, i.id, 'sel1');
     sel.setAttribute('size', '6');
@@ -1698,7 +1713,7 @@ var createFeatureImagesFromScript = function(i) {
         span.appendChild(m);
     }
     for (var o=0; o<i.includes.length; o++) {
-        if (i.includes[o].search('https') != -1) {
+        if (i.includes[o] && i.includes[o].search('https') != -1) {
             var m = HtmlUtil.createImage(chrome.extension.getURL('images/halfencrypted.png'),
                                 i.name,
                                 i.id,
@@ -1795,7 +1810,7 @@ var createImagesFromScript = function(i) {
         for (var o=0; o<i.includes.length;o++) {
             var inc = i.includes[o];
             if (!inc) {
-                console.log("o: Warn: script '" + i.name + "' has invalid include (index: " + i + ")");
+                console.log("o: Warn: script '" + i.name + "' has invalid include (index: " + o + ")");
                 continue; // issue 93 ?!
             }
             
@@ -1815,11 +1830,13 @@ var createImagesFromScript = function(i) {
             var drin = false;
             for (var p=0; p<o; p++) {
                 var pinc = i.includes[p];
-                var pinf = getInfo(pinc);
-                if (pinf == null) continue;
-                if (pinf.dom == inf.dom) {
-                    drin = true;
-                    break;
+                if (pinc) { 
+                    var pinf = getInfo(pinc);
+                    if (pinf == null) continue;
+                    if (pinf.dom == inf.dom) {
+                        drin = true;
+                        break;
+                    }
                 }
             }
             if (!drin) {
