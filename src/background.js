@@ -156,45 +156,68 @@ var convertData = function(convertCB) {
     var newversion = chrome.extension.getVersion();
     var version = determineOldVersion();
 
-    var restoreAllScriptsEx = function(processSource) {
+    var restoreAllScriptsEx = function(processSource, cb) {
         var d = new scriptParser.Script();
         var names = getAllScriptNames();
+        var running = 1;
+        var check = function() {
+            if (--running == 0 && cb) {
+                window.setTimeout(cb, 1);
+            }
+        };
+        
         for (var k in names) {
-            var n = names[k];
-            var r = loadScriptByName(n);
-            if (!r.script || !r.cond) {
-                console.log(chrome.i18n.getMessage("fatal_error") + " (" + n + ")" +"!!!");
-                continue;
-            }
-            for (var kk in d.options) {
-                if (!d.options.hasOwnProperty(kk)) continue;
-
-                if (r.script.options[kk] === undefined) {
-                    console.log("set option " + kk + " to " + JSON.stringify(d.options[kk]));
-                    r.script.options[kk] = d.options[kk];
+            var wrap = function() { 
+                var n = names[k];
+                var r = loadScriptByName(n);
+                if (!r.script || !r.cond) {
+                    console.log(chrome.i18n.getMessage("fatal_error") + " (" + n + ")" +"!!!");
+                    return;
                 }
-            }
-            for (var e in d.options.override) {
-                if (r.script.options.override[e] === undefined) {
-                    console.log("set option.override." + e + " to " + JSON.stringify(d.options.override[e]));
-                    r.script.options.override[e] = d.options.override[e];
-                }
-            }
-            r.script = mergeCludes(r.script);
+                for (var kk in d.options) {
+                    if (!d.options.hasOwnProperty(kk)) continue;
 
-            if (processSource) {
-                var ss = { url: r.script.fileURL,
-                           src: r.script.textContent,
-                           ask: false,
-                           cb : function() { /* done! */ },
-                           hash: r.script.hash };
-                addNewUserScript(ss);
-            } else {
-                r.script.id = scriptParser.getScriptId(r.script.name);
-                r.script.md5 = SyncClient.getMD5fromScript(r.script);
-                storeScript(r.script.name, r.script, false);
-            }
+                    if (r.script.options[kk] === undefined) {
+                        console.log("set option " + kk + " to " + JSON.stringify(d.options[kk]));
+                        r.script.options[kk] = d.options[kk];
+                    }
+                }
+                for (var e in d.options.override) {
+                    if (r.script.options.override[e] === undefined) {
+                        console.log("set option.override." + e + " to " + JSON.stringify(d.options.override[e]));
+                        r.script.options.override[e] = d.options.override[e];
+                    }
+                }
+
+                var time = function() { 
+                    r.script = mergeCludes(r.script);
+
+                    if (processSource) {
+                        var ss = { url: r.script.fileURL,
+                                   src: r.script.textContent,
+                                   ask: false,
+                                   cb : function() { /* done! */ },
+                                   hash: r.script.hash };
+                        addNewUserScript(ss);
+                    } else {
+                        r.script.id = scriptParser.getScriptId(r.script.name);
+                        r.script.md5 = SyncClient.getMD5fromScript(r.script);
+                        storeScript(r.script.name, r.script, false);
+                    }
+
+                    check();
+                };
+                if (cb) {
+                    running++;
+                    window.setTimeout(time, 10);
+                } else {
+                    time();
+                }
+            };
+            wrap();
         }
+
+        check();
     };
 
     var resaveAllScriptsEx = function() {
@@ -320,8 +343,7 @@ var convertData = function(convertCB) {
         { cond: isNewVersion && versionCmp("2.6", version) == eNEWER,
           fn : function(cb) {
                 console.log("Update config from " + version + " to 2.6");
-                restoreAllScriptsEx();
-                window.setTimeout(cb, _setTimeout);
+                restoreAllScriptsEx(false, cb);
             }
         },
         { cond: isNewVersion,
