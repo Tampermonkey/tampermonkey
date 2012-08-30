@@ -29,7 +29,7 @@ var createImageText = function(src, name, id, append, title, oc, text) {
     spos.textContent = text;
     wrap.appendChild(spos);
 
-    if (oc) { //  && !wrap.inserted) { // TODO: dunno why...
+    if (oc) {
         var oco = function(evt) {
             oc.apply(wrap);
         };
@@ -41,7 +41,7 @@ var createImageText = function(src, name, id, append, title, oc, text) {
 }
 
 var createImage = function(src, name, id, append, title, oc) {
-    var image = cr('image', name, id, append);
+    var image = cr('image', name, id, append, true);
 
     image.setAttribute("width", "16px");
     image.setAttribute("height", "16px");
@@ -52,7 +52,7 @@ var createImage = function(src, name, id, append, title, oc) {
     image.name = name;
     image.alt = ' ?';
 
-    if (oc && !image.inserted) {
+    if (oc) {
         image.addEventListener("click", oc);
         image.href = 'javascript://nop/';
     }
@@ -61,7 +61,7 @@ var createImage = function(src, name, id, append, title, oc) {
 };
 
 var createFileInput = function(name, id, oc) {
-    var input = crc('input', 'import', 'file');
+    var input = crc('input', 'import', 'file', null, null, true);
     if (!input.inserted) {
         input.type = 'file';
         if (oc) input.addEventListener("change", oc);
@@ -71,15 +71,13 @@ var createFileInput = function(name, id, oc) {
 
 var createTextarea = function(title, i, oc) {
     var s = cr('div', i.name, i.id, 'textarea');
-    var input = crc('textarea', 'settingsta', i.name, i.id, 'textarea');
+    var input = crc('textarea', 'settingsta', i.name, i.id, 'textarea', true);
     input.name = i.name;
     input.key = i.id;
     input.array = i.array;
     input.oldvalue = i.value;
     input.value = (i.value != undefined) ? (i.array ? i.value.join("\n") : i.value) : '';
-    if (!input.inserted) {
-        if (oc) input.addEventListener("change", oc);
-    }
+    if (oc) input.addEventListener("change", oc);
     var span1 = cr('span', i.name, i.id, 's1');
     span1.textContent = title + ':';
     s.appendChild(span1);
@@ -97,16 +95,14 @@ var createPassword = function(name, i, oc) {
  
 var createInput = function(name, i, oc) {
     var s = cr('div', i.name, i.id, 'input');
-    var input = cr('input', i.name, i.id, 'input');
+    var input = cr('input', i.name, i.id, 'input', true);
     var n = name.split('##');
     input.name = i.name;
     input.key = i.id;
     input.oldvalue = i.value;
     input.value = (i.value != undefined) ? i.value : '';
-    if (!input.inserted) {
-        input.type = "text";
-        if (oc) input.addEventListener("change", oc);
-    }
+    input.type = "text";
+    if (oc) input.addEventListener("change", oc);
     var span1 = cr('span', i.name, i.id, 's1');
     var span2 = cr('span', i.name, i.id, 's2');
     span1.textContent = n[0];
@@ -120,7 +116,7 @@ var createInput = function(name, i, oc) {
 
 var createCheckbox = function(name, i, oc) {
     var s = crc('div', 'checkbox', i.name, i.id, 'cb1');
-    var input = cr('input', i.name, i.id, 'cb');
+    var input = cr('input', i.name, i.id, 'cb', true);
     input.title = i.desc ? i.desc : '';
     input.name = i.name;
     input.key = i.id;
@@ -130,8 +126,8 @@ var createCheckbox = function(name, i, oc) {
     input.checked = i.enabled;
     input.type = "checkbox";
 
-    if (!input.inserted) {
-        if (oc) input.addEventListener("click", oc);
+    if (oc) {
+        input.addEventListener("click", oc);
     }
     var span = crc('span', 'checkbox_desc', i.name, i.id, 'cb2');
     span.textContent = name;
@@ -144,7 +140,7 @@ var createCheckbox = function(name, i, oc) {
 
 var createDropDown = function(name, e, values, oc) {
     var s = cr('div', e.name, e.id, 'outer_dd');
-    var b = cr('select', e.name, e.id, 'dd');
+    var b = cr('select', e.name, e.id, 'dd', true);
 
     for (var k in values) {
         var o1 = cr('option', values[k].name, values[k].name, 'dd' + name);
@@ -156,9 +152,7 @@ var createDropDown = function(name, e, values, oc) {
 
     b.key = e.id;
     b.name = e.name;
-    if (!b.inserted) {
-        b.addEventListener("change", oc);
-    }
+    b.addEventListener("change", oc);
 
     var span = cr('span', e.name, e.id, 'inner_dd');
     span.textContent = name + ": ";
