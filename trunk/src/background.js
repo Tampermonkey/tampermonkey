@@ -191,6 +191,7 @@ var convertData = function(convertCB) {
                 addNewUserScript(ss);
             } else {
                 r.script.id = scriptParser.getScriptId(r.script.name);
+                r.script.md5 = SyncClient.getMD5fromScript(r.script);
                 storeScript(r.script.name, r.script, false);
             }
         }
@@ -1612,6 +1613,16 @@ var SyncClient = {
     period : null,
     syncDoneListener: [],
     scheduled : { to: null, force: null, t: 0 },
+    getMD5DatafromScript : function(script) {
+        var s = [];
+        s[0] = script.textContent;
+        s[1] = script.fileURL;
+        return JSON.stringify(s);
+    },
+    getMD5fromScript : function(script) {
+        var sum = script.md5 || MD5(SyncClient.getMD5DatafromScript(script));
+        return sum;
+    },
     scheduleSync : function(t, force) {
         var n = (new Date()).getTime();
 
@@ -1759,14 +1770,10 @@ var SyncClient = {
             if (!r.script || !r.cond) {
                 continue;
             }
-            var s = [];
-            s[0] = r.script.textContent;
-            s[1] = r.script.fileURL;
 
-            var j = JSON.stringify(s);
-            var md5 = MD5(j);
+            var md5 = SyncClient.getMD5fromScript(r.script);
             var id = (r.script.id || scriptParser.getScriptId(r.script.name)) + scriptAppendix;
-            ret[id] = { id: id, md5: md5, md5data: j, script: r.script };
+            ret[id] = { id: id, md5: md5, script: r.script };
         }
 
         return ret;
@@ -1898,7 +1905,7 @@ var SyncClient = {
             }
             if (cb) cb();
         }
-        Syncer.set(r.id, r.md5data, sc_done);
+        Syncer.set(r.id, SyncClient.getMD5DatafromScript(r.script), sc_done);
     },
     syncAll : function(force) {
         if (SyncClient.syncing > 0) {
@@ -3182,7 +3189,7 @@ var updateUserscripts = function(tabid, showResult, scriptid, callback) {
                         if (obj.r.meta) {
                             if (V || UV) console.log("bg: update hash of script " + r.script.name + " to " + obj.r.meta[cUSOHASH]);
                             obj.r.script.hash = obj.r.meta[cUSOHASH];
-                            storeScript(obj.r.script.name, obj.r.script);
+                            storeScript(obj.r.script.name, obj.r.script, false);
                         }
                     };
 
@@ -3432,6 +3439,11 @@ var storeScript = function(name, script, triggerSync) {
 
     if (script) {
         var changed = !!TM_storage.getValue(name);
+
+        if (triggerSync) {
+            // !triggerSync indicates that the source wasn't changed -> no need to calculate MD5
+            script.md5 = SyncClient.getMD5fromScript(script);
+        }
 
         TM_storage.setValue(name + condAppendix, { inc: script.includes, match: script.matches, exc: script.excludes });
         TM_storage.setValue(name + scriptAppendix, script.textContent);
@@ -3698,7 +3710,7 @@ var requestHandler = function(request, sender, sendResponse) {
             if (r.script && r.cond) {
                 var do_merge = false;
                 var dns = new scriptParser.Script();
-                
+
                 for (var k in dns.options) {
                     if (!dns.options.hasOwnProperty(k)) continue;
                     if (typeof request[k] !== 'undefined') r.script.options[k] = request[k];
@@ -4530,7 +4542,7 @@ var createOptionItems = function(cb) {
                          { name: chrome.i18n.getMessage('No'), value: 'no' } ],
                value: Config.values.webrequest_modHeaders,
                desc: '' });
-        
+
     optss.push({ name: chrome.i18n.getMessage('Forbidden_Pages'),
                id: 'forbiddenPages',
                level: 50,
