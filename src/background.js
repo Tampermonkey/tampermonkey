@@ -4897,7 +4897,7 @@ var PNG = {
 var initBrowserAction = function() {
    chrome.browserAction.setIcon(  {  path: chrome.extension.getURL("images/icon_grey.png") } );
    chrome.browserAction.setPopup( { popup: "action.html" } );
-   chrome.browserAction.setTitle( { title: "Tampermomkey" });
+   chrome.browserAction.setTitle( { title: "Tampermonkey" });
 };
 
 var setBadge = function(tabId) {

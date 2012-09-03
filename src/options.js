@@ -271,12 +271,16 @@ var itemsToMenu = function(items, tabv) {
                                 var val = null;
                                 var elem = elems[o];
                                 if (elem.tagName.toLowerCase() == "textarea") {
-                                    var ar = elem.value.split("\n");
-                                    var nar = [];
-                                    for (var u=0; u<ar.length; u++) {
-                                        if (ar[u] && ar[u].trim() != "") nar.push(ar[u]);
+                                    if (elem.array) { 
+                                        var ar = elem.value.split("\n");
+                                        var nar = [];
+                                        for (var u=0; u<ar.length; u++) {
+                                            if (ar[u] && ar[u].trim() != "") nar.push(ar[u]);
+                                        }
+                                        val = nar;
+                                    } else {
+                                        val = elem.value;
                                     }
-                                    val = nar;
                                 } else if (elem.getAttribute('type') == 'checkbox') {
                                     val = elem.checked;
                                 } else {
