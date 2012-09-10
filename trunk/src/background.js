@@ -375,7 +375,7 @@ var convertData = function(convertCB) {
 var cacheValidPeriod = 30 * 60 * 1000;
 var cacheCheckPeriod = 3 * 60 * 1000;
 
- var addToRequireCache = function(url, content, headers) {
+var addToRequireCache = function(url, content, headers) {
     if (V || CV) console.log("cache: add '" + url + "'");
     requireCache[url] = { ts: (new Date()).getTime(), content: content, headers: headers }
 };
@@ -2454,7 +2454,10 @@ var runtimeInit = function() {
             r.loaded = true;
             if (req.readyState == 4 && req.status == 200 || req.status == 0) {
                 r.textContent = req.responseText;
-                addToRequireCache(r.url, req.responseText);
+                if (req.status != 0) {
+                    // don't cache file:// URIs
+                    addToRequireCache(r.url, req.responseText);
+                }
             }
         };
 
