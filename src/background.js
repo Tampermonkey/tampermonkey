@@ -426,7 +426,7 @@ var localFile = {
 
             if (o) {
                 if (V) console.log("bg: localFile: retrieval of '" + o.url + "' took " + ((new Date()).getTime() - o.ts) + "ms");
-                if (o.cb) o.cb(data.content);s
+                if (o.cb) o.cb(data.content);
                 if (o.iframe) o.iframe.parentNode.removeChild(o.iframe);
                 delete localFile.callbacks[data.id];
             } else {
@@ -460,6 +460,7 @@ var localFile = {
         var wrap = function() {
             var cbi = localFile.id;
             var notfound = function() {
+                if (cbi == null) return; // too late! :)
                 if (localFile.callbacks[cbi]) {
                     localFile.listener(null, JSON.stringify({ id: cbi, content: null }));
                 }
@@ -470,7 +471,7 @@ var localFile = {
                 try {
                     i.contentWindow.postMessage(d, i.src);
                 } catch (e) {}
-            
+                cbi = null;
             };
             i.onload = post;
 
