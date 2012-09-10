@@ -425,7 +425,8 @@ var localFile = {
             var o = localFile.callbacks[data.id];
 
             if (o) {
-                if (o.cb) o.cb(data.content);
+                if (V) console.log("bg: localFile: retrieval of '" + o.url + "' took " + ((new Date()).getTime() - o.ts) + "ms");
+                if (o.cb) o.cb(data.content);s
                 if (o.iframe) o.iframe.parentNode.removeChild(o.iframe);
                 delete localFile.callbacks[data.id];
             } else {
@@ -453,31 +454,32 @@ var localFile = {
         i.src = url + "?gimmeSource=1";
         document.getElementsByTagName('body')[0].appendChild(i);
 
-        var post = function() {
-            var d = JSON.stringify({ id: localFile.id });
-            localFile.callbacks[localFile.id] = { cb: cb, ts: (new Date()).getTime(), iframe: i };
+        var d = JSON.stringify({ id: localFile.id });
+        localFile.callbacks[localFile.id] = { cb: cb, ts: (new Date()).getTime(), iframe: i, url: url };
 
-            var wrap = function() {
-                var cbi = localFile.id;
-                var notfound = function() {
-                    if (localFile.callbacks[cbi]) {
-                        localFile.listener(null, JSON.stringify({ id: cbi, content: null }));
-                    }
-                };
+        var wrap = function() {
+            var cbi = localFile.id;
+            var notfound = function() {
+                if (localFile.callbacks[cbi]) {
+                    localFile.listener(null, JSON.stringify({ id: cbi, content: null }));
+                }
+                cbi = null;
+            };
+            var post = function() {
+                if (cbi == null) return; // too late! :(
+                try {
+                    i.contentWindow.postMessage(d, i.src);
+                } catch (e) {}
+            
+            };
+            i.onload = post;
 
-                // timeout 3000s, this should be enough for local resources
-                window.setTimeout(notfound, 3000);
-            }
+            // timeout 3000s, this should be enough for local resources
+            window.setTimeout(notfound, 3000);
+        }
+        wrap();
 
-            wrap();
-            localFile.id++;
-            try {
-                i.contentWindow.postMessage(d, i.src);
-            } catch (e) {}
-
-        };
-
-        window.setTimeout(post, 10);
+        localFile.id++;
     }
 };
 lfgs = localFile;
