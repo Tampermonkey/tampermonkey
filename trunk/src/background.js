@@ -1754,7 +1754,7 @@ var SyncClient = {
                         if (!err) {
                             Config.values.sync_valid = 'submitted';
                             var resp = function(tab) {
-                                chrome.tabs.sendRequest(tab.id,
+                                chrome.tabs.sendMessage(tab.id,
                                                         { method: "showMsg",
                                                           msg: chrome.i18n.getMessage('Credentials_are_submitted__Please_check_your_email_account_for_verification_details') },
                                                         function(response) {});
@@ -2571,7 +2571,7 @@ var runtimeInit = function() {
                 dblscript[k] = script[k];
             }
 
-            chrome.tabs.sendRequest(oobj.currentTab.id,
+            chrome.tabs.sendMessage(oobj.currentTab.id,
                                     { method: "executeScript",
                                       header: script.header,
                                       code: oobj.createEnv( script.textContent, script),
@@ -2704,7 +2704,7 @@ var mergeCludes = function(script){
 var notifyOptionsTab = function() {
     reorderScripts();
     var done = function(allitems) {
-        chrome.extension.sendRequest({ method: "updateOptions",
+        chrome.extension.sendMessage({ method: "updateOptions",
                                              items: allitems },
                                      function(response) {});
 
@@ -2734,7 +2734,7 @@ var addNewUserScript = function(o) {
     }
 
     if (!script.name || script.name == '' || (script.version == undefined)) {
-        chrome.tabs.sendRequest(o.tabid,
+        chrome.tabs.sendMessage(o.tabid,
                                 { method: "showMsg", msg: chrome.i18n.getMessage('Invalid_UserScript__Sry_')},
                                 function(response) {});
         return false;
@@ -2746,7 +2746,7 @@ var addNewUserScript = function(o) {
     if (!o.clean && oldscript && oldscript.system && !o.defaultscript) return false;
 
     if (script.options.compat_uW_gmonkey) {
-        chrome.tabs.sendRequest(o.tabid,
+        chrome.tabs.sendMessage(o.tabid,
                                 { method: "showMsg", msg: chrome.i18n.getMessage('This_script_uses_uW_gm_api_')},
                                 function(response) {});
 
@@ -2769,7 +2769,7 @@ var addNewUserScript = function(o) {
     script.position = oldscript ? oldscript.position : determineLastScriptPosition() + 1;
 
     if (script.name.search('@') != -1) {
-        chrome.tabs.sendRequest(o.tabid,
+        chrome.tabs.sendMessage(o.tabid,
                                 { method: "showMsg", msg: chrome.i18n.getMessage('Invalid_UserScript_name__Sry_')},
                                 function(response) {});
         return false;
@@ -2968,7 +2968,7 @@ var addNewUserScript = function(o) {
         doit();
         if (o.cb) o.cb(true);
     } else {
-        chrome.tabs.sendRequest(o.tabid,
+        chrome.tabs.sendMessage(o.tabid,
                                 { method: "confirm", msg: msg},
                                 function(response) {
                                     if (response.confirm) {
@@ -3721,7 +3721,7 @@ var requestHandler = function(request, sender, sendResponse) {
                         var items = createActionMenuItems(tab);
                         sendResponse({items: items});
                         if (request.name && Config.values.autoReload) {
-                            chrome.tabs.sendRequest(tab.id,
+                            chrome.tabs.sendMessage(tab.id,
                                                     { method: "reload" },
                                                     function(response) {});
                         }
@@ -3844,7 +3844,7 @@ var requestHandler = function(request, sender, sendResponse) {
                         notifyOptionsTab();
                     }
                 } else {
-                    chrome.tabs.sendRequest(sender.tab.id,
+                    chrome.tabs.sendMessage(sender.tab.id,
                                             { method: "showMsg", msg: chrome.i18n.getMessage('Unable_to_get_UserScript__Sry_'), id: request.id},
                                             function(response) {});
                 }
@@ -4043,8 +4043,11 @@ var requestHandler = function(request, sender, sendResponse) {
         sendResponse({});
     } else {
         console.log("b: " + chrome.i18n.getMessage("Unknown_method_0name0" , request.method));
+        return false;
     }
     if (V) console.log("back: request.method " + request.method + " end!");
+
+    return true;
 };
 
 /* #### Action Menu && Options Page ### */
@@ -5135,7 +5138,7 @@ var loadListener = function(tabID, changeInfo, tab) {
     if (V) console.log("loadListener " + tab.url + " " + changeInfo.status);
     var sere = function() {
         loadListenerTimeout = null;
-        chrome.tabs.sendRequest(tabID,
+        chrome.tabs.sendMessage(tabID,
                                 { method: "getSrc" },
                                 function(response) {
                                     if (V) console.log("add script from " + tab.url);
@@ -5157,7 +5160,7 @@ var loadListener = function(tabID, changeInfo, tab) {
     } else if (changeInfo.status == 'complete') {
         if (allURLs[tabID] &&
             !allURLs[tabID].empty) {
-            chrome.tabs.sendRequest(tabID,
+            chrome.tabs.sendMessage(tabID,
                                     { method: "onLoad" },
                                     function(response) {});
         }
@@ -5342,7 +5345,7 @@ init = function() {
         chrome.tabs.onRemoved.addListener(removeListener);
         chrome.tabs.onSelectionChanged.addListener(selectionChangedListener);
 
-        chrome.extension.onRequest.addListener(requestHandler);
+        chrome.extension.onMessage.addListener(requestHandler);
         chrome.extension.onConnect.addListener(connectHandler);
         chrome.extension.onConnectExternal.addListener(function(port) {
                                                            port.disconnect();

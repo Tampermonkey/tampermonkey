@@ -166,12 +166,12 @@ var createActionsMenu = function(items) {
 var loadUrl = function(url, newtab) {
     try {
         var resp = function(tab) {
-            chrome.tabs.sendRequest(tab.id,
+            chrome.tabs.sendMessage(tab.id,
                                     {method: "loadUrl", url: url, newtab: newtab},
                                     function(response) {});
         };
         if (newtab) {
-            chrome.extension.sendRequest({method: "openInTab", url: url},
+            chrome.extension.sendMessage({method: "openInTab", url: url},
                                          function(response) {});
         } else {
             chrome.tabs.getSelected(null, resp);
@@ -183,7 +183,7 @@ var loadUrl = function(url, newtab) {
 
 var runScriptUpdates = function() {
     try {
-        chrome.extension.sendRequest({method: "runScriptUpdates"}, function(response) {});
+        chrome.extension.sendMessage({method: "runScriptUpdates"}, function(response) {});
     } catch (e) {
         console.log(e);
     }
@@ -191,7 +191,7 @@ var runScriptUpdates = function() {
 
 var execMenuCmd = function(id) {
     try {
-        chrome.extension.sendRequest({method: "execMenuCmd", id: id}, function(response) {});
+        chrome.extension.sendMessage({method: "execMenuCmd", id: id}, function(response) {});
     } catch (e) {
         console.log(e);
     }
@@ -213,7 +213,7 @@ var getFireItems = function(tabid, cb) {
             cb(response.cnt, c);
         }
 
-        chrome.extension.sendRequest({method: "getFireItems", countonly: true, tabid: tabid}, fiResp);
+        chrome.extension.sendMessage({method: "getFireItems", countonly: true, tabid: tabid}, fiResp);
     } catch (e) {
         console.log(e);
     }
@@ -223,7 +223,7 @@ var modifyScriptOptions = function(name, id, value) {
     try {
         var s = { method: "modifyScriptOptions", name: name };
         if (id && id != '') s[id] = value;
-        chrome.extension.sendRequest(s,
+        chrome.extension.sendMessage(s,
                                      function(response) {
                                          if (response && response.items) createActionsMenu(response.items);
                                      });
@@ -233,7 +233,7 @@ var modifyScriptOptions = function(name, id, value) {
     }
 }
 
-chrome.extension.onRequest.addListener(
+chrome.extension.onMessage.addListener(
     function(request, sender, sendResponse) {
         if (V) console.log("a: method " + request.method);
         // TODO: action page pops up, no need to update?

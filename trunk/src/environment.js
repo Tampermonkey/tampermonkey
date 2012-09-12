@@ -296,7 +296,7 @@ var cleanup = function() {
     document.removeEventListener(eDOMNODEINSERTED, domNodeInsertedListener, false);
     document.removeEventListener(eDOMCONTENTLOADED, domLoadedListener, false);
     document.removeEventListener(eLOAD, loadListener, false);
-    document.removeEventListener('unload', cleanup, false);
+    window.removeEventListener('unload', cleanup, false);
 };
 
 var runAllLoadListeners = function() {
@@ -655,7 +655,7 @@ var TM_registerMenuCommand = function(name, fn) {
     var menuId = TM_context_id + '#' + name;
     var onUnload = function() {
         if (V || MV) console.log("env: unRegisterMenuCMD due to unload " + fn.toString());
-        chromeEmu.extension.sendRequest({method: "unRegisterMenuCmd", name: name, id: menuId}, function(response) {});
+        chromeEmu.extension.sendMessage({method: "unRegisterMenuCmd", name: name, id: menuId}, function(response) {});
     };
     var resp = function(response) {
         // response is send, command is unregisterd @ background page
@@ -669,7 +669,7 @@ var TM_registerMenuCommand = function(name, fn) {
     };
     window.addEventListener('unload', onUnload, false);
     if (V || MV) console.log("env: registerMenuCmd " + fn.toString());
-    chromeEmu.extension.sendRequest({method: "registerMenuCmd", name: name, id: TM_context_id, menuId: menuId}, resp);
+    chromeEmu.extension.sendMessage({method: "registerMenuCmd", name: name, id: TM_context_id, menuId: menuId}, resp);
 };
 
 var TM_openInTab = function(url) {
@@ -680,7 +680,7 @@ var TM_openInTab = function(url) {
             // re-schedule, cause tabId is null
             window.setTimeout(close, 500);
         } else if (tabId > 0) {
-            chromeEmu.extension.sendRequest({method: "closeTab", tabId: tabId, id: TM_context_id}, resp);
+            chromeEmu.extension.sendMessage({method: "closeTab", tabId: tabId, id: TM_context_id}, resp);
             tabId = undefined;
         } else {
             if (D) console.log("env: attempt to close already closed tab!");
@@ -692,7 +692,7 @@ var TM_openInTab = function(url) {
     if (url && url.search(/^\/\//) == 0) {
         url = location.protocol + url;
     }
-    chromeEmu.extension.sendRequest({method: "openInTab", url: url, id: TM_context_id}, resp);
+    chromeEmu.extension.sendMessage({method: "openInTab", url: url, id: TM_context_id}, resp);
     return { close: close };
 };
 
@@ -752,7 +752,7 @@ var TM_xmlhttpRequest = function(details) {
 }
 
 var TM_getTab = function(cb) {
-    chromeEmu.extension.sendRequest({method: "getTab", id: TM_context_id}, function(response) {
+    chromeEmu.extension.sendMessage({method: "getTab", id: TM_context_id}, function(response) {
                                         if (cb) {
                                             cb(response.data);
                                         }
@@ -760,11 +760,11 @@ var TM_getTab = function(cb) {
 };
 
 var TM_saveTab = function(tab) {
-    chromeEmu.extension.sendRequest({method: "saveTab", id: TM_context_id, tab: tab}, function(response) {});
+    chromeEmu.extension.sendMessage({method: "saveTab", id: TM_context_id, tab: tab}, function(response) {});
 };
 
 var TM_getTabs = function(cb) {
-    chromeEmu.extension.sendRequest({method: "getTabs", id: TM_context_id}, function(response) {
+    chromeEmu.extension.sendMessage({method: "getTabs", id: TM_context_id}, function(response) {
                                      if (cb) {
                                          cb(response.data);
                                      }
@@ -772,7 +772,7 @@ var TM_getTabs = function(cb) {
 };
 
 var TM_installScript = function(url, cb) {
-    chromeEmu.extension.sendRequest({method: "scriptClick", url: url, id: TM_context_id}, function(response) { if (cb) cb(response); });
+    chromeEmu.extension.sendMessage({method: "scriptClick", url: url, id: TM_context_id}, function(response) { if (cb) cb(response); });
 };
  
 /* ######### Helpers  ############ */
@@ -1038,7 +1038,7 @@ var HTM_runMyScript = function(HTM_request) {
         var noti = function(response) {
             if (response.clicked && cb) cb();
         };
-        chromeEmu.extension.sendRequest({method: "notification", delay: delay, msg: msg, image: image, title: title, id: TM_context_id},
+        chromeEmu.extension.sendMessage({method: "notification", delay: delay, msg: msg, image: image, title: title, id: TM_context_id},
                                         noti);
     };
 
@@ -1232,7 +1232,7 @@ var HTM_runMyScript = function(HTM_request) {
 
 /* ######### Request Listener ############ */
 
-chromeEmu.extension.onRequest.addListener(
+chromeEmu.extension.onMessage.addListener(
     function(request, sender, sendResponse) {
         if (V || EV) console.log("env: request.method " + request.method + " id: " + request.id);
 
@@ -1310,7 +1310,7 @@ TM_winEvalFix();
 document.addEventListener(eDOMNODEINSERTED, domNodeInsertedListener, false);
 document.addEventListener(eDOMCONTENTLOADED, domLoadedListener, false);
 document.addEventListener(eLOAD, loadListener, false);
-document.addEventListener('unload', cleanup, false);
+window.addEventListener('unload', cleanup, false);
 
 if (V || D) console.log("env: initialized (content, id:" + TM_context_id + ", " + window.location.origin + window.location.pathname + ") ");
 

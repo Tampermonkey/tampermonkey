@@ -36,7 +36,7 @@
         
         var req = { method: "ping" };
         try { 
-            chrome.extension.sendRequest(req, response);
+            chrome.extension.sendMessage(req, response);
         } catch (e) {}
 
         _to = window.setTimeout(timedout, timeout);

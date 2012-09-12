@@ -240,16 +240,16 @@ var chromeEmu = {
             tmCE.sendExtensionConnect(chromeEmu.key, JSON.stringify(obj), id);
             return port;
         },
-        sendRequest : function(obj, response) {
+        sendMessage : function(obj, response) {
             var id = chromeEmu.getResponseId(response);
 
-            if (EMV) console.log("emu: extension.sendRequest " + id + " # " + JSON.stringify(obj));
+            if (EMV) console.log("emu: extension.sendMessage " + id + " # " + JSON.stringify(obj));
 
-            tmCE.sendExtensionRequest(chromeEmu.key, JSON.stringify(obj), id);
+            tmCE.sendExtensionMessage(chromeEmu.key, JSON.stringify(obj), id);
         },
-        onRequest : {
+        onMessage : {
             addListener: function (requestHandler) {
-                // chromeEmu.request(tmCE.onRequest, { requestHandlerIdx: chrome.extension.requestHandlers.length });
+                // chromeEmu.request(tmCE.onMessage, { requestHandlerIdx: chrome.extension.requestHandlers.length });
                 chromeEmu.extension.requestHandlers.push(requestHandler);
             }
         }
@@ -267,10 +267,10 @@ var chromeEmu = {
     },
     tabs: {
         updateListeners : [],
-        sendRequest: function(tabId, obj, response) {
+        sendMessage: function(tabId, obj, response) {
             var id = chromeEmu.getResponseId(response);
 
-            if (EMV) console.log("emu: tabs.sendRequest " + id);
+            if (EMV) console.log("emu: tabs.sendMessage " + id);
             
             tmCE.sendTabsRequest(chromeEmu.key, tabId, JSON.stringify(obj), id);
         },

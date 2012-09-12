@@ -25,7 +25,7 @@ if (window.self != window.top &&
         // event.returnValue = s;
 
         var req = { method: "localFileCB", data: s };
-        chrome.extension.sendRequest(req, function() {});
+        chrome.extension.sendMessage(req, function() {});
         window.removeEventListener('message', sendResp, false);
     };
 
@@ -292,9 +292,9 @@ var tmCEinit = function (cId) {
             }
 	},
 
-        onRequest : function(request, sender, responseId) {
+        onMessage : function(request, sender, responseId) {
             if (_background) {
-                if (V) this.log("onRequest " + contextId + " " + responseId + " " + JSON.stringify(request));
+                if (V) this.log("onMessage " + contextId + " " + responseId + " " + JSON.stringify(request));
                 if (request.id && this.id && request.id != this.id) {
                     if (V) this.log("filter: " + request.id + "!=" +  this.id);
                     return;
@@ -306,8 +306,8 @@ var tmCEinit = function (cId) {
                 l = '';
             } else {
                 // var a = arguments;
-                // TM_fireEvent({ fn: "onRequest", args: a });
-                console.log("Warn: onRequest from non BG not supported");
+                // TM_fireEvent({ fn: "onMessage", args: a });
+                console.log("Warn: onMessage from non BG not supported");
             }
 	},
 
@@ -354,19 +354,19 @@ var tmCEinit = function (cId) {
             console.log("WARN: not supported!");
 	},
 
-        sendExtensionRequest: function(key, json, responseId) { //(String key, String json, long responseId) {
+        sendExtensionMessage: function(key, json, responseId) { //(String key, String json, long responseId) {
             if (_background) {
-                if (V) this.log("sendExtensionRequest " + contextId + " " + responseId + " " + json);
+                if (V) this.log("sendExtensionMessage " + contextId + " " + responseId + " " + json);
                 var response = function(resp) {
                     tmCE.onResponse(key, 0, responseId, JSON.stringify(resp));
                 };
                 var obj = JSON.parse(json);
                 obj.responseId = responseId;
-                chrome.extension.sendRequest(obj, response);
+                chrome.extension.sendMessage(obj, response);
                 obj = null;
             } else {
                 var a = arguments;
-                TM_fireEvent({ fn: "sendExtensionRequest", args: a });
+                TM_fireEvent({ fn: "sendExtensionMessage", args: a });
             }
 	},
 
@@ -882,7 +882,7 @@ function cleanup() {
                 url: window.location.origin + window.location.pathname,
                 params: window.location.search + window.location.hash };
 
-    chrome.extension.sendRequest(req, function(response) {});
+    chrome.extension.sendMessage(req, function(response) {});
     
     document.removeEventListener("TM_event"+contextId, eventHandler, false);
     window.removeEventListener("DOMContentLoaded", domContentLoaded, false);
@@ -925,9 +925,11 @@ function reqListerner(request, sender, sendResponse) {
         var id = _handler.getResponseId(sendResponse);
         tmCE.onContentRequest(request, sender, id);
     }
+
+    return true;
 }
 
-chrome.extension.onRequest.addListener(reqListerner);
+chrome.extension.onMessage.addListener(reqListerner);
 _handler.sendMessage();
  
 var xhrRetryCnt = 2;
@@ -952,7 +954,7 @@ var forceTestXhr = function() {
         var req = { method: "getWebRequestInfo",
                     id: contextId };
 
-        chrome.extension.sendRequest(req, res);
+        chrome.extension.sendMessage(req, res);
     };
 
     xmlhttpRequest(d, null, null, null, done);
@@ -1015,7 +1017,7 @@ var init = function() {
                 url: window.location.origin + window.location.pathname,
                 params: window.location.search + window.location.hash };
 
-    chrome.extension.sendRequest(req, updateResponse);
+    chrome.extension.sendMessage(req, updateResponse);
 };
 
 init();
