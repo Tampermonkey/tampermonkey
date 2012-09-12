@@ -140,6 +140,7 @@
                               getUrlArgs: getUrlArgs,
                               alert : doAlert,
                               serialize: serialize,
+                              toType : toType,
                               staticVars : {
                                   urlAllHttp: urlAllHttp,
                                   urlAllHttps: urlAllHttps,

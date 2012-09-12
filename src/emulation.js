@@ -40,6 +40,13 @@ var chromeEmu = {
 
     responses : {},
 
+    clean : function() {
+        chromeEmu.responses = null;
+        chromeEmu.extension.requestHandlers = null;
+        chromeEmu.tabs.updateListeners = null;
+        chromeEmu = null;
+    },
+
     xmlHttpRequest: function(details, callback, onreadychange, onerr, done) {
         var cb = function(req) {
             if (EMV) console.log("emu: req (" + id + " -" + details.url + " returned: " + req);
@@ -225,14 +232,22 @@ var chromeEmu = {
                                addListener : function(listener) {
                                    port.oDlisteners.push(listener);
                                }
+                           },
+                           disconnect : function() {
+                               port.oMlisteners = null;
+                               port.oDlisteners = null;
+                               port = null;
                            }
             };
 
             var msg = function(m) {
                 if (m.onMessage) {
-                    port.notifyListeners(port.oMlisteners, m.msg);
+                    if (port) port.notifyListeners(port.oMlisteners, m.msg);
                 } else if (m.onDisconnect) {
-                    port.notifyListeners(port.oDlisteners);
+                    if (port) {
+                        port.notifyListeners(port.oDlisteners);
+                        port = null;
+                    }
                 }
             };
 
@@ -294,20 +309,6 @@ var chromeEmu = {
         }
     }
 };
-
-function checkInterface(cb) {
-    if (!window.hasOwnProperty("tmCE")) {
-        window.setTimeout(function() { checkInterface(cb); }, 100);
-    }
-    cb();
-}
-
-function checkBgFred(cb) {
-    if (TM_tabs == undefined) {
-        window.setTimeout(function() { checkBgFred(cb); }, 100);
-    }
-    cb();
-}
 
 if (EMV) console.log("emu: Started (" + window.location.origin + window.location.pathname + ")");
 

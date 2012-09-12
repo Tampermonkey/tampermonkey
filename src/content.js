@@ -43,7 +43,8 @@ var EV = false;
 var EMV = false;
 var ENV = false;
 var TS = false;
-
+var CV =  false;
+ 
 (function() {
 
 var eDOMATTRMODIFIED = "DOMAttrModified";
@@ -55,7 +56,8 @@ var allReady = false;
 var wannaRun = false;
 var domLoaded = false;
 var nodeInserted = false;
-
+var Clean = [];
+ 
 var adjustLogLevel = function() {
     D |= (logLevel >= 60);
     V |= (logLevel >= 80);
@@ -144,7 +146,7 @@ var _handler = {
             is += "    } catch (e) {\n";
             is += "        console.log('page: Error: retrieving event! ' + e.message + ' ' + evt.attrName);\n";
             is += "    }\n";
-            is += "    evt.attrName = '';\n";
+            is += "    evt = null;\n";
             is += "};\n";
             is += "document.addEventListener('TM_exec"+contextId+"', eventHandler, false);\n";
             is += "function cleanup(evt) {\n";
@@ -482,6 +484,11 @@ var initUnsafe = function() {
         yippieYeah.setAttribute("onclick", "return {" + props + "};");
         var ret = yippieYeah.onclick();
         var unsafeWindow = ret.window;
+
+        yippieYeah.setAttribute("onclick", null);
+        yippieYeah.onclick = null;
+        yippieYeah = null;
+
         var fi = '__o__' + id;
         var f = 'window.' + fi + ' = {' + props + '};';
             
@@ -491,7 +498,7 @@ var initUnsafe = function() {
         is += "    try {\n";
         is += "        eval(decodeURI(evt.attrName))\n";
         is += "    } catch (e) {}\n";
-        is += "    evt.attrName = '';\n";
+        is += "    evt = null;\n";
         is += "};\n";
         is += "document.addEventListener('TM_do"+contextId+"', eventHandler, false);\n";
         f += is;
@@ -507,11 +514,12 @@ var initUnsafe = function() {
         s.parentNode.removeChild(s);
 
         if (D) console.log("env: init " + window.location.href);
-
-        for (var k in get) {
-            if (!get.hasOwnProperty(k)) continue;
+        
+        for (var kk in get) {
+            if (!get.hasOwnProperty(kk)) continue;
 
             var run = function() {
+                var k = kk;
                 var item = ret[k];
                 var obj = Object.getOwnPropertyDescriptor(window, k);
                 var written = false;
@@ -523,6 +531,10 @@ var initUnsafe = function() {
                                 window[k] = item;
                                 written = true;
                                 if (D) console.log("env: write " + k);
+                                Clean.push(function() {
+                                               if (CV) console.log("clean: window["+k+"]");
+                                               delete window[k];
+                                           });
                             } else if (obj.configurable) {
                                 var prop = {};
                                 obj.value = item;
@@ -530,6 +542,11 @@ var initUnsafe = function() {
                                 Object.defineProperties(window, prop);
                                 written = true;
                                 if (D) console.log("env: redefine " + k);
+                                Clean.push(function() {
+                                               if (CV) console.log("clean: prop window["+k+"]");
+                                               prop[k].value = null;
+                                               Object.defineProperties(window, prop);
+                                           });
                             }
                         } else {
                             var prop = {};
@@ -537,12 +554,18 @@ var initUnsafe = function() {
                                 value: item,
                                 enumerable: true,
                                 writable: false,
-                                configurable: false,
+                                configurable: true
                             };
                             
                             Object.defineProperties(window, prop);
                             written = true;
                             if (D) console.log("env: define " + k + " to " + JSON.stringify(obj));
+                            Clean.push(function() {
+                                           if (CV) console.log("clean: prop window["+k+"]");
+                                           prop[k].value = null;
+                                           Object.defineProperties(window, prop);
+                                       });
+
                         }
                     } catch (e) {
                         console.log(e.message);
@@ -557,9 +580,14 @@ var initUnsafe = function() {
                         value: item,
                         enumerable: true,
                         writable: false,
-                        configurable: false,
+                        configurable: true
                     };
                     Object.defineProperties(window, prop);
+                    Clean.push(function() {
+                                   if (CV) console.log("clean: prop window[unsafe"+ cc +"]");
+                                 prop['unsafe' + cc].value = null;
+                                 Object.defineProperties(window, prop);
+                             });
                 }
             };
             run();
@@ -594,7 +622,6 @@ function xhrFix() {
     return;
 
     if (use.safeContext) {
-        
         var fi = '__o__' + contextId;
         var f = 'window.' + fi + ' = { XMLHttpRequest: XMLHttpRequest };';
         TM_do(f);
@@ -610,26 +637,30 @@ function xhrFix() {
  
 function wrappedJSObjectFix() {
     var arr = [ window['HTMLElement'].prototype, document.__proto__ ];
-
     for (var o=0; o < arr.length; o++) {
-        var k = arr[o];
-
-        var obj = Object.getOwnPropertyDescriptor(k, 'wrappedJSObject');
+        var wrap = function() {
+            var k = arr[o];
+            var obj = Object.getOwnPropertyDescriptor(k, 'wrappedJSObject');
                 
-        if (!obj) {
-            k.__defineGetter__('wrappedJSObject', function() { return this; });
+            if (!obj) {
+                var prop = { 'wrappedJSObject':
+                             {
+                                 get: function() {
+                                     return this;
+                                 },
+                                 enumerable: false,
+                                 configurable: true
+                             },
+                };
+                Object.defineProperties(k, prop);
 
-            Object.defineProperties(k,
-                { 'wrappedJSObject':
-                    {
-                        get: function() {
-                            return this;
-                        },
-                        enumerable: false,
-                        configurable: false,
-                    },
-                });
-        }
+                Clean.push(function() {
+                               if (CV) console.log("clean: " + Helper.toType(k) + "[wrappedJSObject]");
+                               delete k['wrappedJSObject'];
+                           });
+            }
+        };
+        wrap();
     }
 };
  
@@ -650,7 +681,7 @@ function domAttrFix() {
     if (testDOMAttr()) return;
                                 
     var arr = [ window['HTMLElement'].prototype, document.__proto__ ];
-
+    
     for (var o=0; o < arr.length; o++) {
         var k = arr[o];
         if (!k.___addEventListener) {
@@ -770,6 +801,11 @@ function domAttrFix() {
 
                 this.___addEventListener(event, fn, arg1);
             };
+
+            Clean.push(function() {
+                         k.removeEventListener = k.___removeEventListener;
+                         k.addEventListener =  k.___addEventListener;
+                     });
         }
     }
 };
@@ -870,7 +906,7 @@ function eventHandler(evt) {
         console.log("Error: retrieving event! " + e.message);
         console.log("Error: " + evt.attrName);
     }
-    evt.attrName = '';
+    evt = null;
 }
 
 function cleanup() {
@@ -883,12 +919,22 @@ function cleanup() {
                 params: window.location.search + window.location.hash };
 
     chrome.extension.sendMessage(req, function(response) {});
-    
-    document.removeEventListener("TM_event"+contextId, eventHandler, false);
-    window.removeEventListener("DOMContentLoaded", domContentLoaded, false);
-    window.removeEventListener("DOMNodeInserted", domNodeInserted, false);
-    window.removeEventListener("unload", cleanup, false);
+
+    try {
+        document.removeEventListener("TM_event"+contextId, eventHandler, false);
+        window.removeEventListener("DOMContentLoaded", domContentLoaded, false);
+        window.removeEventListener("DOMNodeInserted", domNodeInserted, false);
+        window.removeEventListener("unload", cleanup, false);
+    } catch (e) {
+        console.log("cleanup: Error: " + e.message);
+    }
+
     cleanupHlp();
+
+    for (var i = 0; i<Clean.length; i++) {
+        Clean[i]();
+    }
+    Clean = null;
 }
 
 function cleanupHlp() {

@@ -34,13 +34,12 @@ var eBACKUP = 1;
 
 var TM_internal = "TM_internal";
 
-// protect these safe window items against inital modification and pass them as function parameter to the user script env
-var TM_protected = []; // '$', 'jQuery']; doesn't work well, cause getID doesn't work from functions called via setTimeout and co!
-
 TMwin.domContentLoaded = false;
 TMwin.loadHappened = false;
 TMwin.domNodeInserted = false;
 TMwin.props = {};
+
+Clean = [];
 
 if (!chromeEmu) {
     if (V || D) console.log("environment: replace chromeEmu var with chrome!");
@@ -115,32 +114,15 @@ var TM_mEval = function(script, src, requires, addProps) {
             }
         }
 
-        mask['__TMprotector'] = { addListener: TM_addProtectListener };
-        
         var wrap = function(source) {
             // TODO: is there another way than generating this code?
-            var prot = "";
-            /* doesn't work well, cause getID doesn't work from functions called via setTimeout and co!
-            prot += "var protectListener = function(key, val) {\n";
-            for (var i=0; i<TM_protected.length;i++) {
-                var t = TM_protected[i];
-                prot += "if (key == '" + t + "') " + t + " = val;\n";
-            };
-            prot += "}\n";
-            prot += "__protector.addListener('" + script.id + "', protectListener);\n";
-            */
             var s = "";
-            // TODO: hide __protector from user scripts
-            var s = "var __protector = this.__TMprotector;\n";
-            // doesn't work well, cause getID doesn't work from functions called via setTimeout and co!
-            // s += '(function winProtector(' + TM_protected.join(',') + ') {\n';
             s += 'try {\n';
-            s +=  prot + requires + source + '\n';
+            s +=  requires + source + '\n';
             s += '} catch (e) {\n';
             s += '    console.log("ERROR: Execution of script \'' + script.name + '\' failed! " + e.message); \n';
             s += '    console.log(e.stack)\n';
             s += '}\n';
-            // s += '})()\n';
             return s;
         };
 
@@ -151,9 +133,6 @@ var TM_mEval = function(script, src, requires, addProps) {
         // var runEm = new Function( "window",  emu + "with (window) { " + src + "}");
         var runEm = new Function(setid + emu + wrap(src));
         runEm.apply(mask, []);
-
-        //        var runEm = new Function(TM_protected, emu + wrap(src));
-        //        runEm.apply(mask, []);
 
     } catch (e) {                    
         if (D) {
@@ -297,6 +276,15 @@ var cleanup = function() {
     document.removeEventListener(eDOMCONTENTLOADED, domLoadedListener, false);
     document.removeEventListener(eLOAD, loadListener, false);
     window.removeEventListener('unload', cleanup, false);
+
+    for (var i = 0; i<Clean.length; i++) {
+        Clean[i]();
+    }
+    Clean = null;
+
+    if (chromeEmu.clean) {
+        chromeEmu.clean();
+    }
 };
 
 var runAllLoadListeners = function() {
@@ -359,180 +347,138 @@ function TM_addEventListenerFix() {
     var order = [];
 
     for (var o=0; o<arr.length; o++) {
-        var k = arr[o];
-        if (!k.__addEventListener) {
-            k.__addEventListener = k.addEventListener;
-            k.__removeEventListener = k.removeEventListener;
+        var wrap = function() { 
+            var k = arr[o];
+            if (!k.__addEventListener) {
+                k.__addEventListener = k.addEventListener;
+                k.__removeEventListener = k.removeEventListener;
 
-            k.removeEventListener = function (event, fn, arg1) {
-                if (event == eDOMNODEINSERTED) {
-                    if (nodeInserts.running == fn) {
-                        if (EV) console.log("env: detected removeEventListener while refireAllNodeInserts");
-                        nodeInserts.running = null;
+                k.removeEventListener = function (event, fn, arg1) {
+                    if (event == eDOMNODEINSERTED) {
+                        if (nodeInserts && nodeInserts.running == fn) {
+                            if (EV) console.log("env: detected removeEventListener while refireAllNodeInserts");
+                            nodeInserts.running = null;
+                        }
                     }
-                }
 
-                this.__removeEventListener(event, fn, arg1);
-            };
+                    this.__removeEventListener(event, fn, arg1);
+                };
             
-            k.addEventListener = function (event, fn, arg1) {
-                if (V || EV) console.log("env: addEventListener " + event);
+                k.addEventListener = function (event, fn, arg1) {
+                    if (V || EV) console.log("env: addEventListener " + event);
 
-                var reallyRegister = true;
-                if (event == eLOAD || event == eDOMCONTENTLOADED || event == eDOMNODEINSERTED) {
+                    var reallyRegister = true;
+                    if (event == eLOAD || event == eDOMCONTENTLOADED || event == eDOMNODEINSERTED) {
                     
-                    var sid = null;
-                    var that = this;
-                    try {
-                        sid = arguments.callee.getID ? arguments.callee.getID() : 0;
-                    } catch (e) {
-                        if (D) {
-                            console.log("env: Error: event " + event);
-                            console.log(e);
+                        var sid = null;
+                        var that = this;
+                        try {
+                            sid = arguments.callee.getID ? arguments.callee.getID() : 0;
+                        } catch (e) {
+                            if (D) {
+                                console.log("env: Error: event " + event);
+                                console.log(e);
+                            }
                         }
-                    }
                     
-                    if (V || EV) console.log("env: sid done " + event);
+                        if (V || EV) console.log("env: sid done " + event);
 
-                    var namesp = null;
+                        var namesp = null;
                     
-                    if (sid) {
-                        var run = null;
+                        if (sid) {
+                            var run = null;
                         
-                        // hu, we're called from a userscript context
-                        for (var k in TMwin.props) {
-                            if (!TMwin.props.hasOwnProperty(k)) continue;
-                            if (TMwin.props[k].scriptid == sid.id) {
-                                namesp = k;
-                                break;
-                            }
-                        }
-                        if (event == eLOAD) {
-                            if (TMwin.loadHappened) {
-                                run = function() { postLoadEvent(fn, that); };
-                                reallyRegister = false; // event will be fired only once, registering is uuseless and confuses jQuery
-                                order.splice(1, 0, run); // high priority
-                            }
-                        } else if (event == eDOMCONTENTLOADED) {
-                            if (TMwin.domContentLoaded) {
-                                run = function() { postDomEventListener(fn, that); };
-                                reallyRegister = false; // event will be fired only once, registering is uuseless and confuses jQuery
-                                order.push(run);
-                            }
-                        } else if (event == eDOMNODEINSERTED) {
-                            if (!nodeInserts.done[sid]) {
-                                nodeInserts.done[sid] = true;
-                                run = function() { 
-                                    var onlyEventsAfterDomLoaded = sid.run_at != 'document-start' && sid.run_at != 'document-body';
-
-                                    nodeInserts.running = fn;
-                                    refireAllNodeInserts(fn, that, sid, onlyEventsAfterDomLoaded);
-
-                                    if (nodeInserts.running) {
-                                        // if not already de-registered, register after all delayed events are fired to keep events in order
-                                        that.__addEventListener(event, fn, arg1);
-                                    }
-
-                                    nodeInserts.running = null;
-                                };
-                                order.push(run);
-                            }
-                        }
-
-                        // avoid confusing listener by adhoc execution
-                        if (run) {
-                            var exec = function() {
-                                if (order.length) {
-                                    var l = order[0];
-                                    order = order.slice(1);
-                                    l();
+                            // hu, we're called from a userscript context
+                            for (var k in TMwin.props) {
+                                if (!TMwin.props.hasOwnProperty(k)) continue;
+                                if (TMwin.props[k].scriptid == sid.id) {
+                                    namesp = k;
+                                    break;
                                 }
                             }
-                            window.setTimeout(exec, 1);
-                            reallyRegister = false; // will be done by run function
+                            if (event == eLOAD) {
+                                if (TMwin.loadHappened) {
+                                    run = function() { postLoadEvent(fn, that); };
+                                    reallyRegister = false; // event will be fired only once, registering is uuseless and confuses jQuery
+                                    order.splice(1, 0, run); // high priority
+                                }
+                            } else if (event == eDOMCONTENTLOADED) {
+                                if (TMwin.domContentLoaded) {
+                                    run = function() { postDomEventListener(fn, that); };
+                                    reallyRegister = false; // event will be fired only once, registering is uuseless and confuses jQuery
+                                    order.push(run);
+                                }
+                            } else if (event == eDOMNODEINSERTED) {
+                                if (nodeInserts && !nodeInserts.done[sid]) {
+                                    nodeInserts.done[sid] = true;
+                                    run = function() { 
+                                        var onlyEventsAfterDomLoaded = sid.run_at != 'document-start' && sid.run_at != 'document-body';
+
+                                        nodeInserts.running = fn;
+                                        refireAllNodeInserts(fn, that, sid, onlyEventsAfterDomLoaded);
+
+                                        if (nodeInserts.running) {
+                                            // if not already de-registered, register after all delayed events are fired to keep events in order
+                                            that.__addEventListener(event, fn, arg1);
+                                        }
+
+                                        nodeInserts.running = null;
+                                    };
+                                    order.push(run);
+                                }
+                            }
+
+                            // avoid confusing listener by adhoc execution
+                            if (run) {
+                                var exec = function() {
+                                    if (order.length) {
+                                        var l = order[0];
+                                        order = order.slice(1);
+                                        l();
+                                    }
+                                }
+                                window.setTimeout(exec, 1);
+                                reallyRegister = false; // will be done by run function
+                            }
                         }
                     }
-                }
 
-                if (reallyRegister) this.__addEventListener(event, fn, arg1);
-            };
-        }
-    }
-};
+                    if (reallyRegister) this.__addEventListener(event, fn, arg1);
+                };
 
-/* ######################## protector ###################### */
-
-var protectListeners = {};
-
-function TM_addProtectListener(sid, cb) {
-    protectListeners[sid] = cb;
-};
-
-function TM_protector() {
-    var fireProtectListener = function(sido, key, val) {
-        for (var k in protectListeners) {
-            if (k == sido.id) {
-                protectListeners[k](key, val);
+                Clean.push(function() {
+                               k.removeEventListener = k.__removeEventListener;
+                               k.addEventListener =  k.__addEventListener;
+                           });
             }
         }
-    };
 
-    var __backup = {};
-
-    for (var i=0; i<TM_protected.length; i++) {
-        var pSet = function() {
-            var t = TM_protected[i];
-            var getter = function() {
-                return __backup[t];
-            };
-            var setter = function(val) {
-                if (V) console.log("TM_protector(__defineSetter__): " + t + "set called");
-
-                var sid = null;
-                try {
-                    sid = (arguments.callee.getID ? arguments.callee.getID() : 0);
-                } catch (e) {
-                    if (D) {
-                        console.log("env: Error: protector set " + t);
-                        console.log(e);
-                    }
-                }
-                if (sid) {
-                    fireProtectListener(sid, t, val);
-                } else {
-                    __backup[t] = val;
-                }
-            };
-
-            if (V) console.log("TM_protector: define setter for '" + t + "'");
-            // backup maybe existing value
-            __backup[t] = window[t];
-            window.__defineGetter__(t, getter);
-            window.__defineSetter__(t, setter);
-        };
-
-        // blockify ;)
-        pSet();
+        wrap();
     }
 };
 
 /* ######### Fixes ############ */
 
+var TM_functionIdFix_getID = function (cnt) {
+    if (cnt == undefined) cnt = 20;
+    if (cnt == 0) return null;
+    if (!this.__tmid && this.caller && this.caller.getID) {
+        var id = this.caller.getID(cnt-1);
+        return id;
+    }
+    return this.__tmid;
+};
+
+var TM_functionIdFix_setID = function(id) {
+    this.__tmid = id;
+    return this;
+};
+        
 function TM_functionIdFix() {
     if (!Function.prototype.getID) {
-        Function.prototype.getID = function (cnt) {
-            if (cnt == undefined) cnt = 20;
-            if (cnt == 0) return null;
-            if (!this.__tmid && this.caller && this.caller.getID) {
-                var id = this.caller.getID(cnt-1);
-                return id;
-            }
-            return this.__tmid;
-        }
-        Function.prototype.setID = function(id) {
-            this.__tmid = id;
-            return this;
-        }
+        
+        Function.prototype.getID = TM_functionIdFix_getID;
+        Function.prototype.setID = TM_functionIdFix_setID;
     }
 }
  
@@ -582,6 +528,10 @@ function TM_docEvalFix() {
 
             return res;
         }
+
+        Clean.push(function() {
+                       window[k].prototype.evaluate = window[k].prototype.__evaluate;
+                   });
     }
 };
 
@@ -596,6 +546,10 @@ function TM_windowOpenFix() {
             delete unsafeWindow[fi];
             return ret;
         };
+
+        Clean.push(function() {
+                       window.open = null;
+                   });
     }
 };
 
@@ -627,6 +581,11 @@ function TM_winEvalFix() {
         return __setInterval.apply(this, args);
     };
 
+
+    Clean.push(function() {
+                   window.setTimeout = window.__setTimeout;
+                   window.setInterval = window.__setInterval;
+               });
 };
 
 /* ######### TM_do ###################### */
@@ -1132,7 +1091,13 @@ var HTM_runMyScript = function(HTM_request) {
     };
 
     var undefined = TMwin.undefined;
-    if (TMwin.props[HTM_script['namespace']] == undefined) TMwin.props[HTM_script['namespace']] = { scriptid: HTM_request.script.id, context: function () {}, elements: [], protect: [] };
+    if (TMwin.props[HTM_script['namespace']] == undefined) {
+        TMwin.props[HTM_script['namespace']] = { scriptid: HTM_request.script.id, context: function () {}, elements: [] };
+
+        Clean.push(function() {
+                       TMwin.props[HTM_script['namespace']] = null;
+                   });
+    }
 
     if (!TMwin.use.safeContext) {
         // create some key elements in case the content page window can't do this for us
@@ -1190,7 +1155,8 @@ var HTM_runMyScript = function(HTM_request) {
     if (HTM_script.options.compat_prototypes) {
         if (V || D) console.log("env: option: add toSource");
         
-        if (!Object.prototype.toSource) Object.defineProperties(Object.prototype,
+        if (!Object.prototype.toSource) {
+            Object.defineProperties(Object.prototype,
                 { 'toSource':
                     {
                         value: function() {
@@ -1201,6 +1167,7 @@ var HTM_runMyScript = function(HTM_request) {
                         configurable: true,
                     },
                 });
+        }
 
         if (V || D) console.log("env: option: add some array generics");
 
@@ -1225,7 +1192,15 @@ var HTM_runMyScript = function(HTM_request) {
     if (V || D) console.log("env: execute script " + HTM_script.name + " now!");
     TM_mEval(HTM_script, HTM_request.code, HTM_request.requires, TMwin.props[HTM_script['namespace']]);
 
-    window.addEventListener('unload', HTM_removeStorageListener, false);
+    Clean.push(function() {
+                   HTM_removeStorageListener();
+                   try {
+                       storagePort.disconnect();
+                       storagePort = null;
+                   } catch (e) {}
+                   TM_storage_listeners = null;
+                   HTM_request = null;
+               });
 
     return HTM_script.options.used_events;
 };
@@ -1301,10 +1276,9 @@ chromeEmu.extension.onMessage.addListener(
 /* ######### Run ############ */
 
 TM_docEvalFix();
-TM_functionIdFix();
-TM_addEventListenerFix();
+TM_functionIdFix.apply(window, []);
+TM_addEventListenerFix()
 TM_windowOpenFix();
-TM_protector();
 TM_winEvalFix();
 
 document.addEventListener(eDOMNODEINSERTED, domNodeInsertedListener, false);
