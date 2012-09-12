@@ -438,7 +438,7 @@ var createUtilTab = function(tabv) {
                             if (--cnt == 0) modifyScriptOption(null, false, null, true, true);
                         };
                         cnt++;
-                        chrome.extension.sendRequest({method: "saveScript",
+                        chrome.extension.sendMessage({method: "saveScript",
                                                              name: name,
                                                              code: code,
                                                              reload: false,
@@ -1877,12 +1877,12 @@ var createImagesFromScript = function(i) {
 var loadUrl = function(url, newtab) {
     try {
         var resp = function(tab) {
-            chrome.tabs.sendRequest(tab.id,
+            chrome.tabs.sendMessage(tab.id,
                                     {method: "loadUrl", url: url, newtab: newtab},
                                     function(response) {});
         };
         if (newtab) {
-            chrome.extension.sendRequest({method: "openInTab", url: url},
+            chrome.extension.sendMessage({method: "openInTab", url: url},
                                          function(response) {});
         } else {
             chrome.tabs.getSelected(null, resp);
@@ -1897,7 +1897,7 @@ var saveScript = function(name, code, old_url, new_url, clean, cb) {
         var ou = old_url ? old_url : "";
         var nu = (new_url && new_url != old_url) ? new_url : "";
 
-        chrome.extension.sendRequest({method: "saveScript",
+        chrome.extension.sendMessage({method: "saveScript",
                                       name: name,
                                       code: code,
                                       clean : clean,
@@ -1920,7 +1920,7 @@ var saveScript = function(name, code, old_url, new_url, clean, cb) {
 
 var setOption = function(name, value, ignore) {
     try {
-        chrome.extension.sendRequest({method: "setOption", name: name, value: value},
+        chrome.extension.sendMessage({method: "setOption", name: name, value: value},
                                      function(response) {
                                          if (!ignore) createOptionsMenu(response.items);
                                      });
@@ -1941,7 +1941,7 @@ var modifyScriptOptions = function(name, options, reload, reorder) {
         }
 
         if (V) console.log("modifyScriptOptions sendReq");
-        chrome.extension.sendRequest(s,
+        chrome.extension.sendMessage(s,
                                      function(response) {
                                          if (response.items) createOptionsMenu(response.items, name && true);
                                      });
@@ -1959,7 +1959,7 @@ var modifyScriptOption = function(name, id, value, reload, reorder) {
         if (id && id != '') s[id] = value;
 
         if (V) console.log("modifyScriptOption sendReq");
-        chrome.extension.sendRequest(s,
+        chrome.extension.sendMessage(s,
                                      function(response) {
                                          if (response && response.items) createOptionsMenu(response.items, name && true);
                                      });
@@ -1976,7 +1976,7 @@ var modifyNativeScriptOption = function(nid, id, value, reload) {
         var s = { method: "modifyNativeScript", nid: nid, actionid: id, value: value, reload: reload };
 
         if (V) console.log("modifyNativeScriptOption sendReq");
-        chrome.extension.sendRequest(s,
+        chrome.extension.sendMessage(s,
                                      function(response) {
                                          if (response.items) createOptionsMenu(response.items, name && true);
                                      });
@@ -1991,13 +1991,13 @@ var runScriptUpdates = function(id, cb) {
         var done = function(response) {
             if (cb) cb(response.updatable);
         }
-        chrome.extension.sendRequest({method: "runScriptUpdates", scriptid: id}, done);
+        chrome.extension.sendMessage({method: "runScriptUpdates", scriptid: id}, done);
     } catch (e) {
         console.log("rSu: " + e.message);
     }
 };
 
-chrome.extension.onRequest.addListener(
+chrome.extension.onMessage.addListener(
     function(request, sender, sendResponse) {
         if (V) console.log("o: method " + request.method);
         if (request.method == "updateOptions") {
@@ -2011,7 +2011,10 @@ chrome.extension.onRequest.addListener(
             sendResponse({});
         } else {
             if (V) console.log("o: " + chrome.i18n.getMessage("Unknown_method_0name0" , request.method));
+            return false;
         }
+
+        return true;
     });
 
 if (V) console.log("Register request listener (options)");

@@ -699,7 +699,7 @@ var createScriptUsoTab = function(i, tabd, closeEditor) {
                 alert(chrome.i18n.getMessage("Unable_to_get_UserScript__Sry_"));
             }
         }
-        chrome.extension.sendRequest({ method: "scriptClick",
+        chrome.extension.sendMessage({ method: "scriptClick",
                                        url: "http://userscripts.org/scripts/source/" + i['uso:script'] + ".user.js" },
                                        cb);
     };
@@ -1059,7 +1059,7 @@ var getFireItems = function(tab, url) {
             }
         };
 
-        chrome.extension.sendRequest(s, onResp);
+        chrome.extension.sendMessage(s, onResp);
         Please.wait();
     } catch (e) {
         console.log("mSo: " + e.message);
@@ -1073,7 +1073,7 @@ var startFireUpdate = function(force, cb) {
         var refresh = function() {
             getFireItems(tabID, tabURL);
         };
-        chrome.extension.sendRequest(s, function(response) {
+        chrome.extension.sendMessage(s, function(response) {
                                          if (response.suc === false) {
                                              Please.hide();
                                              alert(chrome.i18n.getMessage('TamperFire_is_up_to_date_'));
@@ -1087,7 +1087,7 @@ var startFireUpdate = function(force, cb) {
     }
 };
 
-chrome.extension.onRequest.addListener(
+chrome.extension.onMessage.addListener(
     function(request, sender, sendResponse) {
         if (V) console.log("f: method " + request.method);
         if (request.method == "confirm") {
@@ -1098,7 +1098,10 @@ chrome.extension.onRequest.addListener(
             sendResponse({});
         } else {
             if (V) console.log("f: " + chrome.i18n.getMessage("Unknown_method_0name0" , request.method));
+            return false;
         }
+
+        return true;
     });
 
 var domListener = function() {

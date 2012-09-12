@@ -172,7 +172,7 @@ var main = function() {
                     var ask = function() {
                         if (confirm(chrome.i18n.getMessage('Do_you_want_to_install_this_userscript_in_Tampermonkey_or_Chrome'))) {
                             Please.wait();
-                            chrome.extension.sendRequest({method: "scriptClick", url: url, id: 0}, function(response) { Please.hide(); });
+                            chrome.extension.sendMessage({method: "scriptClick", url: url, id: 0}, function(response) { Please.hide(); });
                         } else {
                             installNatively(url);
                         }
@@ -200,7 +200,7 @@ var main = function() {
 };
 
 /****** init ********/
-chrome.extension.onRequest.addListener(
+chrome.extension.onMessage.addListener(
     function(request, sender, sendResponse) {
         if (V) console.log("a: method " + request.method);
         if (request.method == "confirm") {
@@ -211,7 +211,10 @@ chrome.extension.onRequest.addListener(
             sendResponse({});
         } else {
             if (V) console.log("a: " + chrome.i18n.getMessage("Unknown_method_0name0" , request.method));
+            return false;
         }
+
+        return true;
     });
 
 if (V) console.log("Register request listener (ask)");
