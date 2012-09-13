@@ -1001,6 +1001,16 @@ var HTM_runMyScript = function(HTM_request) {
                                         noti);
     };
 
+    var TM_setClipboard = function(content, type, cb) {
+        if (!type) type = 'text';
+        var done = function(response) {
+            if (cb) cb();
+        };
+        chromeEmu.extension.sendMessage({ method: "copyToClipboard",
+                                          data: { content: content, type: type },
+                                          id: TM_context_id}, done);
+    };
+
     var TM_runNative = function(fn, args) {
         return TM_execUnsafe(fn, args);
     };
@@ -1085,6 +1095,10 @@ var HTM_runMyScript = function(HTM_request) {
 
         this.GM_getTabs = function(callback) {
             return TM_getTabs(callback);
+        };
+
+        this.GM_setClipboard = function(data, type, callback) {
+            return TM_setClipboard(data, type, callback);
         };
 
         this.GM_info = HTM_getInfo();
