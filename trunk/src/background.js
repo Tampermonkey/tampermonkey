@@ -2358,7 +2358,6 @@ var xmlhttpRequestInternal = function(details, callback, onreadychange, onerr, d
     return xmlhttpRequest(details, callback, onreadychange, onerr, done, true);
 };
 
-
 /* ###### Runtime ####### */
 
 var runtimeInit = function() {
@@ -3680,6 +3679,13 @@ var requestHandler = function(request, sender, sendResponse) {
             console.log(chrome.i18n.getMessage("Unable_to_save_tab_due_to_empty_tabID_"));
         }
         sendResponse({});
+    } else if (request.method == "copyToClipboard") {
+        if (typeof sender.tab != 'undefined') {
+            clipboard.copy(request.data);
+        } else {
+            console.log("bg: unable to process request!");
+        }
+        sendResponse({});
     } else if (request.method == "setOption") {
         var optionstab = (typeof sender.tab != 'undefined' && sender.tab) ? (sender.tab.id >= 0 ? true : false) : null;
 
@@ -4718,6 +4724,34 @@ var convertMgmtToMenuItems = function(tab, options) {
     return convertScriptsToMenuItems(scripts, options);
 };
 
+/* ###clipboard ### */
+
+var clipboard = {
+    copy : function(data) {
+        var myFrame = document.createElement("iframe");
+        myFrame.setAttribute("sandbox" , "allow-same-origin"); // disable javascript
+        document.body.appendChild(myFrame);
+        try {
+            if (data.type == "html") {
+                myFrame.contentDocument.documentElement.innerHTML = data.content;
+            } else {
+                myFrame.contentDocument.documentElement.textContent = data.content;
+            }
+
+            myFrame.contentDocument.designMode = "on"; 
+            myFrame.contentDocument.execCommand("selectAll", false, null); 
+            myFrame.contentDocument.execCommand("copy", false, null); 
+            myFrame.contentDocument.designMode = "off";
+
+        } catch (e) {
+            console.log("bg: clipboard Error: " + e.message);
+        }
+
+        myFrame.parentNode.removeChild(myFrame);
+        myFrame = null;
+    }
+};
+    
 /* ### web requests ### */
 var extensions = {
     getAll : function (cb) {

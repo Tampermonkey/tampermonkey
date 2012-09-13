@@ -396,12 +396,12 @@ var tmCEinit = function (cId) {
             }
 	},
 
-        sendExtensionMessage: function(key, json, responseId) { //(String key, String json, long responseId) {
+        sendExtensionPortMessage: function(key, json, responseId) { //(String key, String json, long responseId) {
             if (_background) {
-                if (V) this.log("sendExtensionMessage " + contextId + " " + responseId + " " + json);
+                if (V) this.log("sendExtensionPortMessage " + contextId + " " + responseId + " " + json);
                 var port = tmCE.ports[responseId];
                 if (!port) {
-                    this.log("Error: sendExtensionMessage unable to find port " + responseId);
+                    this.log("Error: sendExtensionPortMessage unable to find port " + responseId);
                 } else {
                     var obj = JSON.parse(json);
                     obj.responseId = responseId;
@@ -410,7 +410,7 @@ var tmCEinit = function (cId) {
                 }
             } else {
                 var a = arguments;
-                TM_fireEvent({ fn: "sendExtensionMessage", args: a });
+                TM_fireEvent({ fn: "sendExtensionPortMessage", args: a });
             }
 	},
         

@@ -219,7 +219,7 @@ var chromeEmu = {
                                }
                            },
                            postMessage: function (obj) {
-                               tmCE.sendExtensionMessage(chromeEmu.key, JSON.stringify(obj), id);
+                               tmCE.sendExtensionPortMessage(chromeEmu.key, JSON.stringify(obj), id);
                            },
                            onMessage:
                            {
