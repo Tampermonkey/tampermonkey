@@ -204,8 +204,10 @@ chrome.extension.onMessage.addListener(
     function(request, sender, sendResponse) {
         if (V) console.log("a: method " + request.method);
         if (request.method == "confirm") {
-            var c = confirm(request.msg);
-            sendResponse({confirm: c});
+            var resp = function(c) {
+                sendResponse({ confirm: c });
+            };
+            Helper.confirm(request.msg, resp);
         } else if (request.method == "showMsg") {
             Helper.alert(request.msg);
             sendResponse({});

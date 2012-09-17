@@ -340,9 +340,9 @@ var convertData = function(convertCB) {
                 window.setTimeout(cb, _setTimeout);
             }
         },
-        { cond: isNewVersion && versionCmp("2.6", version) == eNEWER,
+        { cond: isNewVersion && versionCmp("2.6.83", version) == eNEWER,
           fn : function(cb) {
-                console.log("Update config from " + version + " to 2.6");
+                console.log("Update config from " + version + " to 2.6.83");
                 restoreAllScriptsEx(false, cb);
             }
         },
@@ -2552,8 +2552,10 @@ var runtimeInit = function() {
             var requires = [];
 
             script.requires.forEach(function(req) {
-                                        // TODO: option to use compaMo.mkCompat here !?!
                                         var contents = req.textContent;
+
+                                        contents = compaMo.mkCompat(contents, script.options.compat_for_requires ? script : null);
+
                                         requires.push(contents);
                                     });
 
@@ -2574,7 +2576,7 @@ var runtimeInit = function() {
                                     { method: "executeScript",
                                       header: script.header,
                                       code: oobj.createEnv( script.textContent, script),
-                                      requires: compaMo.mkCompat(requiredSrc, script),
+                                      requires: requiredSrc,
                                       version: chrome.extension.getVersion(),
                                       storage: storage,
                                       script: dblscript,
@@ -3335,7 +3337,9 @@ var validUrl = function(href, cond, n) {
     var t, run = false;
     if (cond.inc || cond.match) {
         for (t in cond.inc) {
-            if (matchUrl(href, cond.inc[t])) {
+            if (typeof cond.inc[t] !== 'string') {
+                console.log("bg: WARN: include[" + t + "] '" + cond.inc[t] + "' " + (n ? "@" + n + " " : "") + "can't be compared to '" + href + "'");
+            } else if (matchUrl(href, cond.inc[t])) {
                 if (D) console.log("bg: @include '" + cond.inc[t] + "' matched" + (n ? " (" + n + ")" : ""));
                 run = true;
                 break;
@@ -3343,7 +3347,9 @@ var validUrl = function(href, cond, n) {
         }
         if (cond.match) {
             for (t in cond.match) {
-                if (matchUrl(href, cond.match[t], true)) {
+                if (typeof cond.match[t] !== 'string') {
+                    console.log("bg: WARN: match[" + t + "] '" + cond.match[t] + "' " + (n ? "@" + n + " " : "") + "can't be compared to '" + href + "'");
+                } else if (matchUrl(href, cond.match[t], true)) {
                     if (D) console.log("bg: @match '" + cond.match[t] + "' matched" + (n ? " (" + n + ")" : ""));
                     run = true;
                     break;

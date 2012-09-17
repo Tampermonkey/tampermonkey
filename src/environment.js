@@ -23,6 +23,9 @@ var adjustLogLevel = function() {
     EMV |= (logLevel >= 100);
 };
 
+// do not rename...
+var Event = function() {};
+
 (function() {
 
 var eDOMCONTENTLOADED = "DOMContentLoaded";
@@ -161,7 +164,6 @@ var TM_mEval = function(script, src, requires, addProps) {
 var loadListeners = [];
 var nodeInserts = { events: [], done: {}, running: null};
 var nodeInsertListener = [];
-var Event = function() {};
 
 var applyEvent = function(event, props, fn, that) {
     var eprops = {
@@ -460,7 +462,7 @@ function TM_addEventListenerFix() {
 /* ######### Fixes ############ */
 
 var TM_functionIdFix_getID = function (cnt) {
-    if (cnt == undefined) cnt = 20;
+    if (cnt === undefined) cnt = 20;
     if (cnt == 0) return null;
     if (!this.__tmid && this.caller && this.caller.getID) {
         var id = this.caller.getID(cnt-1);

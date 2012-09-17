@@ -213,6 +213,9 @@
   "GM_compat_options_": {
     "message": "GM/FF compatibility options:"
   },
+  "Apply_compatibility_options_to_required_script_too": {
+    "message": "Apply compatibility options to @require scripts too"
+  },
   "Convert_CDATA_sections_into_a_chrome_compatible_format": {
     "message": "Convert CDATA sections into a chrome compatible format"
   },

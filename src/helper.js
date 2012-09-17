@@ -110,7 +110,14 @@
         };
         window.setTimeout(t, 1);
     };
-
+    
+    var doConfirm = function(msg, cb) {
+        var t = function() {
+            var r = confirm(msg);
+            cb(r);
+        };
+        window.setTimeout(t, 1);
+    };
 
     var toType = function(obj) {
         return ({}).toString.apply(obj).match(/\s([a-z|A-Z]+)/)[1];
@@ -139,6 +146,7 @@
                               isLocalImage: isLocalImage,
                               getUrlArgs: getUrlArgs,
                               alert : doAlert,
+                              confirm : doConfirm,
                               serialize: serialize,
                               toType : toType,
                               staticVars : {

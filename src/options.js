@@ -394,16 +394,15 @@ var createUtilTab = function(tabv) {
             }
         }
 
-        ta.value = JSON.stringify(exp);
+        return JSON.stringify(exp);
     };
 
     var impo = function(src) {
         var err = false;
         var cnt = 0;
-        if (ta.value.trim() != "") {
+        if (src.trim() != "") {
             var m = null;
             try {
-                var src = ta.value
                 m = JSON.parse(src);
             } catch (e) {
                 var t1 = '<body>';
@@ -412,8 +411,8 @@ var createUtilTab = function(tabv) {
                     var p1 = src.indexOf(t1);
                     var p2 = src.lastIndexOf(t2);
                     if (p1 != -1 && p2 != -1) {
-                        ta.value = src.substr(p1 + t1.length, p2 - (p1 + t1.length));
-                        impo();
+                        src = src.substr(p1 + t1.length, p2 - (p1 + t1.length));
+                        impo(src);
                     }
                 } else {
                     Helper.alert(chrome.i18n.getMessage('Unable_to_parse_this_'));
@@ -487,19 +486,20 @@ var createUtilTab = function(tabv) {
         Helper.alert('Error: ' + msg);
     };
 
+    var impo_textarea = function() {
+        impo(ta.value);
+    };
+
     var impo_ls = function() {
         function onInitFs(fs) {
-
             fs.root.getFile('scripts.tmx', {}, function(fileEntry) {
-
                                 // Get a File object representing the file,
                                 // then use FileReader to read its contents.
                                 fileEntry.file(function(file) {
                                                    var reader = new FileReader();
 
                                                    reader.onloadend = function(e) {
-                                                       ta.value = this.result;
-                                                       impo();
+                                                       impo(this.result);
                                                    };
 
                                                    reader.readAsText(file);
@@ -513,9 +513,8 @@ var createUtilTab = function(tabv) {
     };
 
     var expo_ls = function() {
-        expo();
+        var ta_value = expo();
         function onInitFs(fs) {
-
             fs.root.getFile('scripts.tmx', {create: true}, function(fileEntry) {
                                 // Create a FileWriter object for our FileEntry (log.txt).
                                 fileEntry.createWriter(function(fileWriter) {
@@ -529,7 +528,7 @@ var createUtilTab = function(tabv) {
 
                                                            // Create a new Blob and write it to log.txt.
                                                            var bb = new BlobBuilder();
-                                                           bb.append(ta.value);
+                                                           bb.append(ta_value);
                                                            fileWriter.write(bb.getBlob('text/plain'));
 
                                                        }, errorHandler);
@@ -541,32 +540,38 @@ var createUtilTab = function(tabv) {
     };
 
     var expo_doc = function() {
-        expo();
+        var ta_value = expo();
 	var bb = new BlobBuilder();
-	bb.append(ta.value);
+	bb.append(ta_value);
 	saveAs(bb.getBlob("text/plain"), "tmScripts.txt");
     };
 
-    var imp_ta = HtmlUtil.createButton(i.name, i.id + '_i_ta', null, chrome.i18n.getMessage('Import_from_Textarea'), impo);
+    var expo_textarea = function() {
+        ta.value = expo();
+    };
+
+    var imp_ta = HtmlUtil.createButton(i.name, i.id + '_i_ta', null, chrome.i18n.getMessage('Import_from_Textarea'), impo_textarea);
     var imp_ls = HtmlUtil.createButton(i.name, i.id + '_i_ls', null, chrome.i18n.getMessage('Import_from_SandboxFS'), impo_ls);
     var imp_file = cr('input', i.name, i.id + '_i_file', 'file');
 
     var handleFileSelect = function (evt) {
         var files = evt.target.files; // FileList object
+        var data = [];
 
-        // Loop through the FileList and render image files as thumbnails.
+        var run_impo = function() {
+            impo(data.pop());
+        };
+        
         for (var i = 0, f; f = files[i]; i++) {
             var reader = new FileReader();
-
             // Closure to capture the file information.
             reader.onload = (function(theFile) {
                                  return function(e) {
-                                     ta.value = e.target.result;
-                                     impo();
+                                     data.push(e.target.result);
+                                     window.setTimeout(run_impo, 10);
                                  };
                              })(f);
             reader.readAsText(f);
-            // reader.readAsDataURL(f);
         }
     }
 
@@ -575,7 +580,7 @@ var createUtilTab = function(tabv) {
         imp_file.addEventListener('change', handleFileSelect, false);
     }
 
-    var exp_ta = HtmlUtil.createButton(i.name, i.id + '_e_ta', null, chrome.i18n.getMessage('Export_to_Textarea'), expo);
+    var exp_ta = HtmlUtil.createButton(i.name, i.id + '_e_ta', null, chrome.i18n.getMessage('Export_to_Textarea'), expo_textarea);
     var exp_doc = HtmlUtil.createButton(i.name, i.id + '_e_doc', null, chrome.i18n.getMessage('Export_to_file'), expo_doc);
     var exp_ls = HtmlUtil.createButton(i.name, i.id + '_e_ls', null, chrome.i18n.getMessage('Export_to_SandboxFS'), expo_ls);
 
@@ -1023,6 +1028,9 @@ var createScriptSettingsTab = function(i, tabd) {
     var i_ds = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Enable_sync'),
                               { id: 'do_sync', name: i.name, enabled: i.do_sync },
                               co);
+    var i_re = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Apply_compatibility_options_to_required_script_too'),
+                              { id: 'compat_for_requires', name: i.name, enabled: i.compat_for_requires },
+                              co);
     var i_md = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Convert_CDATA_sections_into_a_chrome_compatible_format'),
                               { id: 'compat_metadata', name: i.name, enabled: i.compat_metadata },
                               co);
@@ -1039,7 +1047,7 @@ var createScriptSettingsTab = function(i, tabd) {
                               { id: 'compat_prototypes', name: i.name, enabled: i.compat_prototypes },
                               co);
 
-    var i_compats = [i_md, i_fe, i_vi, i_al, i_ts ];
+    var i_compats = [i_re, i_md, i_fe, i_vi, i_al, i_ts ];
 
     var section_opt = crc('div', 'section', i.name, i.id, 'ta_opt');
     var section_opt_head = crc('div', 'section_head', i.name, i.id, 'head_ta_opt');
@@ -2004,8 +2012,10 @@ chrome.extension.onMessage.addListener(
             createOptionsMenu(request.items);
             sendResponse({});
         } else if (request.method == "confirm") {
-            var c = confirm(request.msg);
-            sendResponse({confirm: c});
+            var resp = function(c) {
+                sendResponse({ confirm: c });
+            };
+            Helper.confirm(request.msg, resp);
         } else if (request.method == "showMsg") {
             Helper.alert(request.msg);
             sendResponse({});
