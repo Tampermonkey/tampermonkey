@@ -49,6 +49,7 @@ var Script = function() {
     this.sync = { fromRemote: false,
                   seenOnServer: 0 },
     this.options = {
+        compat_for_requires : true,
         compat_metadata : false,
         compat_foreach : false,
         compat_arrayleft : false,

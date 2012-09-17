@@ -12,10 +12,16 @@ var Helper = Registry.get('helper');
 
 var compaMo = {
     mkCompat : function(src, script, test) {
-        if (script.options.compat_metadata || test) src = compaMo.unMetaDataify(src);
-        if (script.options.compat_foreach || test) src = compaMo.unEachify(src);
-        if (script.options.compat_arrayleft || test) src = compaMo.unArrayOnLeftSideify(src);
-        if (script.options.compat_forvarin /* || test */) src = compaMo.fixForVarXStatements(src);
+        if (script) {
+            if (script.options.compat_metadata || test) src = compaMo.unMetaDataify(src);
+            if (script.options.compat_foreach || test) src = compaMo.unEachify(src);
+            if (script.options.compat_arrayleft || test) src = compaMo.unArrayOnLeftSideify(src);
+            if (script.options.compat_forvarin /* || test */) src = compaMo.fixForVarXStatements(src);
+        }
+        /* it's a shame, but TM does not support "strict mode" scripts at the moment :(
+           setID + getID are not working due to callee restrictions tmf:322 */
+        src = src.replace('"use strict"', '"use\u00A0strict"')
+
         return src;
     },
 
