@@ -1935,9 +1935,11 @@ var SyncClient = {
     syncAll : function(force) {
         if (SyncClient.syncing > 0) {
             if (force) {
-                var sched = function() {
-                    // schedule maybe a lot of sync runs, but do only one
-                    SyncClient.scheduleSync(50, true);
+                var sched = function(success) {
+                    if (success) {
+                        // schedule maybe a lot of sync runs, but do only one
+                        SyncClient.scheduleSync(50, true);
+                    }
                 };
                 // wait for sync end
                 SyncClient.addSyncDoneListener(sched);
@@ -1963,6 +1965,10 @@ var SyncClient = {
             }
         };
 
+        var error = function() {
+            SyncClient.runAllSyncDoneListeners(false);
+        };
+
         var get_version = function() {
             Syncer.get('version', got1);
         };
@@ -1971,6 +1977,7 @@ var SyncClient = {
         var got1 = function(err, k, v) {
             if (err) {
                 console.log("sync: Error: " + k);
+                error();
             } else {
                 SyncClient.remoteVersion = Number(v);
                 next();
@@ -1994,6 +2001,7 @@ var SyncClient = {
                 next();
             } else {
                 if (D) console.log("sync: unable to get remotelist!");
+                error();
             }
         };
 
@@ -2128,7 +2136,7 @@ var SyncClient = {
         var all_done = function() {
             if (V) console.log("sync: syncAll:all_done() syncing = " + (SyncClient.syncing-1));
             if (--SyncClient.syncing == 0) {
-                SyncClient.runAllSyncDoneListeners();
+                SyncClient.runAllSyncDoneListeners(true);
             }
             if (conflict) {
                 notifyOptionsTab();
@@ -2139,11 +2147,12 @@ var SyncClient = {
 
         next();
     },
-    runAllSyncDoneListeners : function() {
+    runAllSyncDoneListeners : function(success) {
         if (V) console.log("sync: runAllSyncDoneListeners() -> " + SyncClient.syncDoneListener.length);
+
         while (SyncClient.syncDoneListener.length) {
             var e = SyncClient.syncDoneListener.splice(0, 1);
-            e[0]();
+            e[0](success);
         }
     }
 };
@@ -3092,212 +3101,223 @@ var notify = {
     }
 };
 
-var notifyOnScriptUpdates = function(force, showResult, id, callback) {
-    if (!force && Config.values.scriptUpdateCheckPeriod == 0) return;
+var ScriptUpdater = {
+    check : function(force, showResult, id, callback) {
+        if (!force && Config.values.scriptUpdateCheckPeriod == 0) return;
 
-    if (showResult) {
-        var t = chrome.i18n.getMessage('Script_Update');
-        var msg = chrome.i18n.getMessage('Check_for_userscripts_updates') + '...';
-        notify.show(t, msg, chrome.extension.getURL("images/icon128.png"), 5000);
-    }
-
-    var last = getUpdateCheckCfg();
-    if (force || ((new Date()).getTime() - last.scripts) > Config.values.scriptUpdateCheckPeriod) {
-        console.log("bg: check for script updates " + (id ? ' for ' + id : ''));
-        var cb = function(updatable, obj) {
-            if (updatable) {
-                try {
-                    var install = function(clicked) {
-                        if (clicked) {
-                            var gotId = function(id, close) {
-                                var ss = { tabid: id,
-                                           url: obj.url,
-                                           src: obj.code,
-                                           ask: true,
-                                           cb : close,
-                                           hash: obj.newhash != undefined ? obj.newhash : null };
-                                addNewUserScript(ss);
-                            };
-                            getValidTabId(null, gotId);
-                        }
-                    };
-
-                    var msg = chrome.i18n.getMessage('There_is_an_update_for_0name0_avaiable_', obj.name) + '\n' + chrome.i18n.getMessage('Click_here_to_install_it_');
-                    var t = chrome.i18n.getMessage('Just_another_service_provided_by_your_friendly_script_updater_');
-                    if (Config.values.notification_silentScriptUpdate) {
-                        install(true);
-                    } else {
-                        notify.show(t, msg, chrome.extension.getURL("images/icon128.png"), Config.values.scriptUpdateHideNotificationAfter, install);
-                    }
-                } catch (e) {
-                    console.log("bg: notification error " + e.message);
-                }
-            }
-            if (callback) callback(updatable);
-        };
-        updateUserscripts(0, showResult, id, cb);
-        last.scripts = (new Date()).getTime();
-        setUpdateCheckCfg(last);
-    } else if (callback) {
-        console.log("bg: WARN notifyOnScriptUpdates -> no force but callback");
-        window.setTimeout(callback, 1);
-    }
-    window.setTimeout(notifyOnScriptUpdates, 5 * 60 * 1000);
-};
-
-trup = notifyOnScriptUpdates;
-
-var scriptUpdateCheck = function(src) {
-
-    var script = scriptParser.createScriptFromSrc(src);
-
-    if (!script.name || script.name == '' || (script.version == undefined)) {
-        return eERROR;
-    }
-
-    var oldscript = TM_storage.getValue(script.name, null);
-
-    if (oldscript && oldscript.system) return null;
-
-    if (script.options.compat_uW_gmonkey) {
-        return eERROR;
-    }
-
-    if (script.name.search('@') != -1) {
-        return eERROR;
-    } else if (oldscript && script.version == oldscript.version) {
-        return eEQUAL;
-    } else if (oldscript && versionCmp(script.version, oldscript.version) == eOLDER) {
-        return eOLDER;
-    } else if (oldscript) {
-        return eNEWER;
-    }  else {
-        // should not happen
-        return eNEWER;
-    }
-    return eNEWER;
-};
-
-var updateUserscripts = function(tabid, showResult, scriptid, callback) {
-    var names = getAllScriptNames();
-    var running = 1;
-    var found = 0;
-
-    var checkNoUpdateNotification = function() {
-        if (running == 0 && found == 0) {
+        var runCheck = function() {
             if (showResult) {
-                if (D || V || UV) console.log("No update found");
-                notify.show('Narf!',
-                            chrome.i18n.getMessage('No_update_found__sry_'),
-                            chrome.extension.getURL("images/icon128.png"));
+                var t = chrome.i18n.getMessage('Script_Update');
+                var msg = chrome.i18n.getMessage('Check_for_userscripts_updates') + '...';
+                notify.show(t, msg, chrome.extension.getURL("images/icon128.png"), 5000);
             }
-            if (callback) {
+
+            var last = getUpdateCheckCfg();
+            if (force || ((new Date()).getTime() - last.scripts) > Config.values.scriptUpdateCheckPeriod) {
+                console.log("bg: check for script updates " + (id ? ' for ' + id : ''));
+                var cb = function(updatable, obj) {
+                    if (updatable) {
+                        try {
+                            var install = function(clicked) {
+                                if (clicked) {
+                                    var gotId = function(id, close) {
+                                        var ss = { tabid: id,
+                                                   url: obj.url,
+                                                   src: obj.code,
+                                                   ask: true,
+                                                   cb : close,
+                                                   hash: obj.newhash != undefined ? obj.newhash : null };
+                                        addNewUserScript(ss);
+                                    };
+                                    getValidTabId(null, gotId);
+                                }
+                            };
+
+                            var msg = chrome.i18n.getMessage('There_is_an_update_for_0name0_avaiable_', obj.name) + '\n' + chrome.i18n.getMessage('Click_here_to_install_it_');
+                            var t = chrome.i18n.getMessage('Just_another_service_provided_by_your_friendly_script_updater_');
+                            if (Config.values.notification_silentScriptUpdate) {
+                                install(true);
+                            } else {
+                                notify.show(t, msg, chrome.extension.getURL("images/icon128.png"), Config.values.scriptUpdateHideNotificationAfter, install);
+                            }
+                        } catch (e) {
+                            console.log("bg: notification error " + e.message);
+                        }
+                    }
+                    if (callback) callback(updatable);
+                };
+                ScriptUpdater.updateUserscripts(0, showResult, id, cb);
+                last.scripts = (new Date()).getTime();
+                setUpdateCheckCfg(last);
+            } else if (callback) {
+                console.log("bg: WARN ScriptUpdater.check -> no force but callback");
                 window.setTimeout(callback, 1);
             }
-        }
-    };
-
-    var realCheck = function(r) {
-        var details = {
-            method: 'GET',
-            retries: _retries,
-            url: determineSourceURL(r.script, true),
         };
 
-        running++;
-        (function() {
-            var obj = { tabid: tabid, r: r};
-            var durl = determineSourceURL(obj.r.script)
-            var cb = function(req) {
-                running--;
-                if (req.readyState == 4 && req.status == 200) {
-                    if (V) console.log(durl);
+        if (SyncClient.enabled) {
+            SyncClient.addSyncDoneListener(runCheck);
+            SyncClient.scheduleSync(50, true);
+        } else {
+            runCheck();
+        }
+        
+        window.setTimeout(ScriptUpdater.check, 5 * 60 * 1000);
+    },
 
-                    var updateHash = function() {
-                        // call only if local and remove script version do match
-                        if (obj.r.meta) {
-                            if (V || UV) console.log("bg: update hash of script " + r.script.name + " to " + obj.r.meta[cUSOHASH]);
-                            obj.r.script.hash = obj.r.meta[cUSOHASH];
-                            storeScript(obj.r.script.name, obj.r.script, false);
-                        }
-                    };
+    srcCmp : function(src) {
 
-                    var ret = scriptUpdateCheck(req.responseText);
-                    if (ret == eNEWER) {
-                        found++;
-                        if (callback) callback(true, { name: obj.r.script.name,
-                                                       url: durl,
-                                                       code: req.responseText,
-                                                       newhash: obj.r.newhash });
-                        return;
-                    } else if (ret == eEQUAL) {
-                        if (V || UV) console.log("bg: found same version @ " + durl);
-                        updateHash();
-                    }
-                } else {
-                    console.log(chrome.i18n.getMessage("UpdateCheck_of_0name0_Url_0url0_failed_", [ obj.r.script.name, durl ]));
+        var script = scriptParser.createScriptFromSrc(src);
+
+        if (!script.name || script.name == '' || (script.version == undefined)) {
+            return eERROR;
+        }
+
+        var oldscript = TM_storage.getValue(script.name, null);
+
+        if (oldscript && oldscript.system) return null;
+
+        if (script.options.compat_uW_gmonkey) {
+            return eERROR;
+        }
+
+        if (script.name.search('@') != -1) {
+            return eERROR;
+        } else if (oldscript && script.version == oldscript.version) {
+            return eEQUAL;
+        } else if (oldscript && versionCmp(script.version, oldscript.version) == eOLDER) {
+            return eOLDER;
+        } else if (oldscript) {
+            return eNEWER;
+        }  else {
+            // should not happen
+            return eNEWER;
+        }
+        return eNEWER;
+    },
+
+    updateUserscripts : function(tabid, showResult, scriptid, callback) {
+        var names = getAllScriptNames();
+        var running = 1;
+        var found = 0;
+
+        var checkNoUpdateNotification = function() {
+            if (running == 0 && found == 0) {
+                if (showResult) {
+                    if (D || V || UV) console.log("No update found");
+                    notify.show('Narf!',
+                                chrome.i18n.getMessage('No_update_found__sry_'),
+                                chrome.extension.getURL("images/icon128.png"));
                 }
+                if (callback) {
+                    window.setTimeout(callback, 1);
+                }
+            }
+        };
+
+        var realCheck = function(r) {
+            var details = {
+                method: 'GET',
+                retries: _retries,
+                url: determineSourceURL(r.script, true),
+            };
+
+            running++;
+            (function() {
+                var obj = { tabid: tabid, r: r};
+                var durl = determineSourceURL(obj.r.script)
+                    var cb = function(req) {
+                    running--;
+                    if (req.readyState == 4 && req.status == 200) {
+                        if (V) console.log(durl);
+
+                        var updateHash = function() {
+                            // call only if local and remove script version do match
+                            if (obj.r.meta) {
+                                if (V || UV) console.log("bg: update hash of script " + r.script.name + " to " + obj.r.meta[cUSOHASH]);
+                                obj.r.script.hash = obj.r.meta[cUSOHASH];
+                                storeScript(obj.r.script.name, obj.r.script, false);
+                            }
+                        };
+
+                        var ret = ScriptUpdater.srcCmp(req.responseText);
+                        if (ret == eNEWER) {
+                            found++;
+                            if (callback) callback(true, { name: obj.r.script.name,
+                                                           url: durl,
+                                                           code: req.responseText,
+                                                           newhash: obj.r.newhash });
+                            return;
+                        } else if (ret == eEQUAL) {
+                            if (V || UV) console.log("bg: found same version @ " + durl);
+                            updateHash();
+                        }
+                    } else {
+                        console.log(chrome.i18n.getMessage("UpdateCheck_of_0name0_Url_0url0_failed_", [ obj.r.script.name, durl ]));
+                    }
+                    checkNoUpdateNotification();
+                };
+                xmlhttpRequest(details, cb);
+            })();
+        };
+
+        var metaCheck = function(r) {
+            running++;
+
+            var getmeta = function(o) {
+                var meta_found = !!o.meta;
+                var hash_different = meta_found && !!o.meta[cUSOHASH] && o.meta[cUSOHASH] != r.script.hash;
+                var version_found = meta_found && !!o.meta.version;
+                var version_newer = version_found && (!r.script.version || versionCmp(o.meta.version, r.script.version) == eNEWER);
+
+                // check script source in case:
+                if (!meta_found || // no meta data was found
+                    hash_different || // hash has changed
+                    !version_found || // meta data does not contain version info
+                    version_newer) { // we noticed a newer version
+
+                    if (V || UV) console.log("bg: hash of script " + r.script.name + " has changed or does not exist! running version check!");
+                    r.meta = o.meta;
+                    r.metasrc = o.metasrc;
+                    realCheck(r)
+                        } else {
+                    if (V || UV) console.log("bg: hash of script " + r.script.name + " has NOT changed (" + o.meta[cUSOHASH] + ").");
+                }
+                running--;
                 checkNoUpdateNotification();
             };
-            xmlhttpRequest(details, cb);
-        })();
-    };
 
-    var metaCheck = function(r) {
-        running++;
-
-        var getmeta = function(o) {
-            var meta_found = !!o.meta;
-            var hash_different = meta_found && !!o.meta[cUSOHASH] && o.meta[cUSOHASH] != r.script.hash;
-            var version_found = meta_found && !!o.meta.version;
-            var version_newer = version_found && (!r.script.version || versionCmp(o.meta.version, r.script.version) == eNEWER);
-
-            // check script source in case:
-            if (!meta_found || // no meta data was found
-                hash_different || // hash has changed
-                !version_found || // meta data does not contain version info
-                version_newer) { // we noticed a newer version
-
-                if (V || UV) console.log("bg: hash of script " + r.script.name + " has changed or does not exist! running version check!");
-                r.meta = o.meta;
-                r.metasrc = o.metasrc;
-                realCheck(r)
-            } else {
-                if (V || UV) console.log("bg: hash of script " + r.script.name + " has NOT changed (" + o.meta[cUSOHASH] + ").");
-            }
-            running--;
-            checkNoUpdateNotification();
+            getMetaData(r.script, getmeta);
         };
 
-        getMetaData(r.script, getmeta);
-    };
+        var one = false;
 
-    var one = false;
+        for (var k in names) {
+            var n = names[k];
+            var r = loadScriptByName(n);
+            if (!r.script || !r.cond) {
+                console.log(chrome.i18n.getMessage("fatal_error") + "(" + n + ")!!!");
+                continue;
+            }
 
-    for (var k in names) {
-        var n = names[k];
-        var r = loadScriptByName(n);
-        if (!r.script || !r.cond) {
-            console.log(chrome.i18n.getMessage("fatal_error") + "(" + n + ")!!!");
-            continue;
+            var c_scriptid = scriptid && r.script.id != scriptid;
+            var c_disabled = !Config.values.scriptUpdateCheckDisabled && !r.script.enabled && !scriptid;
+
+            if (c_scriptid || c_disabled || !(determineMetaURL(r.script) || determineSourceURL(r.script))) continue;
+
+            one = true;
+            metaCheck(r);
         }
 
-        var c_scriptid = scriptid && r.script.id != scriptid
-        var c_disabled = !Config.values.scriptUpdateCheckDisabled && !r.script.enabled && !scriptid;
+        if (!one && scriptid && callback) {
+            window.setTimeout(callback, 1);
+        }
 
-        if (c_scriptid || c_disabled || !(determineMetaURL(r.script) || determineSourceURL(r.script))) continue;
-
-        one = true;
-        metaCheck(r);
+        running--;
+        // remove initialy assigned 1
     }
-
-    if (!one && scriptid && callback) {
-        window.setTimeout(callback, 1);
-    }
-
-    running--;
-    // remove initialy assigned 1
 };
+trup = ScriptUpdater;
 
 var determineLastScriptPosition = function() {
     var names = getAllScriptNames();
@@ -3893,9 +3913,9 @@ var requestHandler = function(request, sender, sendResponse) {
             var done = function(up) {
                 sendResponse({ scriptid: request.scriptid, updatable: up});
             }
-            notifyOnScriptUpdates(true, false, request.scriptid, done);
+            ScriptUpdater.check(true, false, request.scriptid, done);
         } else {
-            notifyOnScriptUpdates(true, true);
+            ScriptUpdater.check(true, true);
             sendResponse({});
         }
     } else if (request.method == "getWebRequestInfo") {
@@ -5378,7 +5398,7 @@ init = function() {
     };
 
     var alldone = function() {
-        window.setTimeout(notifyOnScriptUpdates, 10000);
+        window.setTimeout(ScriptUpdater.check, 10000);
 
         // the content script sends a request when it's loaded.. this happens just once ;)
         chrome.tabs.onUpdated.addListener(loadListener);

@@ -877,7 +877,6 @@ function run() {
         if (load != '' && (V || EV)) {
             console.log("content: Start ENV normally " + contextId);
         }
-        load += "adjustLogLevel();\n";
 
         var run = "(function () { " + debug + back + context + tm + emu + env + evt + load + "})();";
         _handler.sendMessage(run);
@@ -1006,16 +1005,29 @@ var forceTestXhr = function() {
     xmlhttpRequest(d, null, null, null, done);
 };
  
+var initW = 1;
 var init = function() {
     var Femu = "emulation.js";
     var Fenv = "environment.js";
 
     var updateResponse = function(resp) {
+        if (resp === undefined) {
+            if (D) console.log("content: _early_ execution, connection to bg failed -> retry!");
+            window.setTimeout(init, initW);
+            // avoid too much load in case something is really b0rken!
+            initW *= 2;
+            return;
+        }
+
         logLevel = resp.logLevel;
         adjustLogLevel();
 
         if (V || D) console.log("content: Started (" + contextId + ", " + window.location.origin + window.location.pathname + ")");
 
+        if (allReady) {
+            // env is already executed -> set loglevel
+            _handler.sendMessage("TMwin.adjustLogLevel(" + logLevel + ");\n");
+        }
         if (resp.enabledScriptsCount) {
             if (V || D) console.log('content: start event processing for ' + contextId + ' (' + resp.enabledScriptsCount + ' to run)');
             wannaRun = true;

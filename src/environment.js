@@ -13,16 +13,6 @@ var MV = false;
 var CV = false;
 var SV = false;
 
-var adjustLogLevel = function() {
-    D |= (logLevel >= 60);
-    V |= (logLevel >= 80);
-    EV |= (logLevel >= 100);
-    MV |= (logLevel >= 100);
-    CV |= (logLevel >= 100);
-    SV |= (logLevel >= 100);
-    EMV |= (logLevel >= 100);
-};
-
 // do not rename...
 var Event = function() {};
 
@@ -41,8 +31,22 @@ TMwin.domContentLoaded = false;
 TMwin.loadHappened = false;
 TMwin.domNodeInserted = false;
 TMwin.props = {};
+TMwin.adjustLogLevel = function(l) {
+    if (l !== undefined) {
+        logLevel = l;
+    }
+
+    D |= (logLevel >= 60);
+    V |= (logLevel >= 80);
+    EV |= (logLevel >= 100);
+    MV |= (logLevel >= 100);
+    CV |= (logLevel >= 100);
+    SV |= (logLevel >= 100);
+    EMV |= (logLevel >= 100);
+};
 
 Clean = [];
+TMwin.adjustLogLevel();
 
 if (!chromeEmu) {
     if (V || D) console.log("environment: replace chromeEmu var with chrome!");
@@ -65,6 +69,8 @@ var TM_isPartOfDOM = function(elem, cnt){
 };
 
 var TM_mEval = function(script, src, requires, addProps) {
+    var all = null;
+    
     try {
         var mask = addProps.context;
         var emu = '';
@@ -134,7 +140,8 @@ var TM_mEval = function(script, src, requires, addProps) {
         // TODO: window fake
         // execute script in private context and fake window root
         // var runEm = new Function( "window",  emu + "with (window) { " + src + "}");
-        var runEm = new Function(setid + emu + wrap(src));
+        all = setid + emu + wrap(src);
+        var runEm = new Function(all);
         runEm.apply(mask, []);
 
     } catch (e) {                    
@@ -150,6 +157,12 @@ var TM_mEval = function(script, src, requires, addProps) {
         }
         
         var fail = function() {
+            if (D) {
+                chromeEmu.extension.sendMessage({ method: "copyToClipboard",
+                                                  data: { content: all, type: "test" },
+                                                  id: '42'}, function() {});
+            }
+
             throw e;
         };
 
