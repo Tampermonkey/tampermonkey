@@ -257,6 +257,8 @@ var compaMo = {
                 var x;
                 x = z.replace(/\"/g, '\\"').replace(/\n/g, '\\n" + \n"');
                 x = x.replace(/^\n/g, '').replace(/\n$/g, '');
+                // remove Windows line ending stuff
+                x = x.replace(/\r/g, '');
                 var g = t1+z+t2;
                 t = t.replace(g, '(new CDATA("' + x + '"))');
             }
