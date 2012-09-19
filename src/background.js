@@ -45,8 +45,6 @@ var adjustLogLevel = function(logLevel) {
     NV |= (logLevel >= 100);
 };
 
-if (D || V) console.log("Starting background fred");
-
 const eERROR = -2;
 const eOLDER = -1;
 const eEQUAL = 0;
@@ -61,6 +59,7 @@ var _retries = 5; // global xmlHttpRequest retry var
 var _setTimeout = 1;
 var _webRequest = { use: true, headers: true, verified: false, verifyCnt : 20, id: 0, prefix: 'TM_', testprefix: 'foobar' };
 
+var TM_instanceID = (new Date()).getTime() + Math.floor(Math.random() * 061283 + 1);
 var TM_tabs = {};
 var TM_storageListener = [];
 var closeableTabs = {};
@@ -74,6 +73,8 @@ var scriptAppendix = '@source';
 
 var allURLs = {};
 var requireCache = {};
+
+if (D || V) console.log("Starting background fred @" + TM_instanceID);
 
 /* ###### Helpers ####### */
 
@@ -3665,7 +3666,7 @@ var requestHandler = function(request, sender, sendResponse) {
         var sendPong = function() {
             if (ginit) {
                 if (D) console.log("bg: send pong!");
-                sendResponse({ pong: true });
+                sendResponse({ pong: true, instanceID: TM_instanceID });
             } else {
                 window.setTimeout(sendPong, 100);
             }
