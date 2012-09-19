@@ -1009,8 +1009,14 @@ var initW = 1;
 var init = function() {
     var Femu = "emulation.js";
     var Fenv = "environment.js";
-
+    var prepareTimeout = null;
+    
     var updateResponse = function(resp) {
+        if (prepareTimeout != null) {
+            window.clearTimeout(prepareTimeout);
+            prepareTimeout = null;
+        }
+
         if (resp === undefined) {
             if (D) console.log("content: _early_ execution, connection to bg failed -> retry!");
             window.setTimeout(init, initW);
@@ -1076,6 +1082,13 @@ var init = function() {
                 params: window.location.search + window.location.hash };
 
     chrome.extension.sendMessage(req, updateResponse);
+
+    var checkTimeout = function() {
+        if (V || D) console.log('content: timeout detected for ' + contextId);
+        init();
+    };
+
+    prepareTimeout = window.setTimeout(checkTimeout, 1000);
 };
 
 init();
