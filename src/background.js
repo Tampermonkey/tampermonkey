@@ -4015,7 +4015,11 @@ var requestHandler = function(request, sender, sendResponse) {
                     console.log("bg: warn: action menu closed? " + JSON.stringify(e));
                 }
             };
-            PNG.createIconEx(cnt, done2);
+            if (request.countonly) {
+                done2(null);
+            } else {
+                PNG.createIconEx(cnt, done2);
+            }
         };
         if (!TM_fire.isReady()) {
             var s  = chrome.i18n.getMessage('Update_needed');
@@ -4880,10 +4884,12 @@ var PNG = {
             gy.init(x, y);
             if (s) gy.context.scale(s, s);
             gy.context.drawImage(objImg, xp, yp);
-
             gy.loaded = true;
-            if (cb) cb();
+
+            if (objImg.parentNode) objImg.parentNode.removeChild(objImg);
             objImg = null;
+
+            if (cb) cb();
         };
 
         objImg.onload = done;

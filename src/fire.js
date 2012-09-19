@@ -994,6 +994,7 @@ var createImagesFromScript = function(i) {
                 var predom = '';
                 if (inf.tld != '*' && inf.tld != 'tld') tld = inf.tld;
                 if (inf.predom.length) predom = inf.predom.join('.') + '.';
+                // var ico = ("chrome://favicon/http://" + predom + inf.dom + "." + tld + "/").replace(/\*/g, '');
                 var ico = ("http://" + predom + inf.dom + '.' + tld + '/favicon.ico').replace(/\*/g, '');
                 if (ico.search('http://userscripts.org/') == 0 ||
                     ico.search('http://userscripts.com/') == 0) ico = 'http://userscripts.org/images/script_icon.png';
