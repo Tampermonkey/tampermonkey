@@ -3658,7 +3658,7 @@ var connectHandler = function(port) {
 var requestHandler = function(request, sender, sendResponse) {
     if (!ginit) {
         window.setTimeout(function() { requestHandler(request, sender, sendResponse); }, 10);
-        return;
+        return true;
     }
     if (V || EV || MV) console.log("back: request.method " + request.method + " id " + request.id);
 
@@ -3802,17 +3802,17 @@ var requestHandler = function(request, sender, sendResponse) {
                     if (request.actionid == 'installed') {
                         if (request.value == 'false') {
                             extensions.uninstall(sc, nextStep);
-                            return;
+                            return true;
                         }
                     } else if (request.actionid == 'enabled') {
                         extensions.setEnabled(sc, request.value, nextStep);
-                        return;
+                        return true;
                     }
                     nextStep();
                 }
             }
             extensions.getUserscriptById(request.nid, done);
-            return;
+            return true;
         }
 
         nextStep();
@@ -4022,12 +4022,8 @@ var requestHandler = function(request, sender, sendResponse) {
             }
         };
         if (!TM_fire.isReady()) {
-            var s  = chrome.i18n.getMessage('Update_needed');
-            if (TM_fire.status.downloading || TM_fire.status.update) {
-                s = chrome.i18n.getMessage('Update_in_progress');
-            }
             done(0, [], { action: TM_fire.status.action , state: TM_fire.status.progress } );
-            return;
+            return true;
         }
 
         var idsdone = function(items) {
