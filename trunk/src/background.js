@@ -3663,15 +3663,7 @@ var requestHandler = function(request, sender, sendResponse) {
     if (V || EV || MV) console.log("back: request.method " + request.method + " id " + request.id);
 
     if (request.method == "ping") {
-        var sendPong = function() {
-            if (ginit) {
-                if (D) console.log("bg: send pong!");
-                sendResponse({ pong: true, instanceID: TM_instanceID });
-            } else {
-                window.setTimeout(sendPong, 100);
-            }
-        };
-        sendPong();
+        sendResponse({ pong: true, instanceID: TM_instanceID });
     } else if (request.method == "openInTab") {
         var done = function(tab) {
             closeableTabs[tab.id] = true;
@@ -5377,7 +5369,6 @@ init = function() {
     Syncer = Registry.get('syncer');
 
     initBrowserAction();
-    TM_storage.init();
 
     var cfgdone = function() {
         initObjects();
@@ -5386,7 +5377,11 @@ init = function() {
         alldone();
     };
 
-    Config = new ConfigObject(cfgdone);
+    var storagedone = function() {
+        Config = new ConfigObject(cfgdone);
+    };
+
+    TM_storage.init(storagedone);
 
     var waitForWebNav  = function() {
         if (!chrome.webNavigation || !chrome.webNavigation.onCommitted) {
