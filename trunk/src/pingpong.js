@@ -6,6 +6,7 @@
 
 (function() {
     var V = false;
+    var D = true;
     var timeout = 1000;
     var _to = null;
     var _retries = 5;
@@ -28,8 +29,13 @@
             if (fail) fail();
         };
         
-        var response = function() {
-            if (V) console.log("pp: ping succed!");
+        var response = function(r) {
+            if (!r) {
+                if (D || V) console.log("pp: Warn: got pseudo response!");
+                return
+            }
+
+            if (V) console.log("pp: ping succed! @" + r.instanceID);
             clear();
             suc();
         };
