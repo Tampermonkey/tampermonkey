@@ -12,11 +12,12 @@ var fire = null;
 var exte = null;
 var lfgs = null;
 var sycl = null;
+var cfgo = null;
 
 var D = false;
 var V = false;
 var T = false;
-var EV = false;
+var EV = true;
 var MV = false;
 var UV = false;
 var SV = false;
@@ -29,7 +30,7 @@ Registry.require('xmlhttprequest');
 Registry.require('compat');
 Registry.require('parser');
 Registry.require('helper');
-Registry.require('syncer');
+Registry.require('syncinfo');
 
 (function() {
 
@@ -70,8 +71,8 @@ var ginit = false;
 var condAppendix = '@re';
 var storeAppendix = '@st';
 var scriptAppendix = '@source';
+var headerAppendix = '@header';
 
-var allURLs = {};
 var requireCache = {};
 
 if (D || V) console.log("Starting background fred @" + TM_instanceID);
@@ -166,9 +167,9 @@ var convertData = function(convertCB) {
                 window.setTimeout(cb, 1);
             }
         };
-        
+
         for (var k in names) {
-            var wrap = function() { 
+            var wrap = function() {
                 var n = names[k];
                 var r = loadScriptByName(n);
                 if (!r.script || !r.cond) {
@@ -190,7 +191,7 @@ var convertData = function(convertCB) {
                     }
                 }
 
-                var time = function() { 
+                var time = function() {
                     r.script = mergeCludes(r.script);
 
                     if (processSource) {
@@ -202,7 +203,6 @@ var convertData = function(convertCB) {
                         addNewUserScript(ss);
                     } else {
                         r.script.id = scriptParser.getScriptId(r.script.name);
-                        r.script.md5 = SyncClient.getMD5fromScript(r.script);
                         storeScript(r.script.name, r.script, false);
                     }
 
@@ -256,7 +256,6 @@ var convertData = function(convertCB) {
           fn : function(cb) {
                 console.log("Update config from " + version + " to 1.2");
                 var names = [];
-                TM_storage.deleteAll();
                 for (var i=0; i<localStorage.length; i++) {
                     var name = localStorage.key(i);
                     _use_localdb = false;
@@ -333,7 +332,7 @@ var convertData = function(convertCB) {
                         if (r == 'fire_updateURL') {
                             o[r] = 'http://fire.tampermonkey.net/update.php';
                         } else if (r == 'sync_URL') {
-                            o[r] = 'https://ssl-id.net/sync.tampermonkey.net/sync.php';
+                            o[r] = '';
                         }
                     }
                     TM_storage.setValue("TM_config", o);
@@ -413,10 +412,219 @@ var cleanRequireCache = function() {
 
 cleanRequireCache();
 
+/* ####### context registry #### */
+
+var ctxRegistry = {
+    n: {},
+    has: function(tabId) {
+        return (!!ctxRegistry.n[tabId]);
+    },
+    reset : function(tabId) {
+        if (V || UV) console.log("ctxReg: reset ctxRegistry["+tabId+"]");
+        ctxRegistry.init(tabId);
+    },
+    assert : function(tabId, log) {
+        if (log === undefined) log = true;
+
+        if (!ctxRegistry.has(tabId)) {
+            if (log) console.log("ctxReg: assert ctxRegistry["+tabId+"]");
+            ctxRegistry.init(tabId);
+        }
+    },
+    init : function(tabId) {
+        ctxRegistry.n[tabId] = { ts: (new Date()).getTime(),
+                                 urls: {},
+                                 fire_cnt: null,
+                                 empty: true,
+                                 user_agent: null,
+                                 blocker: false,
+                                 stats: { running : 0, disabled: 0, executed: {} } };
+    },
+    remove : function(tabId) {
+        if (ctxRegistry.has(tabId)) delete ctxRegistry.n[tabId];
+    },
+    addUrl : function(tabId, frameId, url, ua) {
+        if (V || UV || EV) console.log("ctxReg: add to ctxRegistry["+tabId+"] -> " + url + " ua: " + JSON.stringify(ua));
+        ctxRegistry.assert(tabId, false);
+
+        if (ctxRegistry.n[tabId].urls[url] == undefined) ctxRegistry.n[tabId].urls[url] = 0;
+
+        ctxRegistry.n[tabId].urls[url]++;
+        ctxRegistry.n[tabId].empty = false;
+
+        for (var k in ua) {
+            if (!ua.hasOwnProperty(k)) continue;
+            if (!ctxRegistry.n[tabId].user_agent) ctxRegistry.n[tabId].user_agent = {};
+            ctxRegistry.n[tabId].user_agent[url] = ua[k];
+        }
+    },
+
+    setCache : function(tabId, frameId, url, runInfo) {
+        if (V || UV || EV) console.log("ctxReg: setCache to ctxRegistry["+tabId+"] -> " + url);
+        ctxRegistry.assert(tabId, false);
+
+        ctxRegistry.n[tabId].cache = runInfo;
+    },
+
+    clearCache : function(tabId, frameId) {
+        if (V || UV || EV) console.log("ctxReg: clearCache to ctxRegistry["+tabId+"]");
+        if (ctxRegistry.has(tabId)) {
+            delete ctxRegistry.n[tabId].cache;
+        }
+    },
+
+    removeUrl : function(tabId, frameId, url) {
+        if (!ctxRegistry.has(tabId)) return;
+
+        if (--ctxRegistry.n[tabId].urls[url] == 0) {
+            if (V || UV || EV) console.log("ctxReg: remove from ctxRegistry["+tabId+"] -> " + url);
+
+            delete ctxRegistry.n[tabId].urls[url];
+            if (ctxRegistry.n[tabId].user_agent) {
+                delete ctxRegistry.n[tabId].user_agent[url];
+            }
+            ctxRegistry.n[tabId].empty = true;
+
+            // really empty?
+            for (var k in ctxRegistry.n[tabId].urls) {
+                if (!ctxRegistry.n[tabId].urls.hasOwnProperty(k)) continue;
+                ctxRegistry.n[tabId].empty = false;
+                break;
+            }
+        }
+    },
+    isEmpty : function(tabId) {
+        if (!ctxRegistry.has(tabId)) return true;
+        return ctxRegistry.n[tabId].empty;
+    },
+
+    setFireCnt : function(tabId, value) {
+        ctxRegistry.assert(tabId, false);
+        ctxRegistry.n[tabId].fire_cnt = value;
+    },
+
+    getFireCnt : function(tabId) {
+        if (!ctxRegistry.has(tabId)) return null;
+        return ctxRegistry.n[tabId].fire_cnt;
+    },
+
+    getInfo : function(tabId) {
+        return ctxRegistry.n[tabId];
+    },
+
+    getRunning : function(tabId) {
+        if (!ctxRegistry.has(tabId)) return null;
+        return ctxRegistry.n[tabId].stats.running;
+    },
+
+    iterateTabs : function(fn) {
+        for (var k in ctxRegistry.n) {
+            if (!ctxRegistry.n.hasOwnProperty(k)) continue;
+            if (fn(k, ctxRegistry.n[k])) break;
+        }
+    },
+    iterateUrls : function(tabId, fn) {
+        return ctxRegistry.iterate(tabId, 'urls', fn);
+    },
+    iterate : function(tabId, key, fn) {
+        if (!ctxRegistry.has(tabId)) return null;
+
+        for (var k in ctxRegistry.n[tabId][key]) {
+            if (!ctxRegistry.n[tabId][key].hasOwnProperty(k)) continue;
+            if (fn(k, ctxRegistry.n[tabId][key][k])) break;
+        }
+        return true;
+    }
+};
+
+/* ####### Tabs #### */
+var Tab = {
+    getScriptRunInfo : function(url, frameId) {
+        var scripts = determineScriptsToRun(url);
+        var runners = [];
+        var disabled = 0;
+        var script_map = {};
+        var user_agent = {};
+
+        for (var k=0; k<scripts.length; k++) {
+            var script = scripts[k];
+
+            if (V) console.log("check " + script.name + " for enabled:" + script.enabled);
+
+            if (!script.enabled) {
+                disabled++;
+                continue;
+            }
+            if (script.options.noframes && frameId != 0) continue;
+
+            if (script.options.user_agent && script.options.user_agent != "") {
+                user_agent[frameId] = script.options.user_agent;
+            }
+            script_map[script.name] = true;
+            runners.push(script);
+        }
+
+        return { runners: runners, disabled: disabled, script_map: script_map, user_agent: user_agent };
+    },
+
+    prepare : function(nfo, length_cb) {
+        var runInfo = Tab.getScriptRunInfo(nfo.url, nfo.frameId);
+
+        ctxRegistry.addUrl(nfo.tabId, nfo.frameId, nfo.url, runInfo.user_agent);
+        if (length_cb) length_cb(runInfo.runners.length, runInfo.disabled);
+
+        return runInfo;
+    },
+
+    runScripts : function(nfo, runInfo, allrun_cb) {
+        var check = function() {
+            if (--running == 0 && allrun_cb) allrun_cb();
+        };
+        var running = 1;
+        var fromCache = false;
+
+        if (!runInfo &&
+            ctxRegistry.has(nfo.tabId)) {
+            runInfo = ctxRegistry.n[nfo.tabId].cache;
+            fromCache = true;
+        }
+
+        if (runInfo) {
+            for (var k=0; k<runInfo.runners.length; k++) {
+                var script = runInfo.runners[k];
+                if (!script.options.user_agent) {
+                    var rt = new runtimeInit();
+                    running++;
+                    rt.contentLoad(nfo, script, check);
+                }
+            }
+
+            if (fromCache) ctxRegistry.clearCache(nfo.tabId, nfo.frameId);
+        } else {
+            console.log("bg: ERROR: runInfo neither given nor found in cache!!!!");
+        }
+        check();
+    },
+
+    reset : function(tabId, early) {
+        ctxRegistry.reset(tabId);
+        TM_menuCmd.clearByTabId(tabId);
+        notifyStorageListeners(null, null, tabId, false);
+
+        if (early) {
+            // skip some actions, cause tab does not exist for some APIs yet
+        } else {
+            setIcon(tabId);
+        }
+    }
+};
+
 /* ####### local file permission #### */
 
 var localFile = {
     id : 0,
+    useXmlHttpReq: true,
+    useIframeMessage: false,
     callbacks: {},
     listener: function(event, d) {
         d = event ? event.data : d;
@@ -426,27 +634,59 @@ var localFile = {
             var o = localFile.callbacks[data.id];
 
             if (o) {
-                if (V) console.log("bg: localFile: retrieval of '" + o.url + "' took " + ((new Date()).getTime() - o.ts) + "ms");
+                if (V) console.log("localFile: retrieval of '" + o.url + "' took " + ((new Date()).getTime() - o.ts) + "ms");
                 if (o.cb) o.cb(data.content);
                 if (o.iframe) o.iframe.parentNode.removeChild(o.iframe);
                 delete localFile.callbacks[data.id];
             } else {
-                console.log("Warn: localFile.getSource callback " + data.id + " not found!");
+                console.log("localFile: WARN: getSource callback " + data.id + " not found!");
             }
         } catch (e) {
-            console.log("ERR: localFile.getSource processing of " + d + " failed!");
+            console.log("localFile: ERR: getSource processing of " + d + " failed!");
         }
     },
     initialize : function() {
-        // window.addEventListener('message', localFile.listener, false);
-        // window.addEventListener('unload', localFile.clean, false);
+        if (localFile.useIframeMessage) {
+            window.addEventListener('message', localFile.listener, false);
+            window.addEventListener('unload', localFile.clean, false);
+        }
     },
     clean: function() {
-        // window.removeEventListener('message', localFile.listener, false);
-        // window.removeEventListener('unload', localFile.clean, false);
+        if (localFile.useIframeMessage) {
+            window.removeEventListener('message', localFile.listener, false);
+            window.removeEventListener('unload', localFile.clean, false);
+        }
         localFile.callbacks = {};
     },
     getSource : function(url, cb) {
+        if (localFile.useXmlHttpReq) {
+            return localFile.getSourceXmlHttp(url, cb);
+        } else {
+            return localFile.getSourceIframe(url, cb);
+        }
+    },
+    getSourceXmlHttp: function(url, cb) {
+        // avoid file:// caching... !?
+        var ts = (new Date()).getTime();
+        url += (url.search('\\?') != -1) ? '&' : '?';
+        url += 'ts=' + ts;
+
+        var resp = function(req) {
+            cb(req.responseText);
+        };
+        var details = {
+            method: 'GET',
+            retries: 0,
+            url: url,
+        };
+        xmlhttpRequest(details,
+                       resp,
+                       null,
+                       null,
+                       null,
+                       true);
+    },
+    getSourceIframe: function(url, cb) {
         if (localFile.id == 0) {
             localFile.initialize();
         }
@@ -471,8 +711,10 @@ var localFile = {
                 if (cbi == null) return; // too late! :(
                 try {
                     i.contentWindow.postMessage(d, i.src);
-                } catch (e) {}
-                cbi = null;
+                    cbi = null;
+                } catch (e) {
+                    if (D) console.log("localFile: ERROR:" + e.message);
+                }
             };
             i.onload = post;
 
@@ -696,7 +938,7 @@ var TM_fire = {
                     }
                     console.log(JSON.stringify(rr)); */
 
-                    var cleaned = function() {
+                    var inited = function() {
                         TM_fire.status.update = true;
 
                         var done = function(cnt) {
@@ -706,6 +948,11 @@ var TM_fire = {
 
                         TM_fire.insertValuesFromJSON(json, done);
                     };
+
+                    var cleaned = function() {
+                        TM_fire.initTables(inited);
+                    };
+
                     TM_fire.clean(cleaned);
                 } else {
                     error("Update URL: " + req.status);
@@ -748,9 +995,8 @@ var TM_fire = {
 
     clean : function(cb) {
         var done = function() {
-            TM_fire.initTables(cb);
+            if (cb) cb();
         }
-
 
         var do5 = function() {
             TM_fire.fireDB.db.transaction(function(tx) {
@@ -1224,12 +1470,12 @@ var TM_fire = {
                 if (--running == 0) done();
             };
 
-            if (allURLs[id]) {
-                for (var i in allURLs[id].urls) {
-                    if (!allURLs[id].urls.hasOwnProperty(i)) continue;
+            if (ctxRegistry.has(id)) {
+                var it = function(i, v) {
                     running++;
                     TM_fire.url.getItems(i, add);
-                }
+                };
+                ctxRegistry.iterateUrls(id, it);
             } else {
                 cb(ret);
             }
@@ -1239,11 +1485,12 @@ var TM_fire = {
 
         getCount : function(id, cb) {
             var done = function(r) {
-                if (allURLs[id]) allURLs[id].fire_cnt = r.length;
+                ctxRegistry.setFireCnt(r.length);
                 if (cb) cb(r.length);
             };
-            if (allURLs[id] && allURLs[id].fire_cnt != undefined) {
-                cb(allURLs[id].fire_cnt);
+            var cn = ctxRegistry.getFireCnt(id);
+            if (cn) {
+                cb(cn);
             } else {
                 // use getItems to get a unified result for all URLs
                 TM_fire.tab.getItems(id, done);
@@ -1446,8 +1693,12 @@ var TM_storage = {
             };
             TM_storage.localDB = {
                 db: openDatabase('tmStorage', '1.0', 'TM Storage', 30 * 1024 * 1024),
-                onSuccess : function(tx, result) { if (SV) console.log("bg: storage: localDB Success "); },
-                onError : function(tx, e) { console.log("bg: storage: localDB Error " + JSON.stringify(e)); },
+                onSuccess : function(tx, result) {
+                    if (SV) console.log("bg: storage: localDB Success ");
+                },
+                onError : function(tx, e) {
+                    console.log("bg: storage: localDB Error " + JSON.stringify(e));
+                },
                 createTable : function(aftercreate) {
                     TM_storage.localDB.db.transaction(function(tx) {
                                                tx.executeSql("CREATE TABLE IF NOT EXISTS " +
@@ -1549,9 +1800,9 @@ var TM_storage = {
     deleteAll : function(cb) {
         if (SV) console.log("TM_storage.deleteAll()");
         if (_use_localdb) {
-            TM_storage.cacheDB[name] = null;
+            TM_storage.cacheDB = {};
             TM_storage.localDB.db.transaction(function(tx) {
-                                       tx.executeSql('DELETE FROM config WHERE ID>0',
+                                       tx.executeSql('DROP TABLE config',
                                                      [],
                                                      cb,
                                                      TM_storage.localDB.onError);
@@ -1634,20 +1885,47 @@ var defaultScripts = function() {
 
 var SyncClient = {
     enabled : false,
-    remoteVersion : 0,
     syncing : 0,
     period : null,
     syncDoneListener: [],
     scheduled : { to: null, force: null, t: 0 },
-    getMD5DatafromScript : function(script) {
-        var s = [];
-        s[0] = script.textContent;
-        s[1] = script.fileURL;
-        return JSON.stringify(s);
+    createTeslcData : function(cb) {
+        var ret = [];
+        var local = SyncClient.getLocalScriptList();
+
+        for (var k=0; k<local.length; k++) {
+            var u = local[k].furl || local[k].durl;
+            if (u) {
+                var s = local[k].name.replace(/\|/g, '!') + '|' + '{"hint":"not supported yet"}' + '|' + u.replace(/\|/g, '%7C');
+                ret.push(s)
+            }
+        }
+        if (cb) cb(ret);
     },
-    getMD5fromScript : function(script) {
-        var sum = script.md5 || MD5(SyncClient.getMD5DatafromScript(script));
-        return sum;
+    enable :  function(callback) {
+        if (SyncClient.enabled) {
+            if (D) console.log("sync: reenable?");
+        } else if (Config.values.sync_type == 0 ||
+                   Config.values.sync_id == "") {
+            SyncClient.enabled = false;
+        } else {
+            SyncClient.enabled = SyncInfo.init(Config.values.sync_type, Config.values.sync_id);
+        }
+        if (callback) callback(SyncClient.enabled);
+    },
+    finalize : function() {
+    },
+    addSyncDoneListener : function (cb) {
+        SyncClient.syncDoneListener.push(cb);
+        if (V) console.log("sync: addSyncDoneListener() -> " + SyncClient.syncDoneListener.length);
+    },
+    runAllSyncDoneListeners : function(success) {
+        if (V) console.log("sync: runAllSyncDoneListeners() -> " + SyncClient.syncDoneListener.length);
+
+        while (SyncClient.syncDoneListener.length) {
+            var e = SyncClient.syncDoneListener.splice(0, 1);
+            e[0](success);
+        }
     },
     scheduleSync : function(t, force) {
         var n = (new Date()).getTime();
@@ -1666,12 +1944,33 @@ var SyncClient = {
         }
 
         var run = function() {
-            SyncClient.syncAll(SyncClient.scheduled.force);
+            SyncClient.sync(SyncClient.scheduled.force);
             SyncClient.scheduled.to = null;
             SyncClient.scheduled.force = null;
         };
 
-        SyncClient.scheduled.to = window.setTimeout(run, t);
+        var abort = function() {
+            SyncClient.scheduled.to = null;
+            SyncClient.scheduled.force = null;
+        };
+
+        var check = function() {
+            if (Config.values.sync_type == SyncInfo.types.eCHROMESYNC) {
+                var got = function(has, asked) {
+                    if (has) {
+                        run();
+                    } else {
+                        console.log("sync: storage permission is needed in order to uses Google Sync!");
+                        abort();
+                    }
+                };
+                storagePermission.requestPermissionEx(got);
+            } else {
+                run();
+            }
+        };
+
+        SyncClient.scheduled.to = window.setTimeout(check, t);
         SyncClient.scheduled.force = force;
         SyncClient.scheduled.ts = n + t;
     },
@@ -1679,7 +1978,7 @@ var SyncClient = {
         if (SyncClient.period) return;
         var t = 18000000 /* 5h */;
         if (D) console.log("sync: schedule sync for periodical run every " + t + " ms");
-        SyncClient.period = window.setInterval(SyncClient.syncAll, t);
+        SyncClient.period = window.setInterval(SyncClient.sync, t);
     },
     disablePeriodicalCheck : function() {
         if (SyncClient.period) {
@@ -1688,107 +1987,8 @@ var SyncClient = {
             SyncClient.period = null;
         }
     },
-    addSyncDoneListener : function (cb) {
-        SyncClient.syncDoneListener.push(cb);
-        if (V) console.log("sync: addSyncDoneListener() -> " + SyncClient.syncDoneListener.length);
-    },
-    checkSyncAccount : function(key, oldVal, newVal) {
-        var et = null;
-        var scheduleEnable = function() {
-            if (et == null) {
-                var run = function() {
-                    SyncClient.enable(function() {
-                                          notifyOptionsTab();
-                                          SyncClient.scheduleSync(3000);
-                                      });
-                    et = null;
-                }
-                et = window.setTimeout(run, 200);
-            }
-        };
-        if (key == 'sync_enabled' && newVal) {
-            if (Config.values.sync_valid == 'valid' ||
-                Config.values.sync_valid == 'unknown') {
-                // enable/create account
-                scheduleEnable();
-            } else if (Config.values.sync_valid == 'submitted' ||
-                       Config.values.sync_valid == 'invalid') {
-                // we can't do anything...
-                if (D) console.log("sync: enabled, credential state is -> " + Config.values.sync_valid);
-            } else {
-                console.log("sync: ambiguous sync state: " + Config.values.sync_valid);
-            };
-        }
-        if (key == 'sync_email' ||
-            key == 'sync_password') {
-            // mark account data not valid
-            Config.values.sync_valid = 'unknown';
-            Config.save();
-            scheduleEnable();
-        }
-    },
-    createAccount :  function(callback) {
-        var cb = function(err, msg) {
-            if (!callback) return;
-
-            if (err == 304) {
-                // already submitted, but hide this
-                callback(0);
-            } else {
-                callback(err, msg);
-            }
-        };
-        Syncer.createAccount(Config.values.sync_email,
-                             Config.values.sync_password,
-                             cb);
-    },
-    enable :  function(callback) {
-        if (!Config.values.sync_enabled ||
-            Config.values.sync_valid == 'invalid') {
-            // disable sync :(
-            SyncClient.enabled = false;
-        } else {
-            var done = function(err, msg) {
-                if (err == 401) {
-                    // account unknown
-                    var cb = function(err, msg) {
-                        if (!err) {
-                            Config.values.sync_valid = 'submitted';
-                            var resp = function(tab) {
-                                chrome.tabs.sendMessage(tab.id,
-                                                        { method: "showMsg",
-                                                          msg: chrome.i18n.getMessage('Credentials_are_submitted__Please_check_your_email_account_for_verification_details') },
-                                                        function(response) {});
-                            };
-                            chrome.tabs.getSelected(null, resp);
-                        } else {
-                            Config.values.sync_valid == 'invalid';
-                        }
-                        Config.save();
-                        if (callback) callback(err, msg);
-                    };
-                    SyncClient.createAccount(cb);
-                } else if (err) {
-                    // wrong password, ...
-                    if (D) console.log("sync: init of Syncer failed: " + msg);
-                    Config.values.sync_valid = 'invalid';
-                    Config.save();
-                    if (callback) callback();
-                } else {
-                    if (D) console.log("sync: init of Syncer succed (user: " + Config.values.sync_email + " url: " + Config.values.sync_URL + ")");
-                    Config.values.sync_valid = 'valid';
-                    Config.save();
-                    if (callback) callback();
-                }
-            };
-            Syncer.verifySettings(Config.values.sync_URL,
-                                  Config.values.sync_email,
-                                  Config.values.sync_password, done);
-            SyncClient.enabled = true;
-        }
-    },
     getLocalScriptList : function() {
-        var ret = {};
+        var ret = [];
         var names = getAllScriptNames();
         for (var k in names) {
             var n = names[k];
@@ -1797,149 +1997,52 @@ var SyncClient = {
                 continue;
             }
 
-            var md5 = SyncClient.getMD5fromScript(r.script);
-            var id = (r.script.id || scriptParser.getScriptId(r.script.name)) + scriptAppendix;
-            ret[id] = { id: id, md5: md5, script: r.script };
+            var id = (r.script.id || scriptParser.getScriptId(r.script.name));
+            var durl = r.script.downloadURL ? r.script.downloadURL.split('#')[0] : null;
+            var furl = r.script.fileURL ? r.script.fileURL.split('#')[0] : null;
+
+            ret.push({ id: id, name: r.script.name, durl: durl, furl: furl });
         }
 
         return ret;
     },
-    getRemoteMd5List : function(cb) {
-        var error = function(msg) {
-            if (D) console.log("sync: err " + msg);
-            cb(null, msg);
-        };
-
-        var goterr = false;
-        var keys = [];
-        var list = {};
-        var gotList = function(err, res) {
-            if (err) {
-                error(res);
-                return;
-            }
-            keys = res;
-            iterate();
-        };
-
-        var running = 1;
-        var iterate = function() {
-            for (var i = 0; i < keys.length; i++) {
-                var k = keys[i];
-                if (k.search(scriptAppendix) != -1) {
-                    running++;
-                    Syncer.md5(k, fill);
+    getRemoteScriptList : function(cb) {
+        SyncInfo.list(cb);
+    },
+    checkSyncAccount : function(key, oldVal, newVal) {
+        var et = null;
+        var scheduleEnable = function(force) {
+            if (et == null) {
+                var run = function() {
+                    SyncClient.enable(function() {
+                                          notifyOptionsTab();
+                                          SyncClient.scheduleSync(3000, force);
+                                      });
+                    et = null;
                 }
-            }
-
-            check();
-        };
-
-        var check = function() {
-            if (--running == 0) {
-                if (goterr) {
-                    error(goterr);
-                    return;
-                } else {
-                    cb(list);
-                }
+                et = window.setTimeout(run, 200);
             }
         };
-
-        var fill = function(err, k, v) {
-            if (err) {
-                goterr = v;
+        if (key == 'sync_enabled') {
+            if (newVal) {
+                SyncClient.schedulePeriodicalCheck();
+                scheduleEnable();
             } else {
-                list[k] = { id: k, md5 : v };
+                SyncClient.enabled = false;
+                SyncClient.disablePeriodicalCheck();
             }
-
-            check();
-        };
-
-        Syncer.list(gotList);
-    },
-    scriptAddedCb : function(name, script) {
-        if (!SyncClient.enabled || !script.options.do_sync) return;
-        if (V) console.log("sync: scriptAddedCb()");
-        SyncClient.scheduleSync(500, true);
-    },
-    scriptChangedCb : function(name, script) {
-        if (!SyncClient.enabled || !script.options.do_sync || (script.sync && script.sync.seenOnServer < 0)) return;
-        if (V) console.log("sync: scriptChangedCb()");
-        SyncClient.scheduleSync(500, true);
-    },
-    scriptRemovedCb : function(name, script) {
-        if (!SyncClient.enabled || !script.options.do_sync || (script.sync && script.sync.seenOnServer < 0)) return;
-        if (V) console.log("sync: scriptRemovedCb()");
-        var id = (script.id || scriptParser.getScriptId(script.name)) + scriptAppendix;
-        SyncClient.removeScript(id);
-    },
-    removeScript : function(id, cb) {
-        if (D) console.log("sync: removeScript " + id);
-        var done = function() {
-            if (cb) cb();
-        };
-        Syncer.set(id, null, done);
-    },
-    markScriptSeen: function(r, v) {
-        if (!r.script.sync) r.script.sync = {};
-        if (r.script.sync.seenOnServer != v) {
-            if (V) console.log("sync: mark script '" + r.script.name + "' seen on version " + v);
-            r.script.sync.seenOnServer = v;
-            storeScript(r.script.name, r.script, false);
+        } else if (key == 'sync_type' ||
+                   key == 'sync_id') {
+            scheduleEnable();
         }
     },
-    markScriptConflict: function(r) {
-        if (!r.script.sync) r.script.sync = {};
-        console.log("sync: warn: conflict in script " + r.script.name + " local " + r.script.sync.seenOnServer + " remote " + SyncClient.remoteVersion);
-        r.script.sync.seenOnServer = -1;
-        storeScript(r.script.name, r.script, false);
-    },
-    importScript: function(r, cb) {
-        if (D) console.log("sync: import " + r.id);
-
-        var get_done = function(err, k, value) {
-            if (err) {
-                console.log("sync: Error: importScript -> " + k);
-            } else {
-                var s = null;
-                try {
-                    s = JSON.parse(value);
-                } catch (e) {
-                    console.log("sync: Parse error: importScript -> " + k);
-                }
-                if (s) {
-                    var src = s[0];
-                    var url = s[1];
-                    console.log("sync: import script " + k + " with script url " + url);
-                    var sync = { fromRemote: true, seenOnServer: SyncClient.remoteVersion };
-                    addNewUserScript({ url: url, src: src, ask: false, sync: sync, save: true, cb : cb });
-                    return;
-                }
-            }
-            if (cb) cb();
-        }
-        Syncer.get(r.id, get_done);
-
-    },
-    exportScript: function(r, cb) {
-        if (D) console.log("sync: export " + r.script.name);
-
-        var sc_done = function(err, k) {
-            if (err) {
-                console.log("sync: Error: exportScript -> " + k);
-            }
-            if (cb) cb();
-        }
-        Syncer.set(r.id, SyncClient.getMD5DatafromScript(r.script), sc_done);
-    },
-    syncAll : function(force) {
+    sync: function(force) {
         if (SyncClient.syncing > 0) {
             if (force) {
                 var sched = function(success) {
                     if (success) {
                         // schedule maybe a lot of sync runs, but do only one
-                        SyncClient.scheduleSync(50, true);
+                        SyncClient.scheduleSync(50, force);
                     }
                 };
                 // wait for sync end
@@ -1948,16 +2051,18 @@ var SyncClient = {
             return;
         }
 
-        SyncClient.syncing++;
-        if (V) console.log("sync: syncAll() syncing = " + SyncClient.syncing);
+        if (!SyncClient.enabled) {
+            return;
+        }
 
-        var latest = Config.values.sync_latest;
+        SyncClient.syncing++;
+        if (V) console.log("sync: start syncing = " + SyncClient.syncing);
+
         var local = null;
         var remote = null;
-        var mark = [];
-        var change = false;
         var run = [];
-        var conflict = false;
+        var change = false;
+        var success = true;
 
         var next = function() {
             if (run.length > 0) {
@@ -1967,35 +2072,15 @@ var SyncClient = {
         };
 
         var error = function() {
-            SyncClient.runAllSyncDoneListeners(false);
+            success = false;
+            all_done();
         };
 
-        var get_version = function() {
-            Syncer.get('version', got1);
-        };
-        run.push(get_version);
-
-        var got1 = function(err, k, v) {
-            if (err) {
-                console.log("sync: Error: " + k);
-                error();
-            } else {
-                SyncClient.remoteVersion = Number(v);
-                next();
-            }
-        };
-
-        var compare = function() {
-            if (SyncClient.remoteVersion != latest || force) {
-                SyncClient.getRemoteMd5List(got2);
-                local = SyncClient.getLocalScriptList();
-            } else {
-                if (D) console.log("sync: remote version == local version");
-            }
+        var get = function() {
+            SyncClient.getRemoteScriptList(got);
+            local = SyncClient.getLocalScriptList();
         }
-        run.push(compare);
-
-        var got2 = function(l) {
+        var got = function(l) {
             remote = l;
 
             if (remote) {
@@ -2005,6 +2090,35 @@ var SyncClient = {
                 error();
             }
         };
+        run.push(get);
+
+        var localHasUrl = function(u) {
+            if (u) {
+                u = u.split('#')[0];
+                for (var k=0; k<local.length; k++) {
+                    if (local[k].furl == u ||
+                        local[k].durl == u) {
+
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        };
+
+        var remoteHasUrl = function(u) {
+            if (u) {
+                u = u.split('#')[0];
+                for (var k=0; k<remote.length; k++) {
+                    if (remote[k].url == u) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        };
 
         var impo = function() {
             var running = 1;
@@ -2012,150 +2126,84 @@ var SyncClient = {
                 if (--running == 0) next();
             };
 
-            if (Config.values.sync_import == '+') {
-                for (var r in remote) {
+            if (Config.values.sync_import == '0') {
+                if (D) console.log("sync: import disabled -> next step");
+            } else if (Config.values.sync_import == '+') {
+                for (var u=0; u<remote.length; u++) {
+                    var o = remote[u];
                     var drin = false;
-                    var different = false;
 
-                    var sso = 0;
-
-                    if (local[r]) {
-                        sso = local[r].script.sync ? Number(local[r].script.sync.seenOnServer) : 0;
-                        if (!local[r].script.options.do_sync || sso < 0) continue;
-
+                    if (localHasUrl(o.url)) {
                         drin = true;
-                        if (remote[r].md5 != local[r].md5) different = true;
                     }
 
-                    var local_change = drin && different && SyncClient.remoteVersion > 0 && sso == SyncClient.remoteVersion;
-                    var local_and_remote_change = drin && different && SyncClient.remoteVersion > 0 && sso < SyncClient.remoteVersion;
-
-                    if (local_and_remote_change) {
-                        SyncClient.markScriptConflict(local[r]);
-                        conflict = true;
-                        continue;
-                    }
-                    if (local_change && V) {
-                        console.log("sync: script " + local[r].script.name + " different but locally modified -> do not re-import");
-                    }
-
-                    // do not import in case the script is locally modified, export in this case instead ;)
-                    if (!drin || (different && !local_change)) {
-                        change = true;
+                    if (!drin) {
                         running++;
-                        SyncClient.importScript(remote[r], check);
+                        change = true;
+                        SyncClient.importScript(o, check);
                     }
                 }
             } else {
-                console.log("sync: Err: +- Import Mode not supported!");
+                console.log("sync: Err: +- Import Mode not supported yet!");
             }
             check();
         };
         run.push(impo);
 
-        var expo_add = function() {
+        var expo = function() {
             var running = 1;
             var check = function() {
                 if (--running == 0) next();
             };
 
-            for (var r in local) {
-                var drin = false;
-                var different = false;
-                if (!local[r].script.options.do_sync || (local[r].script.sync && local[r].script.sync.seenOnServer < 0)) continue;
+            if (Config.values.sync_export == '0' || Config.values.sync_type == SyncInfo.types.ePASTEBIN) {
+                if (D) console.log("sync: export disabled -> next step");
+            } else if (Config.values.sync_export == '+' ||
+                       Config.values.sync_export == '+-') {
 
-                if (remote[r]) {
-                    drin = true;
-                    if (remote[r].md5 != local[r].md5) different = true;
-                }
+                for (var u=0; k<local.length; u++) {
+                    var drin = false;
+                    var o = local[u];
+                    var r = o.furl || o.durl;
+                    if (!r) continue;
+                    r = r.split('#')[0];
 
-                if (!drin || different) {
-                    running++;
-                    mark.push(local[r]);
-                    SyncClient.exportScript(local[r], check);
-                    remote[r] = local[r]; // shortcut to update remote informations
-                    change = true;
-                } else {
-                    mark.push(local[r]);
+                    if (remoteHasUrl(r)) {
+                        drin = true;
+                    }
+
+                    if (!drin) {
+                        running++;
+                        change = true;
+                        SyncClient.exportScript(o, check);
+                    }
                 }
             }
             check();
         };
-        run.push(expo_add);
-
-        var expo_rm = function() {
-            if (Config.values.sync_export == '+-') {
-            /* skip for now! remove scripts by installing and than deleting them!
-            for (var r in remote) {
-                var drin = false;
-                if (local[r]) {
-                    drin = true;
-                }
-                if (!drin) {
-                    // change = true;
-                    console.log("would like to remove " + r + " from server");
-                }
-            } */
-            }
-
-            next();
-        };
-        run.push(expo_rm);
-
-        var sync_fin = function() {
-            if (change) {
-                SyncClient.remoteVersion++;
-                Syncer.set('version', "" + SyncClient.remoteVersion, set_done);
-            } else {
-                if (D) console.log("sync: done, known version " + SyncClient.remoteVersion);
-                next();
-            }
-        };
-        run.push(sync_fin);
-
-        var set_done = function(err, msg) {
-            if (err) {
-                if (D) console.log("sync: err " + msg);
-            }
-
-            Config.values.sync_latest = SyncClient.remoteVersion;
-            Config.save();
-            notifyOptionsTab();
-
-            if (D) console.log("sync: done, new version " + SyncClient.remoteVersion);
-            next();
-        };
-
-        var mark_scripts = function() {
-            for (var i=0; i<mark.length; i++) {
-                SyncClient.markScriptSeen(mark[i], SyncClient.remoteVersion);
-            }
-            next();
-        };
-        run.push(mark_scripts);
+        run.push(expo);
 
         var all_done = function() {
-            if (V) console.log("sync: syncAll:all_done() syncing = " + (SyncClient.syncing-1));
+            if (D) console.log("sync: finished");
             if (--SyncClient.syncing == 0) {
-                SyncClient.runAllSyncDoneListeners(true);
+                SyncClient.runAllSyncDoneListeners(success);
             }
-            if (conflict) {
+            if (change) {
                 notifyOptionsTab();
             }
-            next();
         };
         run.push(all_done);
 
         next();
     },
-    runAllSyncDoneListeners : function(success) {
-        if (V) console.log("sync: runAllSyncDoneListeners() -> " + SyncClient.syncDoneListener.length);
 
-        while (SyncClient.syncDoneListener.length) {
-            var e = SyncClient.syncDoneListener.splice(0, 1);
-            e[0](success);
-        }
-    }
+    importScript: function(o, cb) {
+        if (D) console.log("sync: import " + (o.name || o.url));
+
+        var sync = { imported: true };
+        var props = { ask: false, sync: sync, save: true };
+        installFromUrl(o.url, props, cb);
+    },
 };
 sycl = SyncClient;
 
@@ -2163,29 +2211,38 @@ sycl = SyncClient;
 
 var setIcon = function(tabId, obj) {
     if (obj == undefined) obj = Config;
+    var s;
 
-    if (tabId != null && allURLs[tabId] && allURLs[tabId].stats.running) {
+    var blocker = false;
+    var running = false;
+
+    if (tabId && ctxRegistry.has(tabId)) {
+        blocker = ctxRegistry.n[tabId].blocker;
+        running = ctxRegistry.getRunning(tabId);
+    }
+    
+    if (blocker) {
+        obj.images.icon = 'images/icon_grey_blocker.png';
+    } else if (running) {
         obj.images.icon = 'images/icon.png';
-        chrome.browserAction.setIcon( { tabId: tabId, path: chrome.extension.getURL( obj.images.icon) } );
     } else {
         obj.images.icon = 'images/icon_grey.png';
-        var s = { path: chrome.extension.getURL( obj.images.icon) };
-        if (tabId != null) s.tabId = tabId;
-        chrome.browserAction.setIcon( s );
+    }
+
+    s = { path: chrome.extension.getURL( obj.images.icon) };
+    if (tabId != null) s.tabId = tabId;
+
+    try {
+        chrome.browserAction.setIcon(s);
+    } catch (e) {
+        console.log("bg: ERROR while setIcon! " + e.message);
     }
 };
 
 var addCfgCallbacks = function(obj) {
     Config.addChangeListener('sync_enabled', SyncClient.checkSyncAccount);
-    Config.addChangeListener('sync_enabled', function(n, o, e) {
-                                 if (e) {
-                                     SyncClient.schedulePeriodicalCheck();
-                                 } else {
-                                     SyncClient.disablePeriodicalCheck();
-                                 }
-                             });
-    Config.addChangeListener('sync_email', SyncClient.checkSyncAccount);
-    Config.addChangeListener('sync_password', SyncClient.checkSyncAccount);
+    Config.addChangeListener('sync_type', SyncClient.checkSyncAccount);
+    Config.addChangeListener('sync_id', SyncClient.checkSyncAccount);
 
     Config.addChangeListener('fire_enabled', function(n, o, e) {
                                  if (e && !TM_fire.status.initialized) {
@@ -2225,7 +2282,7 @@ var ConfigObject = function(initCallback) {
                      firstRun: true,
                      webrequest_use : 'yes',
                      webrequest_modHeaders : 'yes',
-                     notification_showTMUpdate: false,
+                     notification_showTMUpdate: true,
                      notification_silentScriptUpdate: true,
                      scriptTemplate : defltScript,
                      scriptUpdateCheckPeriod: 12 * 60 * 60 * 1000,
@@ -2244,14 +2301,13 @@ var ConfigObject = function(initCallback) {
                      editor_enterMode : 'indent',
                      editor_electricChars : true,
                      editor_lineNumbers: true,
+                     editor_autoSave: false,
+                     editor_easySave: false,
                      sync_enabled: false,
-                     sync_URL: 'https://ssl-id.net/sync.tampermonkey.net/sync.php',
-                     sync_email: "",
-                     sync_password: "",
-                     sync_valid: "unknown",
-                     sync_latest: 0,
+                     sync_type: 0,
+                     sync_id: "",
                      sync_import: "+",
-                     sync_export: "+-",
+                     require_blacklist : [ '/^https?:\\/\\/sizzlemctwizzle.com\\/.*/' ],
                      forbiddenPages : [ '*.paypal.tld/*', 'https://*deutsche-bank-24.tld/*', 'https://*bankamerica.tld/*',
                                         '*://plusone.google.com/*/fastbutton*',
                                         '*://www.facebook.com/plugins/*',
@@ -2340,9 +2396,16 @@ var ConfigObject = function(initCallback) {
         oobj.initialized = true;
 
         if (oobj.values.notification_showTMUpdate && upNotification) {
-            notify.show(chrome.i18n.getMessage('Welcome_'),
-                        chrome.i18n.getMessage('Have_fun_with_Tampermonkey', upNotification), chrome.extension.getURL("images/icon128.png"));
+            var args = 'version=' + chrome.extension.getVersion() + '&' +
+                       'ext=' + chrome.extension.getID().substr(0, 4);
+            var url = 'http://tampermonkey.net/changelog.php?' + args;
+
+            notify.showUpdate(chrome.i18n.getMessage('Updated_to__0version0', (upNotification || chrome.extension.getVersion())),
+                              null,
+                              chrome.extension.getURL("images/icon128.png"),
+                              { text: chrome.i18n.getMessage('Click_here_to_see_the_recent_changes'), src: url });
         }
+
         if (initCallback) initCallback();
     }
 
@@ -2397,17 +2460,19 @@ var runtimeInit = function() {
             if (req.readyState == 4) {
                 if (req.status == 200 || req.status == 0) {
                     res.resText = req.responseText;
-                    if (req.status == 0 || Helper.isLocalImage(res.url)) {
-                        if (res.url.search('.ico$') != -1) {
+                    if (!image) {
+                        if (res.url.search('.ico$') != -1 ||
+                            res.url.search('.jpg$') != -1) {
                             image = 'image/x-icon';
                         } else if (res.url.search('.gif$') != -1) {
                             image = 'image/gif';
                         } else if (res.url.search('.png$') != -1) {
                             image = 'image/png';
-                        } else {
+                        } else if (Helper.isLocalImage(res.url)) {
                             image = 'image/x-icon';
                         }
-                    } else {
+                    }
+                    if (req.status == 200 /* not local! */) {
                         addToRequireCache(res.url, req.responseText, req.responseHeaders);
                     }
                     if (!image) {
@@ -2417,7 +2482,7 @@ var runtimeInit = function() {
                     }
                     cb(script);
                 } else {
-                    if (D || V) console.log("Failed to load! " + req.status + " " + req.statusText);
+                    if (D || V) console.log("getRes: Failed to load: '" + res.url + "' " + req.status + " " + req.statusText);
                     cb(script);
                 }
             }
@@ -2447,10 +2512,12 @@ var runtimeInit = function() {
                             url: r.url,
                             retries: _retries,
                             overrideMimeType: 'text/plain; charset=x-user-defined'
+                            /* TODO: Why does the response headers now (Chrome 24) contain this overriden mime type?!
+                                     This breaks the image detection above, so use the URL to check for images! :/ */
                         };
 
-                        if (V) console.log("request " + r.url);
-                        xmlhttpRequest(details, function(req) { storeResource(req, r); });
+                        if (V) console.log("getRes: request " + r.url);
+                        xmlhttpRequest(details, function(req) { storeResource(req, r); }, null, null, null, true);
                     }
                 }
                 return true;
@@ -2460,6 +2527,29 @@ var runtimeInit = function() {
         return false;
     };
 
+    this.isBlacklisted = function(url) {
+        var black = false;
+
+        var check = function(v) {
+            var b = false;
+            
+            if (!v.length) return;
+
+            if (v.substr(0,1) == '/') {
+                b = matchUrl(url, v);
+            } else {
+                b = (url.search(v) != -1);
+            }
+            if (D && b) console.log('bg: require blacklist entry "' + v + '" matched');
+
+            black |= b;
+        };
+        
+        Helper.forEach(Config.values.require_blacklist, check);
+
+        return black;
+    };
+    
     this.getRequires = function(script, cb) {
 
         var fillRequire = function(req, res) {
@@ -2476,9 +2566,16 @@ var runtimeInit = function() {
         for (var k in script.requires) {
             var r = script.requires[k];
             if (!r.loaded && r.url) {
-                var t = getFromRequireCache(r.url);
+
+                var t = null;
+                if (oobj.isBlacklisted(r.url)) {
+                    t  = { content: '// this @require ("' + encodeURIComponent(r.url) + '") is blacklisted!\n' };
+                } else {
+                    t = getFromRequireCache(r.url);
+                }
+
                 if (t) {
-                    fillRequire( { readyState: 4, status: 200, responseText: t.content }, r );
+                    fillRequire( { readyState: 4, status: 200, responseText: t.content }, r);
                     oobj.getRequires(script, cb);
                 } else {
                     if (V) console.log("requires " + r.url);
@@ -2486,7 +2583,6 @@ var runtimeInit = function() {
                         fillRequire(req, r);
                         oobj.getRequires(script, cb);
                     };
-
                     if (r.url.search('^file://') == 0) {
                         var c = function(s) {
                             onResp({readyState: 4, status: s ? 0 : 404, responseText: s});
@@ -2513,21 +2609,21 @@ var runtimeInit = function() {
         cb();
     };
 
-    this.contentLoad = function(tab, main, cb) {
+    this.contentLoad = function(info, main, cb) {
 
-        if (oobj.getNextResource(main, function(script) { oobj.contentLoad(tab, script, cb); })) {
+        if (oobj.getNextResource(main, function(script) { oobj.contentLoad(info, script, cb); })) {
             return;
         }
 
-        oobj.currentTab = tab;
-        if (typeof TM_tabs[tab.id] == 'undefined') TM_tabs[tab.id] = { storage: {} };
+        oobj.info = info;
+        if (typeof TM_tabs[info.tabId] == 'undefined') TM_tabs[info.tabId] = { storage: {} };
 
         var req_cb = function() {
             var scripts = [];
             scripts.push(main);
 
-            console.log(chrome.i18n.getMessage("run_script_0url0___0name0", [ tab.url , main.name]));
-            oobj.injectScript(scripts, tab, cb);
+            console.log(chrome.i18n.getMessage("run_script_0url0___0name0", [ info.url , main.name]));
+            oobj.injectScript(scripts, cb);
         };
 
         oobj.getRequires(main, req_cb);
@@ -2554,7 +2650,7 @@ var runtimeInit = function() {
         return src;
     };
 
-    this.injectScript = function(scripts, tab, cb) {
+    this.injectScript = function(scripts, cb) {
         var script;
         if (cb == undefined) cb = function() {};
 
@@ -2582,7 +2678,7 @@ var runtimeInit = function() {
                 dblscript[k] = script[k];
             }
 
-            chrome.tabs.sendMessage(oobj.currentTab.id,
+            chrome.tabs.sendMessage(oobj.info.tabId,
                                     { method: "executeScript",
                                       header: script.header,
                                       code: oobj.createEnv( script.textContent, script),
@@ -2590,7 +2686,7 @@ var runtimeInit = function() {
                                       version: chrome.extension.getVersion(),
                                       storage: storage,
                                       script: dblscript,
-                                      id: oobj.currentTab.scriptId },
+                                      id: oobj.info.scriptId },
                                     cb);
         }
     };
@@ -2739,7 +2835,7 @@ var addNewUserScript = function(o) {
 
     var script = scriptParser.createScriptFromSrc(o.src);
 
-    if (o.name && script.name != script.name) {
+    if (o.name && o.name != script.name) {
         console.log("bg: addNewUserScript() Names do not match!");
         return false;
     }
@@ -2779,7 +2875,7 @@ var addNewUserScript = function(o) {
 
     script.position = oldscript ? oldscript.position : determineLastScriptPosition() + 1;
 
-    if (script.name.search('@') != -1) {
+    if (script.name.search('\n') != -1) {
         chrome.tabs.sendMessage(o.tabid,
                                 { method: "showMsg", msg: chrome.i18n.getMessage('Invalid_UserScript_name__Sry_')},
                                 function(response) {});
@@ -2834,12 +2930,12 @@ var addNewUserScript = function(o) {
     if (oldscript) {
         // sync options and info
         if (oldscript.sync) script.sync = oldscript.sync;
-        script.options.do_sync = oldscript.options.do_sync;
     }
 
     if (!reset && !o.clean && oldscript) {
         // don't change some settings in case it's a system script or an update
         script.enabled = oldscript.enabled;
+        // TODO: overwrite ?! script.options.user_agent = oldscript.options.user_agent || '';
 
         // compatibility
         if (!script.options.awareOfChrome) {
@@ -2861,8 +2957,6 @@ var addNewUserScript = function(o) {
 
     if (!o.clean && o.sync) {
         script.sync = o.sync;
-        // TODO: a little bit ugly, maybe the callback should get the name of the installed script to be able to modify some things later on?!
-        script.options.do_sync = true;
     }
 
     if (!script.includes.length && !script.matches.length) {
@@ -2991,22 +3085,30 @@ var addNewUserScript = function(o) {
     return true;
 };
 
-var installFromUrl = function(url, tabid, cb) {
+var installFromUrl = function(url, props, cb) {
     var details = {
         method: 'GET',
         retries: _retries,
         url: url,
     };
     var inst = function(req) {
-        if (req.readyState == 4 && req.status == 200) {
-            var callback = function(installed) {
-                if (cb) cb(true, installed);
-            };
-
-            addNewUserScript({ tabid: tabid, url: url, src: req.responseText, ask: true, cb : callback });
-        } else {
-            if (V) console.log("scriptClick: " + url + " req.status = " + req.status);
-            if (cb) cb(false, false);
+        if (req.readyState == 4) {
+            if (req.status == 200) {
+                var callback = function(installed) {
+                    if (cb) cb(true, installed);
+                };
+                var o = { url: url, src: req.responseText, ask: true, cb : callback };
+                if (props) {
+                    for (var k in props) {
+                        if (!props.hasOwnProperty(k)) continue;
+                        o[k] = props[k];
+                    }
+                }
+                addNewUserScript(o);
+            } else {
+                if (V) console.log("scriptClick: " + url + " req.status = " + req.status);
+                if (cb) cb(false, false);
+            }
         }
     };
     xmlhttpRequest(details, inst);
@@ -3023,18 +3125,20 @@ var getValidTabId = function(ignore, cb) {
 
     var resp = function(tab) {
         var id = 0;
-        if (!tab || !tab.id || !allURLs[tab.id]) {
+        if (!tab || !tab.id || !ctxRegistry.has(tab.id)) {
             var i = 0;
             var ts = 0;
-            for (var g in allURLs) {
-                if (!allURLs.hasOwnProperty(g)) continue;
-                if (ts == 0 || allURLs[g].ts < ts) {
+
+            var it = function(g, t) {
+                if (ts == 0 || t.ts < ts) {
                     if (!isIn(g)) {
-                        ts = allURLs[g].ts;
+                        ts = t.ts;
                         i = g;
                     }
                 }
-            }
+            };
+            ctxRegistry.iterateTabs(it);
+
             id = Number(i);
         } else if (!isIn(tab.id)) {
             id = tab.id;
@@ -3072,22 +3176,30 @@ var notify = {
         }
         return id;
     },
-    show : function(title, text, image, delay, callback) {
+    notify : function(title, text, image, delay, perm, link, callback) {
         var notifyId = callback ? notify.getNotifyId(callback) : null;
-        var args = 'notify=1&title=' + encodeURIComponent(title) + '&text=' + encodeURIComponent(text);
+        var args = 'notify=1&title=' + encodeURIComponent(title);
+        if (text) {
+            args += '&text=' + encodeURIComponent(text);
+        }
         if (image) args += "&image=" + encodeURIComponent(image);
-        if (delay != undefined) {
+        if (delay) {
             delay = Number(delay);
             args += "&delay=" + encodeURIComponent(delay);
         }
-        if (notifyId) {
-            args += "&notifyId=" + encodeURIComponent(notifyId);
+
+        if (perm || notifyId) {
+            if (perm) {
+                args += "&requestPerm=" + perm + ";" + encodeURIComponent(notifyId);
+            } else {
+                args += "&notifyId=" + encodeURIComponent(notifyId);
+            }
             var to = null;
             var remove = null;
-            var listen = function() {
+            var listen = function(evt) {
                 if (NV) console.log("bg: received click -> notifyId: " + notifyId);
                 remove();
-                callback(true);
+                callback(!perm || evt.attrName == "true");
             };
             remove = function() {
                 if (NV) console.log("bg: remove listener -> notifyId: " + notifyId);
@@ -3097,8 +3209,20 @@ var notify = {
             window.addEventListener("notify_" + notifyId, listen, false);
             to = window.setTimeout(function() { to = null; remove(); callback(false); }, delay ? delay + 5000 : 10 * 60 * 1000);
         }
+        if (link) {
+            args += "&link=" + encodeURIComponent(link.text) + ";" + encodeURIComponent(link.src);
+        }
         var notification = webkitNotifications.createHTMLNotification('notification.html?' + args);
         notification.show();
+    },
+    getPermission : function(title, text, image, delay, perm, callback) {
+        notify.notify(title, text, image, delay, perm, null, callback);
+    },
+    showUpdate : function(title, text, image, link) {
+        notify.notify(title, text, image, 300000, null, link, null);
+    },
+    show : function(title, text, image, delay, callback) {
+        notify.notify(title, text, image, delay, null, null, callback);
     }
 };
 
@@ -3106,63 +3230,70 @@ var ScriptUpdater = {
     check : function(force, showResult, id, callback) {
         if (!force && Config.values.scriptUpdateCheckPeriod == 0) return;
 
-        var runCheck = function() {
+        var runCheck = function(initial) {
             if (showResult) {
                 var t = chrome.i18n.getMessage('Script_Update');
                 var msg = chrome.i18n.getMessage('Check_for_userscripts_updates') + '...';
                 notify.show(t, msg, chrome.extension.getURL("images/icon128.png"), 5000);
             }
 
+            console.log("bg: check for script updates " + (id ? ' for ' + id : ''));
+            var cb = function(updatable, obj) {
+                if (updatable) {
+                    try {
+                        var install = function(clicked) {
+                            if (clicked) {
+                                var gotId = function(id, close) {
+                                    var ss = { tabid: id,
+                                               url: obj.url,
+                                               src: obj.code,
+                                               ask: true,
+                                               cb : close,
+                                               hash: obj.newhash != undefined ? obj.newhash : null };
+                                    addNewUserScript(ss);
+                                };
+                                getValidTabId(null, gotId);
+                            }
+                        };
+
+                        var msg = chrome.i18n.getMessage('There_is_an_update_for_0name0_avaiable_', obj.name) + '\n' + chrome.i18n.getMessage('Click_here_to_install_it_');
+                        var t = chrome.i18n.getMessage('Just_another_service_provided_by_your_friendly_script_updater_');
+                        if (Config.values.notification_silentScriptUpdate) {
+                            install(true);
+                        } else {
+                            notify.show(t, msg, chrome.extension.getURL("images/icon128.png"), Config.values.scriptUpdateHideNotificationAfter, install);
+                        }
+                    } catch (e) {
+                        console.log("bg: notification error " + e.message);
+                    }
+                }
+                if (callback) callback(updatable);
+            };
+            ScriptUpdater.updateUserscripts(0, showResult, id, cb);
+        };
+
+        var prepare = function() {
             var last = getUpdateCheckCfg();
             if (force || ((new Date()).getTime() - last.scripts) > Config.values.scriptUpdateCheckPeriod) {
-                console.log("bg: check for script updates " + (id ? ' for ' + id : ''));
-                var cb = function(updatable, obj) {
-                    if (updatable) {
-                        try {
-                            var install = function(clicked) {
-                                if (clicked) {
-                                    var gotId = function(id, close) {
-                                        var ss = { tabid: id,
-                                                   url: obj.url,
-                                                   src: obj.code,
-                                                   ask: true,
-                                                   cb : close,
-                                                   hash: obj.newhash != undefined ? obj.newhash : null };
-                                        addNewUserScript(ss);
-                                    };
-                                    getValidTabId(null, gotId);
-                                }
-                            };
-
-                            var msg = chrome.i18n.getMessage('There_is_an_update_for_0name0_avaiable_', obj.name) + '\n' + chrome.i18n.getMessage('Click_here_to_install_it_');
-                            var t = chrome.i18n.getMessage('Just_another_service_provided_by_your_friendly_script_updater_');
-                            if (Config.values.notification_silentScriptUpdate) {
-                                install(true);
-                            } else {
-                                notify.show(t, msg, chrome.extension.getURL("images/icon128.png"), Config.values.scriptUpdateHideNotificationAfter, install);
-                            }
-                        } catch (e) {
-                            console.log("bg: notification error " + e.message);
-                        }
-                    }
-                    if (callback) callback(updatable);
+                var exec = function() {
+                    runCheck();
+                    last.scripts = (new Date()).getTime();
+                    setUpdateCheckCfg(last);
                 };
-                ScriptUpdater.updateUserscripts(0, showResult, id, cb);
-                last.scripts = (new Date()).getTime();
-                setUpdateCheckCfg(last);
+                if (SyncClient.enabled) {
+                    SyncClient.addSyncDoneListener(exec);
+                    SyncClient.scheduleSync(50, false);
+                } else {
+                    exec();
+                }
             } else if (callback) {
                 console.log("bg: WARN ScriptUpdater.check -> no force but callback");
                 window.setTimeout(callback, 1);
             }
         };
 
-        if (SyncClient.enabled) {
-            SyncClient.addSyncDoneListener(runCheck);
-            SyncClient.scheduleSync(50, true);
-        } else {
-            runCheck();
-        }
-        
+        prepare();
+
         window.setTimeout(ScriptUpdater.check, 5 * 60 * 1000);
     },
 
@@ -3349,8 +3480,13 @@ var matchUrl = function(href, reg, match) {
         r = new RegExp('.*' + reg.replace(/^\//g, '').replace(/\/$/g, '') + '.*', 'i');
     } else {
         var re = Helper.getRegExpFromUrl(reg, Config, false, match);
-        r = new RegExp(re);
+        if (match) {
+            r = new RegExp(re);
+        } else {
+            r = new RegExp(re, 'i');
+        }
     }
+
     return href.replace(r, '') == '';
 };
 
@@ -3492,12 +3628,8 @@ var storeScript = function(name, script, triggerSync) {
     if (triggerSync === undefined) triggerSync = true;
 
     if (script) {
-        var changed = !!TM_storage.getValue(name);
-
-        if (triggerSync) {
-            // !triggerSync indicates that the source wasn't changed -> no need to calculate MD5
-            script.md5 = SyncClient.getMD5fromScript(script);
-        }
+        var added = !TM_storage.getValue(name);
+        var changed;
 
         TM_storage.setValue(name + condAppendix, { inc: script.includes, match: script.matches, exc: script.excludes });
         TM_storage.setValue(name + scriptAppendix, script.textContent);
@@ -3505,24 +3637,12 @@ var storeScript = function(name, script, triggerSync) {
         s.textContent = null;
         TM_storage.setValue(name, s);
 
-        if (triggerSync) { /* TODO: avoid sync in case only i.e. position was changed! */
-            if (changed) {
-                SyncClient.scriptChangedCb(name, script);
-            } else {
-                SyncClient.scriptAddedCb(name, script);
-            }
-        }
     } else {
         var r = loadScriptByName(name);
 
         TM_storage.deleteValue(name + condAppendix);
         TM_storage.deleteValue(name + scriptAppendix);
         TM_storage.deleteValue(name);
-
-        // triggerSync... removal always triggers sync
-        if (r.script && r.cond) {
-            SyncClient.scriptRemovedCb(name, r.script);
-        }
     }
 };
 
@@ -3565,20 +3685,22 @@ var notifyStorageListeners = function(name, key, tabid, send) {
     }
 };
 
-var removeStorageListeners = function(name, id) {
+var removeStorageListeners = function(name, id, send) {
+    if (send === undefined) send = true;
     var old = TM_storageListener;
+
     TM_storageListener = [];
     for (var k in old) {
         var c = old[k];
         try {
             if (c.name == name && c.id == id) {
                 if (V || SV) console.log('send empty response ' + name + " " + id);
-                c.response({});
+                if (send) c.response({});
             } else {
                 TM_storageListener.push(c);
             }
         } catch (e) {
-            console.log("Storage listener clear for script " + name + " failed! Page reload?!");
+            if (D) console.log("Storage listener clear for script " + name + " failed! Page reload?!");
         }
     }
 };
@@ -3590,14 +3712,14 @@ var connectHandler = function(port) {
         window.setTimeout(function() { connectHandler(port); }, 10);
         return;
     }
-
     var connectMsgHandler = function(request) {
+        var disconnectHandler = null;
         var sender = port.sender;
         var sendResponse = function(o) {
             try {
                 port.postMessage(o);
             } catch (e) {
-                console.log('bg: Error sending port message: ' + JSON.stringify(o));
+                console.log('bg: Error sending port (' + port.name + ') message: ' + JSON.stringify(o));
             }
         };
 
@@ -3613,6 +3735,10 @@ var connectHandler = function(port) {
             if (typeof sender.tab != 'undefined') {
                 if (V || SV) console.log("storage add listener " + request.name + " " + request.id);
                 TM_storageListener.push({ tabid: sender.tab.id, id: request.id, name: request.name, time: (new Date()).getTime(), response: sendResponse});
+                disconnectHandler = function() {
+                    // there is no need to try to send some data when we're already disconnected
+                    removeStorageListeners(request.name, request.id, false);
+                };
             } else {
                 console.log(chrome.i18n.getMessage("Unable_to_load_storage_due_to_empty_tabID_"));
                 sendResponse({ error: true });
@@ -3650,6 +3776,7 @@ var connectHandler = function(port) {
             }
             sendResponse({});
         }
+        if (disconnectHandler) port.onDisconnect.addListener(disconnectHandler);
     };
 
     port.onMessage.addListener(connectMsgHandler);
@@ -3660,7 +3787,7 @@ var requestHandler = function(request, sender, sendResponse) {
         window.setTimeout(function() { requestHandler(request, sender, sendResponse); }, 10);
         return true;
     }
-    if (V || EV || MV) console.log("back: request.method " + request.method + " id " + request.id);
+    if (V || EV || MV) console.log("back: request.method " + request.method + " contextId " + request.id + " tabId: " + (sender.tab ? sender.tab.id : "unknown!!!"));
 
     if (request.method == "ping") {
         sendResponse({ pong: true, instanceID: TM_instanceID });
@@ -3669,7 +3796,19 @@ var requestHandler = function(request, sender, sendResponse) {
             closeableTabs[tab.id] = true;
             sendResponse({ tabId: tab.id });
         }
-        chrome.tabs.create({ url: request.url}, done);
+        var s = [ 'active' ];
+        var o = { url: request.url };
+        if (request.options) {
+            for (var n=0; n<s.length; n++) {
+                if (request.options[s[n]] !== undefined) {
+                    o[s[n]] = request.options[s[n]];
+                }
+            }
+            if (request.options.insert) {
+                o.index = sender.tab.index + 1;
+            }
+        }
+        chrome.tabs.create(o, done);
     } else if (request.method == "closeTab") {
         // check if this tab was created by openInTab request!
         if (request.tabId && closeableTabs[request.tabId]) {
@@ -3721,6 +3860,28 @@ var requestHandler = function(request, sender, sendResponse) {
         };
 
         createOptionItems(done);
+    } else if (request.method == "buttonPress") {
+        var optionstab = (typeof sender.tab != 'undefined' && sender.tab) ? (sender.tab.id >= 0 ? true : false) : null;
+
+        var done = function() {
+            sendResponse({});
+        };
+
+        if (request.name == 'reset_simple') {
+            Reset.reset(done);
+        } else if (request.name == 'reset_factory') {
+            Reset.factoryReset(done)
+        } else if (request.name == 'create_teslc_data') {
+            var cb = function(ret) {
+                clipboard.copy({ content: Converter.UTF8.encode(ret.join('<br>')), type: 'html'});
+                done();
+            };
+            SyncClient.createTeslcData(cb);
+        } else {
+            console.log("bg: Warning: unnknown button " + name);
+            sendResponse({});
+        }
+
     } else if (request.method == "modifyScriptOptions" || request.method == "modifyNativeScript") {
         var optionstab = (typeof sender.tab != 'undefined' && sender.tab) ? (sender.tab.id >= 0 ? true : false) : null;
         var reload = (request.reload == undefined || request.reload == true);
@@ -3819,11 +3980,17 @@ var requestHandler = function(request, sender, sendResponse) {
 
     } else if (request.method == "saveScript") {
         // TODO: check renaming and remove old one
+        var reload = (request.reload == undefined || request.reload == true);
+
         var cb = function(installed) {
-            var done = function(allitems) {
-                sendResponse({items: allitems, installed: installed});
-            };
-            createOptionItems(done);
+            if (reload) {
+                var done = function(allitems) {
+                    sendResponse({items: allitems, installed: installed});
+                };
+                createOptionItems(done);
+            } else {
+                sendResponse({});
+            }
         };
 
         if (request.clean) {
@@ -3851,7 +4018,7 @@ var requestHandler = function(request, sender, sendResponse) {
                 callback = function (installed) { reorderScripts();
                                                   cb(installed); };
             }
-            if (!addNewUserScript({ tabid: sender.tab.id, force_url: request.force_url, url: request.file_url, src: request.code, ask: true, save: true, cb : callback })) {
+            if (!addNewUserScript({ tabid: sender.tab.id, force_url: request.force_url, url: request.file_url, src: request.code, ask: !Config.values.editor_easySave, save: true, cb : callback })) {
                 if (callback) callback(false);
             }
         } else {
@@ -3874,7 +4041,7 @@ var requestHandler = function(request, sender, sendResponse) {
                                             function(response) {});
                 }
             };
-            installFromUrl(request.url, sender.tab.id, cb);
+            installFromUrl(request.url, { tabid: sender.tab.id }, cb);
         } else {
             console.log(chrome.i18n.getMessage("Unable_to_install_script_due_to_empty_tabID_"));
         }
@@ -3924,22 +4091,23 @@ var requestHandler = function(request, sender, sendResponse) {
             (Config.values.appearance_badges == 'running' ||
              Config.values.appearance_badges == 'disabled')) {
 
+            var frameId = 0;
             var contextId = request.id;
             if (V || UV) console.log("unload check " + contextId + " url: " + request.url);
 
             if (contextId &&
-                allURLs[sender.tab.id] &&
-                allURLs[sender.tab.id].stats.executed[contextId]) {
+                ctxRegistry.has(sender.tab.id) &&
+                ctxRegistry.n[sender.tab.id].stats.executed[contextId]) {
 
-                allURLs[sender.tab.id].stats.running -= allURLs[sender.tab.id].stats.executed[contextId].running;
-                allURLs[sender.tab.id].stats.disabled -= allURLs[sender.tab.id].stats.executed[contextId].disabled;
+                ctxRegistry.n[sender.tab.id].stats.running -= ctxRegistry.n[sender.tab.id].stats.executed[contextId].running;
+                ctxRegistry.n[sender.tab.id].stats.disabled -= ctxRegistry.n[sender.tab.id].stats.executed[contextId].disabled;
 
                 // shouldn't happen...
-                if (allURLs[sender.tab.id].stats.running < 0) allURLs[sender.tab.id].stats.running = 0;
-                if (allURLs[sender.tab.id].stats.disabled < 0) allURLs[sender.tab.id].stats.disabled = 0;
+                if (ctxRegistry.n[sender.tab.id].stats.running < 0) ctxRegistry.n[sender.tab.id].stats.running = 0;
+                if (ctxRegistry.n[sender.tab.id].stats.disabled < 0) ctxRegistry.n[sender.tab.id].stats.disabled = 0;
 
                 var url = request.url + request.params;
-                removeFromAllURLs(sender.tab.id, url);
+                ctxRegistry.removeUrl(sender.tab.id, frameId, url);
 
                 setBadge(sender.tab.id);
             }
@@ -3947,11 +4115,32 @@ var requestHandler = function(request, sender, sendResponse) {
         sendResponse({});
     } else if (request.method == "prepare") {
         if (typeof sender.tab != 'undefined' && sender.tab.index >= 0) { // index of -1 is used by google search for omnibox
-            if (request.topframe || !allURLs[sender.tab.id] /* i.e. tamperfire page */) {
-                resetTabInfo(sender.tab.id);
-                setIcon(sender.tab.id);
+            var scheme = (!sender.tab || !sender.tab.url || sender.tab.url.length < 4) ? null :  sender.tab.url.substr(0,4);
+
+            if (scheme == "file" ||
+                !ctxRegistry.has(sender.tab.id) /* i.e. tamperfire page */) {
+
+                Tab.reset(sender.tab.id, false);
+
+                if (request.topframe &&
+                    _webRequest.headers &&
+                    _webRequest.verified) {
+
+                    if (!scheme || (scheme != "http" && scheme != "file")) {
+                        // all http related traffic should be Tab.prepare'd by webRequest.headerFix !
+                        console.log("bg: WARN: this should _NEVER_ happen!!!!!");
+                    } else {
+                        var nfo = { tabId: sender.tab.id,
+                                    frameId: request.topframe ? 0 : 1 /* TODO: get frameId of sender!*/ ,
+                                    scriptId: request.id,
+                                    url: sender.tab.url };
+
+                        ctxRegistry.setCache(nfo.tabId, nfo.frameId, nfo.url, Tab.prepare(nfo));
+                    }
+                }
             }
-            var cb = function( scripts, enabledScriptsCount, disabledScriptsCount ) {
+
+            var length_cb = function(enabledScriptsCount, disabledScriptsCount ) {
                 var r = { enabledScriptsCount: enabledScriptsCount,
                           raw: {},
                           webRequest: _webRequest,
@@ -3967,13 +4156,9 @@ var requestHandler = function(request, sender, sendResponse) {
                 } else {
                     sendResponse( { logLevel: Config.values.logLevel } );
                 }
-                for (var k in scripts) {
-                    if (!scripts.hasOwnProperty(k)) continue;
-                    allURLs[sender.tab.id].scripts[k] = true;
-                }
-                allURLs[sender.tab.id].stats.running += enabledScriptsCount;
-                allURLs[sender.tab.id].stats.disabled += disabledScriptsCount;
-                allURLs[sender.tab.id].stats.executed[request.id] = { disabled: disabledScriptsCount, running: enabledScriptsCount };
+                ctxRegistry.n[sender.tab.id].stats.running += enabledScriptsCount;
+                ctxRegistry.n[sender.tab.id].stats.disabled += disabledScriptsCount;
+                ctxRegistry.n[sender.tab.id].stats.executed[request.id] = { disabled: disabledScriptsCount, running: enabledScriptsCount };
 
                 setIcon(sender.tab.id);
                 if (Config.values.appearance_badges != 'tamperfire') {
@@ -3982,20 +4167,31 @@ var requestHandler = function(request, sender, sendResponse) {
                 }
             };
             var allrun_cb = function() {
-                allURLs[sender.tab.id].allow_requests = true;
                 setBadge(sender.tab.id);
             };
             if (Config.values.forbiddenPages.length == 0 || validUrl(request.url, { exc: Config.values.forbiddenPages })) {
-                updateListener(sender.tab.id, {status: "complete"}, sender.tab, request, cb, allrun_cb);
+                // TODO: get frameId of sender!
+                sender.tab.frameId = request.topframe ? 0 : 1;
+                tabUpdateListener(sender.tab.id, {status: "complete"}, sender.tab, request, length_cb, allrun_cb);
                 // a url may be added! reset fire count
-                allURLs[sender.tab.id].fire_cnt = undefined;
+                ctxRegistry.setFireCnt(sender.tab.id, null);
             } else {
                 console.log("Forbidden page: '" + request.url + "' -> Do nothing!");
-                allURLs[sender.tab.id].allow_requests = true;
                 sendResponse({});
             }
         } else {
             sendResponse({});
+        }
+
+    } else if (request.method == "scriptBlockerDetected") {
+        var done = function(has, asked) {
+            sendResponse({ alert: has && asked });
+        };
+
+        contentSettings.requestPermissionEx(done);
+        if (ctxRegistry.has(sender.tab.id)) {
+            ctxRegistry.n[sender.tab.id].blocker = true;;
+            setIcon(sender.tab.id);
         }
     } else if (request.method == "startFireUpdate") {
         var done = function(suc) {
@@ -4064,7 +4260,9 @@ var requestHandler = function(request, sender, sendResponse) {
         }
         notify.show(request.title, request.msg, image, request.delay, cb);
     } else if (request.method == "localFileCB") {
-        localFile.listener(null, request.data);
+        if (!localFile.useIframeMessage) {
+            localFile.listener(null, request.data);
+        }
         sendResponse({});
     } else {
         console.log("b: " + chrome.i18n.getMessage("Unknown_method_0name0" , request.method));
@@ -4162,12 +4360,12 @@ var createFirePageItems = function(request, items) {
     var ret = [];
     var u = 'http://...';
 
-    if (request.tabid && allURLs[request.tabid] && !allURLs[request.tabid].empty) {
-        for (var k in allURLs[request.tabid].urls) {
-            if (!allURLs[request.tabid].urls.hasOwnProperty(k)) continue;
+    if (request.tabid && !ctxRegistry.isEmpty(request.tabid)) {
+        var it = function(k, v) {
             u = k;
-            break;
-        }
+            return true;
+        };
+        ctxRegistry.iterateUrls(request.tabid, it);
     } else if (request.url) {
         u = request.url;
     }
@@ -4241,7 +4439,7 @@ var createActionMenuItems = function(tab) {
         }
     }
     s.push({ name: chrome.i18n.getMessage('Get_new_scripts___'), image: chrome.extension.getURL('images/script_download.png'), url: 'http://userscripts.org', newtab: true});
-    s.push({ name: chrome.i18n.getMessage('Add_new_script___'), image: chrome.extension.getURL('images/script_add.png'), url: chrome.extension.getURL('options.html') + '?new=1', newtab: true });
+    s.push({ name: chrome.i18n.getMessage('Add_new_script___'), image: chrome.extension.getURL('images/script_add.png'), url: chrome.extension.getURL('options.html') + '?open=0', newtab: true });
 
     ret = ret.concat(s);
     ret.push(createDivider());
@@ -4279,13 +4477,9 @@ var createOptionItems = function(cb) {
 
         for (var i=0; i< exts.length; i++) {
             var k = exts[i];
-            var img = k.enabled
-                ? chrome.extension.getURL('images/greenled.png')
-                : chrome.extension.getURL('images/redled.png');
 
             var obj = { name: k.name,
                         id: k.id,
-                        image: img,
                         icon: k.icon,
                         code: null,
                         position: 0,
@@ -4327,6 +4521,7 @@ var createOptionItems = function(cb) {
     var opttf = [];
     var optns = [];
     var optsy = [];
+    var optsr = [];
 
     optsg.push({ name: chrome.i18n.getMessage('General'), section: true});
 
@@ -4363,57 +4558,62 @@ var createOptionItems = function(cb) {
                value: Config.values.logLevel,
                desc: '' });
 
-        optsy.push({ name: chrome.i18n.getMessage('Script_Syncer'), section: true, level: 50, needsave: true });
-    optsy.push({ name: chrome.i18n.getMessage('Enable_Script_Sync'),
+    optsy.push({ name: chrome.i18n.getMessage('TESLC') + ' BETA', section: true, level: 50, needsave: true });
+
+    optsy.push({ name: chrome.i18n.getMessage('Enable_TESLC'),
                        id: 'sync_enabled',
                        level: 50,
                        option: true,
                        checkbox: true,
                        enabled: Config.values.sync_enabled,
-                       desc: '' });
+                       desc: chrome.i18n.getMessage('Tampermonkey_External_Script_List_Control') });
 
-    var hint = "";
-    if (Config.values.sync_valid == "valid") {
-        hint = chrome.i18n.getMessage('Account_is_verified');
-    } else if (Config.values.sync_valid == "submitted") {
-        hint = chrome.i18n.getMessage('Credentials_are_submitted__Please_check_your_email_account_for_verification_details');
-    } else if (Config.values.sync_valid == "invalid") {
-        hint = chrome.i18n.getMessage('Credentials_are_invalid_');
-    } else if (Config.values.sync_valid == "unknown") {
-        hint = chrome.i18n.getMessage('Please_enter_your_existing_credentials_or_use_new_ones_');
-    }
 
-    optsy.push({ name: chrome.i18n.getMessage('eMail'), id: 'sync_email',
-                       level: 50,
-                       mail: true,
-                       value: Config.values.sync_email,
-                       hint: hint,
-                       option: true });
-    optsy.push({ name: chrome.i18n.getMessage('Password'), id: 'sync_password',
-                       level: 50,
-                       password: true,
-                       value: Config.values.sync_password,
-                       option: true });
+    optsy.push({ name: chrome.i18n.getMessage('Sync_Type'),
+                 id: 'sync_type',
+                 enabler: true,
+                 level: 50,
+                 option: true,
+                 select: [ { name: "pastebin.com", value: SyncInfo.types.ePASTEBIN, enable : { 'sync_export' : 0, 'import_pl_mi': 0 }} /*,
+                           { name: "Chrome Sync", value: SyncInfo.types.eCHROMESYNC, enable : { 'sync_id': 0, 'create_teslc_data' : 0 }} */ ],
+                 value: Config.values.sync_type });
 
     optsy.push({ name: chrome.i18n.getMessage('Import_Mode'),
                id: 'sync_import',
+               enabledBy: 'sync_type',
                level: 60,
                option: true,
-               select: [ { name: chrome.i18n.getMessage('Off'), value: '0' },
-                         { name: chrome.i18n.getMessage('Create_only'), value: '+' } /*,
-                         { name: chrome.i18n.getMessage('Create_and_remove'), value: '+-' }*/ ],
+               select: [ { name: chrome.i18n.getMessage('Create_only'), value: '+' },
+                         { name: chrome.i18n.getMessage('Create_and_remove'), value: '+-', enabledBy: 'sync_type', id: 'import_pl_mi' } ],
                value: Config.values.sync_import,
                desc: chrome.i18n.getMessage('This_options_sets_up_how_to_handle_changes_from_the_sync_server_') });
 
     optsy.push({ name: chrome.i18n.getMessage('Export_Mode'),
                id: 'sync_export',
+               enabledBy: 'sync_type',
                level: 60,
                option: true,
-               select: [ { name: chrome.i18n.getMessage('Off'), value: '0' },
-                      /* { name: chrome.i18n.getMessage('Create_only'), value: '+' } , */
+               select: [ { name: chrome.i18n.getMessage('Create_only'), value: '+' },
                          { name: chrome.i18n.getMessage('Create_and_remove'), value: '+-' } ],
                value: Config.values.sync_export,
-               desc: chrome.i18n.getMessage('This_options_sets_up_how_to_sync_local_changes_to_the_server_') });
+               desc: chrome.i18n.getMessage('This_options_sets_up_how_to_handle_changes_from_the_sync_server_') });
+
+    optsy.push({ name: chrome.i18n.getMessage('Sync_Id'),
+                 id: 'sync_id',
+                 enabledBy: 'sync_type',
+                 level: 50,
+                 text: true,
+                 value: Config.values.sync_id,
+                 option: true });
+
+
+    optsy.push({ name: chrome.i18n.getMessage('Create_Exportable_Data'),
+               id: 'create_teslc_data',
+               enabledBy: 'sync_type',
+               button: true,
+               ignore: true,
+               level: 60,
+               warning: chrome.i18n.getMessage('Copy_exportable_data_to_clipboard_Ok_') });
 
     optsa.push({ name: chrome.i18n.getMessage('Appearance'), section: true, level: 20 });
 
@@ -4466,7 +4666,7 @@ var createOptionItems = function(cb) {
                value: Config.values.fire_updatePeriod,
                desc: '' });
 
-        optse.push({ name: chrome.i18n.getMessage('Editor'), section: true, level: 20});
+    optse.push({ name: chrome.i18n.getMessage('Editor'), section: true, level: 20});
 
     optse.push({ name: chrome.i18n.getMessage('Enable_Editor'),
                id: 'editor_enabled',
@@ -4542,6 +4742,21 @@ var createOptionItems = function(cb) {
                enabled: Config.values.editor_lineNumbers,
                desc: '' });
 
+   /* optse.push({ name: chrome.i18n.getMessage('Enable_autoSave'),
+               id: 'editor_autoSave',
+               level: 20,
+               option: true,
+               checkbox: true,
+               enabled: Config.values.editor_autoSave,
+               desc: '' }); */
+
+    optse.push({ name: chrome.i18n.getMessage('Enable_easySave'),
+               id: 'editor_easySave',
+               level: 20,
+               option: true,
+               checkbox: true,
+               enabled: Config.values.editor_easySave,
+               desc: '' });
 
     optsu.push({ name: chrome.i18n.getMessage('Script_Update'), section: true, level: 0});
 
@@ -4608,6 +4823,15 @@ var createOptionItems = function(cb) {
                value: Config.values.forbiddenPages,
                desc: '' });
 
+    optss.push({ name: chrome.i18n.getMessage('_require_blacklist'),
+               id: 'require_blacklist',
+               level: 80,
+               option: true,
+               input: true,
+               array: true,
+               value: Config.values.require_blacklist,
+               desc: '' });
+
     optns.push({ name: chrome.i18n.getMessage('Userscripts'), section: true, level: 80 });
 
     optns.push({ name: chrome.i18n.getMessage('New_script_template_'),
@@ -4617,8 +4841,26 @@ var createOptionItems = function(cb) {
                  input: true,
                  value: Config.values.scriptTemplate });
 
+    optsr.push({ name: chrome.i18n.getMessage('Reset_Section'), section: true, level: 50 });
 
-    ret = ret.concat(optsg).concat(optsa).concat(optsu).concat(optsy).concat(opttf).concat(optse).concat(optss).concat(optns);
+    optsr.push({ name: chrome.i18n.getMessage('Restart_Tampermonkey'),
+               id: 'reset_simple',
+               level: 50,
+               button: true,
+               reload: true,
+               value: 0,
+               warning: chrome.i18n.getMessage('This_will_restart_Tampermonkey_Ok_') });
+
+    optsr.push({ name: chrome.i18n.getMessage('Factory_Reset'),
+               id: 'reset_factory',
+               level: 80,
+               button: true,
+               reload: true,
+               value: 0,
+               warning: chrome.i18n.getMessage('This_will_remove_all_scripts_and_reset_all_settings_Ok_') });
+
+
+    ret = ret.concat(optsg).concat(optsa).concat(optsu).concat(optsy).concat(opttf).concat(optse).concat(optss).concat(optns).concat(optsr);
 
     ret.push({ name: 'EOS', section: true, endsection: true});
 
@@ -4643,7 +4885,18 @@ var createDivider = function() {
 };
 
 var createAboutItem = function() {
-    return { name: ' ' + chrome.i18n.getMessage('About_Tampermonkey'), image: chrome.extension.getURL('images/info.png'), url: 'http://tampermonkey.net/about.html?version=' + chrome.extension.getVersion(), newtab: true };
+
+    var args = 'version=' + chrome.extension.getVersion() + '&' +
+               'ext=' + chrome.extension.getID().substr(0, 4);
+
+    return { image: chrome.extension.getURL('images/info.png'),
+             urls : [ { name: ' ' + chrome.i18n.getMessage('About'),
+                        url: 'http://tampermonkey.net/about.html?' + args,
+                        newtab: true },
+                      { name: ' ' + chrome.i18n.getMessage('Changelog'),
+                        url: 'http://tampermonkey.net/changelog.php?' + args,
+                        newtab: true } ]
+            };
 };
 
 var convertMenuCmdsToMenuItems = function(tabId) {
@@ -4665,14 +4918,6 @@ var convertScriptsToMenuItems = function(scripts, options) {
     for (var k in scripts) {
         var script = scripts[k];
 
-        var img = script.enabled
-                ? chrome.extension.getURL('images/greenled.png')
-                : chrome.extension.getURL('images/redled.png');
-
-        if (!script.icon64 && !script.icon) {
-            script.icon64 = chrome.extension.getURL('images/txt.png');
-        }
-
         var item;
         if (options) {
             item = script;
@@ -4684,10 +4929,14 @@ var convertScriptsToMenuItems = function(scripts, options) {
                       position: script.position};
         }
 
-        item.image = img;
         item.file_url = script.downloadURL || script.fileURL;
         item.positionof = scripts.length;
-        item.userscript = true;
+        item.userscript = script.options.user_agent ? false : true;
+        item.user_agent = script.options.user_agent;
+
+        if (!script.icon64 && !script.icon) {
+            item.icon64 = chrome.extension.getURL(item.user_agent ? 'images/user_agent.png' : 'images/txt.png');
+        }
 
         if (script.options) {
             var dns = new scriptParser.Script();
@@ -4717,10 +4966,10 @@ var convertMgmtToMenuItems = function(tab, options) {
     var scripts = [];
 
     if (tab) {
-        if (allURLs[tab.id] && !allURLs[tab.id].empty) {
-            for (var i in allURLs[tab.id].urls) {
-                if (!allURLs[tab.id].urls.hasOwnProperty(i)) continue;
-                if (V || UV) console.log("Found at AllURL["+tab.id+"] -> " + allURLs[tab.id].urls[i]);
+        if (!ctxRegistry.isEmpty(tab.id)) {
+            var it = function(i, v) {
+                if (V || UV) console.log("Found at ctxRegistry["+tab.id+"].urls -> " + i);
+
                 var s = determineScriptsToRun(i);
                 for (var j=0; j<s.length; j++) {
                     var drin = false;
@@ -4729,12 +4978,14 @@ var convertMgmtToMenuItems = function(tab, options) {
                             drin = true;
                             break;
                         }
-                }
+                    }
                     if (!drin) scripts.push(s[j]);
                 }
-            }
+            };
+
+            ctxRegistry.iterateUrls(tab.id, it);
         } else {
-            console.log("bg: WARN: allURLs["+tab.id+"] is empty!");
+            console.log("bg: WARN: ctxRegistry["+tab.id+"].urls is empty!");
         }
     } else {
         scripts = determineScriptsToRun(url);
@@ -4757,9 +5008,9 @@ var clipboard = {
                 myFrame.contentDocument.documentElement.textContent = data.content;
             }
 
-            myFrame.contentDocument.designMode = "on"; 
-            myFrame.contentDocument.execCommand("selectAll", false, null); 
-            myFrame.contentDocument.execCommand("copy", false, null); 
+            myFrame.contentDocument.designMode = "on";
+            myFrame.contentDocument.execCommand("selectAll", false, null);
+            myFrame.contentDocument.execCommand("copy", false, null);
             myFrame.contentDocument.designMode = "off";
 
         } catch (e) {
@@ -4770,7 +5021,248 @@ var clipboard = {
         myFrame = null;
     }
 };
-    
+
+/* ### content settings ### */
+var permission = {
+    permContentSettings: 'contentSettings',
+    permStorage : 'storage',
+    permissions : null,
+    lock: false,
+
+    clear: function() {
+        if (permission.lock) {
+            console.log("perm: clear, but locked");
+        };
+        permission.permissions = null;
+    },
+
+    get : function(cb) {
+        var gotPerms = function(p) {
+            Helper.forEach(p.permissions, function(v, k) { permission.permissions[v] = true; });
+            permission.lock = false;
+            if (cb) cb();
+        };
+
+        permission.lock = true;
+        permission.permissions = {};
+        chrome.permissions.getAll(gotPerms);
+    },
+
+    has : function(perm, cb) {
+        if (permission.lock) {
+            var again = function() { permission.has(perm, cb); };
+            window.setTimeout(again, 50);
+            return;
+        };
+
+        if (!permission.permissions) {
+            var check = function() {
+                permission.has(perm, cb);
+            };
+            permission.get(check);
+            return;
+        }
+
+        if (cb) cb(!!permission.permissions[perm]);
+    },
+
+    ask : function(perm, title, msg, cb) {
+        var image = chrome.extension.getURL("images/icon128.png");
+        var done = function(granted) {
+            if (cb) cb(granted);
+        };
+
+        var gotPerm = function(granted) {
+            if (granted) {
+                if (!permission.permissions) permission.permissions = {};
+                permission.permissions[perm] = true;
+
+                done(granted);
+                return;
+            }
+            done(false);
+        };
+
+        notify.getPermission(title, msg, image, 60000, perm, gotPerm);
+    },
+
+    remove : function(perm, cb) {
+        var done = function(removed) {
+            if (permission.permissions) permission.permissions[perm] = false;
+            if (cb) cb(removed);
+        };
+        chrome.permissions.remove({ permissions: [perm] }, done);
+    }
+};
+
+var storagePermission = {
+    asked: false,
+    hasPermission: null,
+
+    init: function() {
+        var g = function(s) {
+            storagePermission.hasPermission = s;
+            if (D) console.log("bg: storagePermission: hasPermission = " + s)
+        };
+        permission.has(permission.permStorage, g);
+    },
+
+    askForPermission : function(cb) {
+        permission.ask(permission.permStorage,
+                       chrome.i18n.getMessage("Storage_permission_is_needed_"),
+                       chrome.i18n.getMessage("Click_here_to_allow_TM_to_use_Google_sync"),
+                       cb);
+    },
+
+    requestPermissionEx : function(cb) {
+        var gotPerm = function(g) {
+            if (cb) cb(g, true);
+            if (g && !storagePermission.hasPermission) {
+                storagePermission.hasPermission = true;
+                // restart TM
+                Reset.reset();
+            }
+        };
+
+        var h = function(p) {
+            if (storagePermission.asked) {
+                if (cb) cb(p);
+                return;
+            }
+
+            if (!p) {
+                storagePermission.askForPermission(gotPerm);
+            } else {
+                cb(false);
+            }
+
+            // only once in a lifetime (TM) :)
+            storagePermission.asked = true;
+        };
+
+        permission.has(permission.permStorage, h);
+    },
+
+    remove : function(cb) {
+        permission.remove(permission.permStorage, cb);
+    }
+};
+
+var contentSettings = {
+    asked: false,
+    runCheck: false,
+    init: function() {
+        var g = function(s) {
+            contentSettings.runCheck = s;
+            if (D) console.log("bg: contentSettings: runCheck = " + s)
+        };
+        permission.has(permission.permContentSettings, g);
+    },
+
+    askForPermission : function(cb) {
+        permission.ask(permission.permContentSettings,
+                       chrome.i18n.getMessage("A_script_blocker_was_detected_"),
+                       chrome.i18n.getMessage("Click_here_to_allow_TM_to_override_the_script_blocker"),
+                       cb);
+    },
+
+    requestPermissionEx : function(cb) {
+        var gotPerm = function(g) {
+            if (cb) cb(g, true);
+            if (g && !contentSettings.runCheck) {
+                contentSettings.runCheck = true;
+                // restart TM
+                Reset.reset();
+            }
+        };
+
+        var h = function(p) {
+            if (contentSettings.asked) {
+                if (cb) cb(p);
+                return;
+            }
+
+            if (!p) {
+                contentSettings.askForPermission(gotPerm);
+            } else {
+                cb(false);
+            }
+
+            // only once in a lifetime (TM) :)
+            contentSettings.asked = true;
+        };
+
+        permission.has(permission.permContentSettings, h);
+    },
+
+    remove : function(cb) {
+        permission.remove(permission.permContentSettings, cb);
+    }
+};
+
+/* ### reset ### */
+
+var Reset = {
+    run : function(type, cb) {
+        var running = 1;
+
+        var alldone = function() {
+            if (cb) cb();
+            window.location.reload();
+        };
+
+        var check = function() {
+            if (--running == 0) {
+                alldone();
+            }
+        };
+
+        if (type == "config") {
+            var values = TM_storage.listValues();
+            for (var k in values) {
+                var v = values[k];
+                if (v.search(scriptAppendix) == -1) continue;
+                if (v.search(condAppendix) == -1) continue;
+                if (v.search(storeAppendix) == -1) continue;
+                TM_storage.deleteValue(v);
+            }
+
+        } else if (type == "factory") {
+            if (TM_fire.isReady()){
+                running++;
+                TM_fire.clean(check);
+            }
+
+            if (contentSettings.runCheck) {
+                running++;
+                contentSettings.remove(check);
+            }
+
+            if (storagePermission.hasPermission) {
+                running++;
+                storagePermission.remove(check);
+            }
+
+            running++;
+            TM_storage.deleteAll(check);
+        }
+
+        check();
+    },
+
+    reset: function(cb) {
+        Reset.run(null, cb);
+    },
+
+    factoryReset: function(cb) {
+        Reset.run("factory", cb);
+    },
+
+    configReset: function(cb) {
+        Reset.run("config", cb);
+    }
+};
+
 /* ### web requests ### */
 var extensions = {
     getAll : function (cb) {
@@ -4979,19 +5471,16 @@ var setBadge = function(tabId) {
     if (Config.values.appearance_badges == 'off') {
         c = 0;
     } else if (Config.values.appearance_badges == 'running') {
-        if (tabId && allURLs[tabId]) {
-            c = allURLs[tabId].stats.running;
+        if (tabId && ctxRegistry.has(tabId)) {
+            c = ctxRegistry.n[tabId].stats.running;
         }
     } else if (Config.values.appearance_badges == 'running_unique') {
-        if (tabId && allURLs[tabId]) {
-            for (var k in allURLs[tabId].scripts) {
-                if (!allURLs[tabId].scripts.hasOwnProperty(k)) continue;
-                c++;
-            }
+        if (tabId && ctxRegistry.has(tabId) && ctxRegistry.n[tabId].cache) {
+            c = ctxRegistry.n[tabId].cache.runners.length;
         }
     } else if (Config.values.appearance_badges == 'disabled') {
-        if (tabId && allURLs[tabId]) {
-            c = allURLs[tabId].stats.disabled;
+        if (tabId && ctxRegistry.has(tabId)) {
+            c = ctxRegistry.n[tabId].stats.disabled;
         }
     } else if (Config.values.appearance_badges == 'tamperfire') {
         var done = function(cnt) {
@@ -5008,6 +5497,8 @@ var setBadge = function(tabId) {
 /* ### web requests ### */
 var webRequest = {
     infoChanged : [],
+    redirects : {},
+
     addInfoChangedListener : function(fn) {
         webRequest.infoChanged.push(fn);
     },
@@ -5040,9 +5531,6 @@ var webRequest = {
             if (D) console.log('bg: verified webRequest ' + (_webRequest.headers ? '' : 'not ') + 'being working');
 
             try {
-                if (!_webRequest.headers) {
-                    // chrome.webRequest.onBeforeSendHeaders.removeListener(webRequest.headerFix);
-                }
                 chrome.webRequest.onSendHeaders.removeListener(webRequest.headerCheck);
             } catch(ex) {
                 _webRequest.headers = false;
@@ -5052,43 +5540,166 @@ var webRequest = {
         }
     },
 
+    extractInfoFromURL : function(url) {
+        var d = '';
+        var p = 'http';
+
+        if (url) {
+            var x = url.toLowerCase();
+            if (x.indexOf("://") != -1) {
+                p = x.substr(0, url.indexOf("://"));
+                x = x.substr(url.indexOf("://") + 3);
+            }
+            if (x.indexOf("/") != -1) x = x.substr(0, x.indexOf("/"));
+            if (x.indexOf("@") != -1) x = x.substr(x.indexOf("@") + 1);
+            if (x.indexOf(":") > 0) x = x.substr(0, x.indexOf(":"));
+            d = x;
+        }
+        
+        return {domain: d, protocol: p};
+    },
+
+    detectRedirect : function(details) {
+        var rh = details.responseHeaders;
+        var id = details.requestId;
+        var redirected = false;
+
+        if (webRequest.redirects[id]) {
+            redirected = true;
+            // if (D) console.log("webReq: #" + id + " detected old redirect " + webRequest.redirects[id].url);
+        }
+
+        for (var i = 0; i < rh.length; i++) {
+            var item = rh[i];
+            if (item.name == 'Location') {
+                var wrap = function() {
+                    var rid = id;
+                    if (redirected) {
+                        // if (D) console.log("webReq: #" + id + " skip cleanup");
+                        window.clearTimeout(webRequest.redirects[id].to);
+                    }
+                    var cleanRedirect = function() {
+                        // if (D) console.log("webReq: #" + id + " cleanup");
+                        delete(webRequest.redirects[rid]);
+                    };
+
+                    webRequest.redirects[rid] = { url: item.value, to: window.setTimeout(cleanRedirect, 10000) };
+                };
+                wrap();
+                break;
+            }
+        }
+
+        if (redirected) {
+            // if (D) console.log("webReq: #" + id + " add url to responseHeaders (" + webRequest.redirects[id].url + ")");
+            rh.push({name: 'TM-finalURL', value: webRequest.redirects[id].url });
+            // if (D) console.log(rh);
+            return { responseHeaders: rh };
+        }
+
+        return {};
+    },
+
     headerFix : function(details) {
         if (V || UV) console.log(details.type);
 
+        var registered = ctxRegistry.has(details.tabId);
+        var main = details.type == 'main_frame';
+        var script = contentSettings.runCheck;
+        var frame = main || details.type == 'sub_frame';
+
+        if (main) {
+            Tab.reset(details.tabId, true);
+            if (V || UV || EV) console.log("bg: create new ctxRegistry entry for URL " + details.url);
+            var nfo = { tabId: details.tabId, frameId: 0 /* 'main_frame' */ , scriptId: 0, url: details.url };
+            ctxRegistry.setCache(nfo.tabId, nfo.frameId, nfo.url, Tab.prepare(nfo));
+
+            registered = true;
+        }
+
+        if (frame && script) {
+            var info = webRequest.extractInfoFromURL(details.url);
+            var pat = info.protocol + '://' + info.domain + '/*';
+
+            // white list protocol + domain to be more specific and therefore more important than a script blocker
+            // note: doesn't work at the moment...
+            chrome.contentSettings.javascript.set({ primaryPattern: pat, setting: 'allow'});
+
+            if (V || UV || EV) {
+                var later = function() {
+                    var cb = function(a) {
+                        console.log("contentSettings: (" + (new Date()).getTime() + ") state: " + JSON.stringify(a));
+                    };
+                    chrome.contentSettings.javascript.get({ primaryUrl: details.url }, cb);
+                };
+                console.log("contentSettings: (" + (new Date()).getTime() + ") allow URL " + pat);
+                later();
+                    
+                window.setTimeout(later, 20);
+            }
+        }
+
+        var u = registered && ctxRegistry.n[details.tabId].user_agent;
+        var xml = _webRequest.headers && details.type == 'xmlhttprequest';
+
+        if (!u && !xml) return {};
+
+        var m = false;
         var f = {};
         var t = [];
         var r = new RegExp('^' + _webRequest.prefix);
+
+        var uv;
+        if (u) {
+            for (var k in ctxRegistry.n[details.tabId].user_agent) {
+                if (!ctxRegistry.n[details.tabId].user_agent.hasOwnProperty(k)) continue;
+                uv = ctxRegistry.n[details.tabId].user_agent[k];
+            }
+            if (V || UV) console.log("bg: userscript user-agent spoof enabled! (" + uv + ")");
+        }
 
         if (V || UV) {
             console.log("bg: process request to " + details.url);
             console.log(details.requestHeaders);
         }
+
         for (var i = 0; i < details.requestHeaders.length; i++) {
             var item = details.requestHeaders[i];
             if (item.name.search(r) == 0) {
                 t.push(item);
+            } else if (u && item.name == 'User-Agent') {
+                m = true;
+                f[item.name] = uv;
             } else {
                 f[item.name] = item.value;
             }
         }
 
-        for (var i = 0; i < t.length; i++) {
-            var item = t[i];
-            f[item.name.replace(r, '')] = item.value;
+        if (xml) {
+            for (var i = 0; i < t.length; i++) {
+                var item = t[i];
+                m = true;
+                f[item.name.replace(r, '')] = item.value;
+            }
+
+            if (!_webRequest.verified) {
+                m = true;
+                f[_webRequest.testprefix] = 'true';
+            }
         }
 
-        if (!_webRequest.verified) {
-            f[_webRequest.testprefix] = 'true';
+        if (m) {
+            var d = [];
+            for (var k in f) {
+                if (!f.hasOwnProperty(k)) continue;
+                if (k != "") d.push({ name: k, value: f[k]});
+            }
+
+            if (V || UV) console.log(d);
+            return { requestHeaders: d };
         }
 
-        var d = [];
-        for (var k in f) {
-            if (!f.hasOwnProperty(k)) continue;
-            if (k != "") d.push({ name: k, value: f[k]});
-        }
-
-        if (V || UV) console.log(d);
-        return { requestHeaders: d };
+        return {};
     },
 
     sucRequest : function(details) {
@@ -5127,8 +5738,9 @@ var webRequest = {
         if (_webRequest.use) {
             try {
                 chrome.webRequest.onBeforeRequest.removeListener(webRequest.checkRequestForUserscript);
+                chrome.webRequest.onBeforeSendHeaders.removeListener(webRequest.headerFix);
+                chrome.webRequest.onHeadersReceived.removeListener(webRequest.detectRedirect);
                 if (_webRequest.headers) {
-                    chrome.webRequest.onBeforeSendHeaders.removeListener(webRequest.headerFix);
                     if (_webRequest.verified == false) chrome.webRequest.onSendHeaders.removeListener(webRequest.headerCheck);
                     if (V || UV) chrome.webRequest.onCompleted.removeListener(webRequest.sucRequest);
                 }
@@ -5146,9 +5758,10 @@ var webRequest = {
                 var reqFilter = { urls: [ "http://*/*", "https://*/*" ], types : [ "xmlhttprequest" ] };
                 var rreqFilter = { urls: [ "http://*/*", "https://*/*", "file://*/*" ] };
                 chrome.webRequest.onBeforeRequest.addListener(webRequest.checkRequestForUserscript, rreqFilter, ["blocking"]);
+                chrome.webRequest.onBeforeSendHeaders.addListener(webRequest.headerFix, rreqFilter, ["requestHeaders", "blocking"]);
+                chrome.webRequest.onHeadersReceived.addListener(webRequest.detectRedirect, reqFilter, ["responseHeaders", "blocking"]);
 
                 if (headers) {
-                    chrome.webRequest.onBeforeSendHeaders.addListener(webRequest.headerFix, reqFilter, ["requestHeaders", "blocking"]);
                     if (!verified) chrome.webRequest.onSendHeaders.addListener(webRequest.headerCheck, reqFilter, ["requestHeaders"]);
                     if (V || UV) chrome.webRequest.onCompleted.addListener(webRequest.sucRequest, reqFilter, []);
                 }
@@ -5177,6 +5790,7 @@ var webRequest = {
 function cleanup() {
     if (D) console.log("bg: cleanup!");
     webRequest.finalize();
+    SyncClient.finalize();
 }
 
 window.addEventListener("unload", cleanup, false);
@@ -5212,12 +5826,17 @@ var loadListener = function(tabID, changeInfo, tab) {
         } else {
             loadListenerTimeout = window.setTimeout(sere, 5000);
         }
+    } else if (changeInfo.url) {
+        if (V || EV) console.log("bg: url of tab " + tabID + "(" +  changeInfo.status + ") has changed to " + changeInfo.url);
     } else if (changeInfo.status == 'complete') {
-        if (allURLs[tabID] &&
-            !allURLs[tabID].empty) {
+        if (!ctxRegistry.isEmpty(tabID)) {
             chrome.tabs.sendMessage(tabID,
                                     { method: "onLoad" },
                                     function(response) {});
+        }
+        if (contentSettings.runCheck) {
+            if (V || EV || UV) console.log("contentSettings: (" + (new Date()).getTime() + ") javascript.clear({})");
+            chrome.contentSettings.javascript.clear({});
         }
     }
 };
@@ -5233,87 +5852,40 @@ var onCommitedListener = function(details) {
     chrome.tabs.getSelected(null, resp);
 };
 
-var resetTabInfo = function(tabId) {
-    if (V || UV) console.log("bg: reset AllURL["+tabId+"]");
-    initAllURLsByTabId(tabId);
-    TM_menuCmd.clearByTabId(tabId);
-    notifyStorageListeners(null, null, tabId, false);
-};
-
-var addToAllURLs = function(tabid, url) {
-    if (V || UV) console.log("Add to AllURL["+tabid+"] -> " + url);
-    allURLs[tabid].urls[url] = true;
-    allURLs[tabid].empty = false;
-};
-
-var removeFromAllURLs = function(tabid, url) {
-    if (V || UV) console.log("Remove from AllURL["+tabid+"] -> " + url);
-    if (allURLs[tabid].urls[url]) {
-        delete allURLs[tabid].urls[url];
-        allURLs[tabid].empty = true;
-
-        for (var k in allURLs[tabid].urls) {
-            if (!allURLs[tabid].urls.hasOwnProperty(k)) continue;
-            allURLs[tabid].empty = false;
-            break;
-        }
-    }
-};
-
-var initAllURLsByTabId = function(tabId) {
-    allURLs[tabId] = { ts: (new Date()).getTime(), urls: {}, fire: null, empty: true, allow_requests: false, scripts: {}, stats: { running : 0, disabled: 0, executed: {} } };
-};
-
-var updateListener = function(tabID, changeInfo, tab, request, length_cb, allrun_cb) {
+var tabUpdateListener = function(tabId, changeInfo, tab, request, length_cb, allrun_cb) {
     if (!Config.initialized) {
-        window.setTimeout(function() { updateListener(tabID, changeInfo, tab, request, cb); }, 100);
+        window.setTimeout(function() { tabUpdateListener(tabId, changeInfo, tab, request, length_cb, allrun_cb); }, 100);
         return;
     }
     if (changeInfo.status == 'complete') {
-        if (tab.title.search(Helper.escapeForRegExp(tab.url) + " is not available") != -1) {
-            var reload = function() {
-                console.log("trigger reload (tabID " + tabID + ") of " + tab.url);
-                chrome.tabs.update(tabID, {url: tab.url});
-            };
-            window.setTimeout(reload, 20000);
-        } else {
-            if (request) tab.url = request.url + request.params;
-            var scripts = determineScriptsToRun(tab.url);
-            var runners = [];
-            var disabled = 0;
-            var script_map = {};
+        var scriptId = 0;
+        var url = tab.url;
 
-            for (var k=0; k<scripts.length; k++) {
-                var script = scripts[k];
-
-                if (V) console.log("check " + script.name + " for enabled:" + script.enabled);
-
-                if (!script.enabled) {
-                    disabled++;
-                    continue;
-                }
-                if (script.options.noframes && !request.topframe) continue;
-
-                script_map[script.name] = true;
-                runners.push(script);
-            }
-
-            addToAllURLs(tabID, tab.url);
-            if (length_cb) length_cb(script_map, runners.length, disabled);
-
-            var cb = function() {
-                if (--running == 0) allrun_cb();
-            };
-            var running = 1;
-            for (var k=0; k<runners.length; k++) {
-                running++;
-                var script = runners[k];
-                var rt = new runtimeInit();
-                if (request) tab.scriptId = request.id;
-                rt.contentLoad(tab, script, cb);
-            }
-            running--;
+        if (request) {
+            url = request.url + request.params;
+            scriptId = request.id;
         }
+        var nfo = { tabId: tabId, frameId: tab.frameId, scriptId: scriptId, url: url };
+        var runInfo = null;
+
+        if (tab.frameId > 0 ||
+            /* TODO: sub_frame runInfo is not cached cause frameId is not available for reqestListeners!
+                     Otherwise we would pre-generate the info at webRequest.headerFix for sub frames too. */
+            !ctxRegistry.has(tabId) ||
+            !ctxRegistry.n[tabId].cache) {
+
+            runInfo = Tab.prepare(nfo, length_cb);
+        } else if (length_cb) {
+            if (ctxRegistry.has(tabId)) {
+                var runInfo = ctxRegistry.n[tabId].cache;
+                length_cb(runInfo.runners.length, runInfo.disabled);
+            } else {
+                // all info should be Tab.prepare'd by webRequest.headerFix !
+                console.log("bg: WARN: this should _NEVER_ happen!!!!!");
+            }
+        }
+
+        Tab.runScripts(nfo, runInfo, allrun_cb);
     }
 };
 
@@ -5322,16 +5894,18 @@ var selectionChangedListener = function(tabId, selectInfo) {
 };
 
 var removeListener = function(tabId, removeInfo) {
-    if (allURLs[tabId]) delete allURLs[tabId];
+    ctxRegistry.remove(tabId);
 };
 
 var initObjects = function() {
     adjustLogLevel(Config.values.logLevel);
 
+    contentSettings.init();
+    storagePermission.init();
+
     if (Config.values.sync_enabled &&
-        Config.values.sync_URL &&
-        Config.values.sync_email &&
-        Config.values.sync_password) {
+        Config.values.sync_type &&
+        Config.values.sync_id) {
 
         SyncClient.enable();
         SyncClient.scheduleSync(1000, true);
@@ -5368,7 +5942,7 @@ init = function() {
     compaMo = Registry.get('compat');
     scriptParser = Registry.get('parser');
     Helper = Registry.get('helper');
-    Syncer = Registry.get('syncer');
+    SyncInfo = Registry.get('syncinfo');
 
     initBrowserAction();
 
@@ -5381,6 +5955,7 @@ init = function() {
 
     var storagedone = function() {
         Config = new ConfigObject(cfgdone);
+        cfgo = Config;
     };
 
     TM_storage.init(storagedone);

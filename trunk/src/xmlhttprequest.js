@@ -23,9 +23,20 @@
         }
         var xmlhttp = new XMLHttpRequest();
         var createState = function() {
+            var rh = '';
+            var fu = details.url;
+            if (xmlhttp.readyState == 4) {
+                rh = xmlhttp.getAllResponseHeaders();
+                if (rh) {
+                    rh = rh.replace(/TM-finalURL\: .*[\r\n]{1,2}/, '');
+                }
+                var fi = xmlhttp.getResponseHeader('TM-finalURL');
+                if (fi) fu = fi;
+            }
             var o = {
                 readyState: xmlhttp.readyState,
-                responseHeaders: (xmlhttp.readyState == 4 ? xmlhttp.getAllResponseHeaders() : ''),
+                responseHeaders: rh,
+                finalUrl : fu,
                 status: (xmlhttp.readyState == 4 ? xmlhttp.status : 0),
                 statusText: (xmlhttp.readyState == 4 ? xmlhttp.statusText : '')
             };
@@ -86,8 +97,9 @@
                         responseState.progress = { total: c.total,  totalSize: c.totalSize };
                     } else {
                         var t = Number(getStringBetweenTags(responseState.responseHeaders, 'Content-Length:', '\n').trim());
+                        var l = xmlhttp.responseText ? xmlhttp.responseText.length : 0;
                         if (t > 0) {
-                            responseState.progress = { total: xmlhttp.responseText.length,  totalSize: t };
+                            responseState.progress = { total: l,  totalSize: t };
                         }
                     }
                 } catch (e) {}

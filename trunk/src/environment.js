@@ -130,7 +130,7 @@ var TM_mEval = function(script, src, requires, addProps) {
             s +=  requires + source + '\n';
             s += '} catch (e) {\n';
             s += '    console.log("ERROR: Execution of script \'' + script.name + '\' failed! " + e.message); \n';
-            s += '    console.log(e.stack)\n';
+            s += '    console.log(e.stack.replace(/\\(eval at <anonymous> /g, "").replace(/<anonymous>:/g, "").replace(/chrome-extension:\\/\\/[\\w]{32}\\/content\\.js:\\d*:\\d*\\)*, /g, ""))\n';
             s += '}\n';
             return s;
         };
@@ -144,11 +144,47 @@ var TM_mEval = function(script, src, requires, addProps) {
         var runEm = new Function(all);
         runEm.apply(mask, []);
 
-    } catch (e) {                    
+    } catch (e) {
+        var opts = { newcap: true,
+                     sloppy: true,
+                     white: true,
+                     plusplus: true,
+                     nomen: true,
+                     'continue': true,
+                     todo: true,
+                     eqeq: true,
+                     unparam: true,
+                     devel: true };
+        var JS = null;
+        try {
+            JS = JSLINT;
+        } catch (je) {}
+
+        var result = JS ? JS(all, opts) : true;
+        var details = '';
+        
+        if (result) {
+            details = emu + src;
+        } else {
+            var lines = (setid + emu).split('\n').length + 2;
+            var rlines = requires.split('\n').length;
+
+            var error_message = '';
+            for (var i in JSLINT.errors) {
+                var error = JSLINT.errors[i];
+                if (error && error.line >= lines) {
+                    var l = error.line - lines + 1;
+                    error_message += l > rlines ? 'script: ' : 'require: ';
+                    error_message += error.reason.replace(/.$/, '') + ' on line: ' + l + ' at character: ' + error.character + "\n";
+                }
+            }
+            details = "JSLINT output:\n" + error_message;
+        }
+
         if (D) {
             console.log("env: ERROR: Syntax error @ '" + script.name + "'!\n" +
                         "##########################\n" +
-                        emu + src +
+                        details +
                         "##########################\nERROR: " + e.message + "\n");
             console.log(e.stack);
         } else {
@@ -168,7 +204,6 @@ var TM_mEval = function(script, src, requires, addProps) {
 
         window.setTimeout(fail, 1);
         return;
-
     }
 };
 
@@ -554,7 +589,7 @@ function TM_windowOpenFix() {
     if (TMwin.use.safeContext) {
         // redefine window.open to a function the returns the DOMWindow of the opened window
         window.open = function(url) {
-            var fi = '__o__' + TM_content_context;
+            var fi = '__o__' + TM_context_id;
             var f = 'window.' + fi + ' = window.open(decodeURI("' + encodeURI(url) + '"));';
             TM_do(f);
             var ret = unsafeWindow[fi];
@@ -608,7 +643,7 @@ function TM_winEvalFix() {
 var TM_do = function(src) {
     if (TMwin.use.safeContext) {
         var customEvent = document.createEvent("MutationEvent");
-        customEvent.initMutationEvent('TM_do' + TM_content_context,
+        customEvent.initMutationEvent('TM_do' + TM_context_id,
                                       false,
                                       false,
                                       null,
@@ -646,7 +681,7 @@ var TM_registerMenuCommand = function(name, fn) {
     chromeEmu.extension.sendMessage({method: "registerMenuCmd", name: name, id: TM_context_id, menuId: menuId}, resp);
 };
 
-var TM_openInTab = function(url) {
+var TM_openInTab = function(url, options) {
     // retrieve tabId to have a chance of closing this window lateron
     var tabId = null;
     var close = function() {
@@ -666,7 +701,7 @@ var TM_openInTab = function(url) {
     if (url && url.search(/^\/\//) == 0) {
         url = location.protocol + url;
     }
-    chromeEmu.extension.sendMessage({method: "openInTab", url: url, id: TM_context_id}, resp);
+    chromeEmu.extension.sendMessage({method: "openInTab", url: url, id: TM_context_id, options: options }, resp);
     return { close: close };
 };
 
@@ -806,13 +841,8 @@ var HTM_runMyScript = function(HTM_request) {
                         var oldval = TM_context_storage.data[k];
                         TM_context_storage.data[k] = response.storage.data[k];
                         var newval = TM_context_storage.data[k];
-                        
-                        var to = function() {
-                            TM_notifyValueChangeListeners(key, oldval, newval, true);
-                        };
                         if (SV) console.log("env: storageListener - config key " + key + ": " + oldval + " -> " + newval);
-                        window.setTimeout(to, 1);
-
+                        TM_notifyValueChangeListeners(key, oldval, newval, true);
                     };
                     run();
                 }
@@ -901,10 +931,7 @@ var HTM_runMyScript = function(HTM_request) {
         TM_context_storage.ts = (new Date()).getTime();
         delete TM_context_storage.data[name];
         TM_saveStorageKey(name);
-        var notif = function() {
-            TM_notifyValueChangeListeners(name, old, TM_context_storage.data[name], false);
-        };
-        window.setTimeout(notif, 1);
+        TM_notifyValueChangeListeners(name, old, TM_context_storage.data[name], false);
     };
 
     var TM_listValues = function() {
@@ -959,11 +986,9 @@ var HTM_runMyScript = function(HTM_request) {
 
         TM_context_storage.ts = (new Date()).getTime();
         TM_context_storage.data[name] = value;
-        var notif = function() {
-            TM_saveStorageKey(name);
-            TM_notifyValueChangeListeners(name, old, TM_context_storage.data[name], false);
-        };
-        window.setTimeout(notif, 1);
+
+        TM_saveStorageKey(name);
+        TM_notifyValueChangeListeners(name, old, TM_context_storage.data[name], false);
     };
 
     var TM_getResourceText = function(name) {
@@ -1072,8 +1097,8 @@ var HTM_runMyScript = function(HTM_request) {
             return TM_registerMenuCommand(name, funk);
         };
 
-        this.GM_openInTab = function(url) {
-            return TM_openInTab(url);
+        this.GM_openInTab = function(url, options) {
+            return TM_openInTab(url, options);
         };
 
         this.GM_setValue = function(name, value) {
@@ -1244,6 +1269,8 @@ chromeEmu.extension.onMessage.addListener(
             console.log("env: Not for me! " + TM_context_id + "!=" + request.id);
             return;
         }
+        var topframe = window.self == window.top;
+
         if (request.method == "executeScript") {
             var r = function() {
                 HTM_runMyScript(request);
@@ -1265,40 +1292,42 @@ chromeEmu.extension.onMessage.addListener(
             runAllLoadListeners();
             sendResponse({});
             window.setTimeout(function() { if (V || EV) console.log("env: disable nodeInserts magic!"); nodeInserts = null }, 2000);
-        } else if (request.method == "loadUrl") {
-            window.location = request.url;
-            sendResponse({});
-        } else if (request.method == "reload") {
-            window.location.reload();
-            sendResponse({});
-        } else if (request.method == "confirm") {
-            var ask = function() {
-                var c = confirm(request.msg);
-                sendResponse({confirm: c});
-            }
-            window.setTimeout(ask, 100);
-        } else if (request.method == "showMsg") {
-            var ask = function() {
-                var t = function() {
-                    alert(request.msg);
-                };
-                window.setTimeout(t, 1);
+        } else if (topframe) {
+            if (request.method == "loadUrl") {
+                window.location = request.url;
                 sendResponse({});
-            }
-            window.setTimeout(ask, 100);
-        } else if (request.method == "getSrc") {
-            var t = '';
-            var bodies = document.getElementsByTagName('body');
-            if (bodies.length > 0) {
-                var body = bodies[0];
-                t = body.innerText;
+            } else if (request.method == "reload") {
+                window.location.reload();
+                sendResponse({});
+            } else if (request.method == "confirm") {
+                var ask = function() {
+                    var c = confirm(request.msg);
+                    sendResponse({confirm: c});
+                }
+                window.setTimeout(ask, 100);
+            } else if (request.method == "showMsg") {
+                var ask = function() {
+                    var t = function() {
+                        alert(request.msg);
+                    };
+                    window.setTimeout(t, 1);
+                    sendResponse({});
+                }
+                window.setTimeout(ask, 100);
+            } else if (request.method == "getSrc") {
+                var t = '';
+                var bodies = document.getElementsByTagName('body');
+                if (bodies.length > 0) {
+                    var body = bodies[0];
+                    t = body.innerText;
+                } else {
+                    t = document.innerHTML;
+                }
+                sendResponse({src: t});
+                
             } else {
-                t = document.innerHTML;
+                console.log("env: unknown method " + request.method);
             }
-            sendResponse({src: t});
-
-        } else {
-            console.log("env: unknown method " + request.method);
         }
     });
 
