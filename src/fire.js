@@ -377,8 +377,8 @@ var itemsToMenu = function(items, tabv, cb) {
                     startFireUpdate(true);
                 };
 
-                var input = HtmlUtil.createButton(i.name, i.id, null, i.name, oc);
-                var inputf = HtmlUtil.createButton(i.fname, i.id, null, i.fname, ocf);
+                var input = HtmlUtil.createButton(i.name, i.id, i.name, oc);
+                var inputf = HtmlUtil.createButton(i.fname, i.id, i.fname, ocf);
 
                 if (section) {
                     section.appendChild(input);
@@ -689,7 +689,7 @@ var createScriptUsoTab = function(i, tabd, closeEditor) {
     container.appendChild(info_outer);
     container_menu.appendChild(menu);
 
-    var i_sc_close = HtmlUtil.createButton(i.name, 'close_script', null, chrome.i18n.getMessage('Close'), closeEditor);
+    var i_sc_close = HtmlUtil.createButton(i.name, 'close_script', chrome.i18n.getMessage('Close'), closeEditor);
 
     var install = function() {
         var cb = function(resp) {
@@ -704,7 +704,7 @@ var createScriptUsoTab = function(i, tabd, closeEditor) {
                                        cb);
     };
 
-    var install_button = HtmlUtil.createButton(i.name, 'save', null, chrome.i18n.getMessage('Install'), install);
+    var install_button = HtmlUtil.createButton(i.name, 'save', chrome.i18n.getMessage('Install'), install);
 
     menu.appendChild(install_button);
     menu.appendChild(i_sc_close);
@@ -726,20 +726,22 @@ var createScriptUsoTab = function(i, tabd, closeEditor) {
 var createScriptDetailsTabView = function(tab, i, tr, parent, closeTab) {
     var tab_head = crc('div', '', i.name, i.id, 'script_tab_head');
 
+    var na = Helper.decodeHtml(i.name);
+
     var heading = crc('div', 'heading', i.name, 'heading');
     var heading_icon = crc('img', 'nameNicon64', i.name, 'heading_icon');
     var hicon = i.icon64 ? i.icon64 : i.icon
     heading_icon.src = hicon;
     var heading_name = crc('div', 'nameNname64', i.name, 'heading_name');
-    heading_name.textContent = i.name;
+    heading_name.textContent = na;
     if (hicon) heading.appendChild(heading_icon);
     heading.appendChild(heading_name);
     var heading_author = crc('div', 'author', i.name, 'author');
     if (i.author) {
-        heading_author.textContent = 'by ' + i.author;
+        heading_author.textContent = 'by ' + Helper.decodeHtml(i.author);
     } else if (i.copyright) {
         heading_author.innerHTML = '&copy; ';
-        heading_author.textContent += i.copyright;
+        heading_author.textContent += Helper.decodeHtml(i.copyright);
     }
 
     var table = crc('table', 'noborder p100100', i.name, 'table');
@@ -827,7 +829,8 @@ var createScriptItem = function(tabv, i, tr) {
         sname_name.appendChild(sname_elem);
     }
 
-    sname_elem.textContent = (i.name.length > 35) ? i.name.substr(0,35) + '...' : i.name;
+    var na = Helper.decodeHtml(i.name);
+    sname_elem.textContent = ((na.length > 35) ? na.substr(0,35) + '...' : na);
     sname.appendChild(sname_name);
 
     var ret = [];
@@ -846,7 +849,7 @@ var createScriptItem = function(tabv, i, tr) {
 
     var createTab = function() {
         var tabh = crc('div', '', i.name, i.id, 'details_h');
-        tabh.textContent = chrome.i18n.getMessage('Edit') + ' - ' + ((i.name.length > 25) ? i.name.substr(0,25) + '...' : i.name);
+        tabh.textContent = ((na.length > 25) ? na.substr(0,25) + '...' : na);
         var tabc = cr('div', i.name, i.id, 'details_c');
 
         tab = tabv.insertTab(null, 'details_' + Helper.createUniqueId(i.name, i.id), tabh, tabc, null, doClose);
@@ -918,7 +921,7 @@ var createScriptItem = function(tabv, i, tr) {
     // add click listener to td to make this more convenient
     var sname_td = getTD(i, sname, 'script_td2', 'scripttd scripttd_name clickable');
     sname_td.addEventListener('click', scriptClick);
-    sname_td.title = i.description ? i.name + '\n\n' + i.description : i.name;
+    sname_td.title = i.description ? na + '\n\n' + Helper.decodeHtml(i.description) : na;
     
     ret.push(sname_td);
     ret.push(getTD(i, srank, 'script_td3'));

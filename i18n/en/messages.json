@@ -198,8 +198,11 @@
   "Registered_menu_cmds": {
     "message": "Registered Menu Cmds"
   },
-  "About_Tampermonkey": {
-    "message": "About Tampermonkey"
+  "About": {
+    "message": "About"
+  },
+  "Changelog": {
+    "message": "Changelog"
   },
   "Tampermonkey_Options": {
     "message": "Tampermonkey"
@@ -244,7 +247,7 @@
     "message": "Run at:"
   },
   "Update_URL_": {
-    "message": "Update URL:"
+    "message": "Update URL"
   },
   "Save": {
     "message": "Save"
@@ -291,7 +294,7 @@
     "message": "This script stores data to Tampermonkey."
   },
   "This_script_has_access_to_https_pages": {
-    "message": "This script has access to https pages."
+    "message": "This item has access to https pages."
   },
   "One_or_more_compatibility_options_are_set": {
     "message": "One or more compatibility options are set. You might want/should review them."
@@ -308,6 +311,12 @@
   "This_script_runs_in_Chrome_mode": {
     "message": "This script runs in Chrome mode"
   },
+  "This_only_changes_the_user_agent_string": {
+    "message": "This item only changes the User-Agent for the includes webpages"
+  },
+  "This_is_a_userscript": {
+    "message": "This is a user script written in Javascript"
+  },
   "Really_delete_this_script__": {
     "message": "Really delete this script?"
   },
@@ -318,7 +327,7 @@
     "message": "Edit this script"
   },
   "This_script_has_access_to_webpage_scripts": {
-    "message": "This script has full access to the webpage."
+    "message": "This item has full access to the webpage."
   },
   "Utilities": {
     "message": "Utilities"
@@ -367,16 +376,16 @@
   "Just_another_service_provided_by_your_friendly_script_updater_": {
     "message": "Just another service provided by your friendly script updater:"
   },
-  "Welcome_": {
-    "message": "Welcome!"
-  },
-  "Have_fun_with_Tampermonkey": {
-    "message": "Have fun with Tampermonkey $version$! :)",
+  "Updated_to__0version0": {
+    "message": "Updated to: $version$",
     "placeholders": {
       "version": {
          "content": "$1"
       }
     }
+  },
+  "Click_here_to_see_the_recent_changes": {
+    "message": "Click here to see the recent changes"
   },
   "General": {
     "message": "General"
@@ -537,6 +546,9 @@
   "Forbidden_Pages": {
     "message": "Forbidden Pages"
   },
+  "_require_blacklist": {
+    "message": "@require Blacklist"
+  },
   "This_page_is_blacklisted_at_the_security_settings": {
     "message": "Blacklisted by security settings"
   },
@@ -610,6 +622,9 @@
   },
   "Version": {
     "message": "Version"
+  },
+  "Type": {
+    "message": "Type"
   },
   "Update_needed": {
     "message": "Update needed"
@@ -757,29 +772,23 @@
   "An_internal_error_occured_Do_you_want_to_visit_the_forum_": {
     "message": "An internal error occured. If this problem persist, please press OK and report this issue at the forum.\n\nDo you want to visit the Tampermonkey forum?"
   },
-  "Script_Syncer": {
-    "message": "Script Syncer"
+  "TESLC": {
+    "message": "TESLC"
   },
-  "Enable_Script_Sync": {
-    "message": "Enable Script Sync"
+  "Enable_TESLC": {
+    "message": "Enable TESLC"
   },
-  "eMail": {
-    "message": "E-mail Address"
+  "Tampermonkey_External_Script_List_Control": {
+    "message": "Tampermonkey External Script List Control"
   },
-  "Password": {
-    "message": "Password"
+  "Sync_Type": {
+    "message": "Type"
   },
-  "Account_is_verified": {
-    "message": "Sync credentials are verified"
+  "Sync_Id": {
+    "message": "Id"
   },
-  "Credentials_are_submitted__Please_check_your_email_account_for_verification_details": {
-    "message": "Your sync credentials are submitted. Please check your email account for verification details."
-  },
-  "Credentials_are_invalid_": {
-    "message": "The stored sync credentials are invalid!"
-  },
-  "Please_enter_your_existing_credentials_or_use_new_ones_": {
-    "message": "Please enter your existing sync credentials or use new ones."
+  "Imported": {
+    "message": "Imported"
   },
   "Import_Mode": {
     "message": "Import Mode"
@@ -790,11 +799,8 @@
   "Create_and_remove": {
     "message": "Create and Remove"
   },
-  "This_options_sets_up_how_to_handle_changes_from_the_sync_server_": {
-    "message": "This options sets up how to handle changes from the sync server. You can a) disable the import feature, b) set it to 'create only', so that TM installs all remote scripts, or c) set it 'create and remove' so that local scripts may be removed in case they are deleted at the server."
-  },
-  "This_options_sets_up_how_to_sync_local_changes_to_the_server_": {
-    "message": "This options sets up how to sync local changes to the server. You can a) disable the export feature, b) set it to 'create only', so that TM copies all local scripts to the server, or c) set it read-write so that a remote script is removed when it is deleted locally."
+  "Sync": {
+    "message": "Sync"
   },
   "Export_Mode": {
     "message": "Export Mode"
@@ -805,11 +811,17 @@
   "Enable_sync": {
     "message": "Enable Sync"
   },
-  "Conflict_remove_or_disable_sync": {
-    "message": "Conflicting remote version was found. Please remove the local version or disable sync for this script."
+  "This_options_sets_up_how_to_sync_local_changes_to_the_server_": {
+    "message": "This options sets up how to sync local changes to the server. You can a) disable the export feature, b) set it to 'create only', so that TM copies all local scripts to the server, or c) set it read-write so that a remote script is removed when it is deleted locally."
   },
-  "Sync": {
-    "message": "Sync"
+  "This_options_sets_up_how_to_handle_changes_from_the_sync_server_": {
+    "message": "This options sets up how to handle changes from the sync server. You can a) set it to 'create only', so that TM installs all remote scripts, or b) set it 'create and remove' so that local scripts will be removed in case they are removed from the server."
+  },
+  "Create_Exportable_Data": {
+    "message": "Create Exportable Data"
+  },
+  "Copy_exportable_data_to_clipboard_Ok_": {
+    "message": "Copy exportable TESLC data to clipboard. Ok?"
   },
   "Allow_headers_to_be_modified_by_scripts": {
     "message": "Allow HTTP headers to be modified by scripts"
@@ -822,6 +834,63 @@
   },
   "Auto": {
     "message": "Auto"
+  },
+  "__Please_choose__": {
+    "message": "-- Please choose an option --"
+  },
+  "Enable": {
+    "message": "Enable"
+  },
+  "Disable": {
+    "message": "Disable"
+  },
+  "Trigger_Update": {
+    "message": "Trigger an update"
+  },
+  "Apply_this_action_to_the_selected_scripts": {
+    "message": "Apply this action to all selected scripts"
+  },
+  "Start": {
+    "message": "Start"
+  },
+  "Really_delete_the_selected_items_": {
+    "message": "Do you really want to delete the selected items?"
+  },
+  "A_script_blocker_was_detected_": {
+    "message": "A script blocker was detected!"
+  },
+  "Storage_permission_is_needed_": {
+    "message": "Storage permission is needed!"
+  },
+  "Click_here_to_allow_TM_to_override_the_script_blocker": {
+    "message": "In order to allow your userscripts to run you need to click here to allow Tampermonkey to override the script blocker setting!"
+  },
+  "Click_here_to_allow_TM_to_use_Google_sync": {
+    "message": "Click here to allow Tampermonkey to use Google Sync!"
+  },
+  "Please_reload_this_page_in_order_to_run_your_userscripts_": {
+    "message": "Please reload this page to run your userscripts."
+  },
+  "Reset_Section": {
+    "message": "Reset"
+  },
+  "Restart_Tampermonkey": {
+    "message": "Restart Tampermonkey"
+  },
+  "This_will_restart_Tampermonkey_Ok_": {
+    "message": "Do you really want to restart Tampermonkey?"
+  },
+  "Factory_Reset": {
+    "message": "Factory Reset"
+  },
+  "This_will_remove_all_scripts_and_reset_all_settings_Ok_": {
+    "message": "Do you really want to remove all scripts and reset all settings?"
+  },
+  "Enable_autoSave": {
+    "message": "Save content when editor loses focus"
+  },
+  "Enable_easySave": {
+    "message": "Dont show confirmation dialog on save"
   },
   "EOF": {
     "message": "EOF"

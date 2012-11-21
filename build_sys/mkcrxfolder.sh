@@ -33,7 +33,7 @@ if [ $e -eq 1 ]
 then
    ./compress.sh -a src rel
 else
-   tar c -C "src/" --exclude "*.svn" --exclude "*.*~" . | \
+   tar c -C "src/" --exclude "*.svn" --exclude "*.*~" --exclude "*.diff" --exclude "*.js.*" --exclude "svn-com*" . | \
 	tar x -C "rel/"
 fi
 svn info | grep -r "Revision:" | sed "s/Revision: //g" > rev.tmp
@@ -76,6 +76,12 @@ cp ../i18n/zh_CN/* _locales/zh_CN/
 mkdir system
 cp ../src/system/* system/
 
+# keep jslint copyright notice
+mv jslint.js jslint.js.tmp
+head -n 24 ../src/jslint.js > jslint.js
+cat jslint.js.tmp >> jslint.js
+rm jslint.js.tmp
+
 if [ $l -eq 0 ]
 then
     cat ../build_sys/manifest.json.google.com > manifest.tmp
@@ -89,6 +95,8 @@ rm manifest.tmp
 
 cd images
 mv icon_grey.png icon_grey.png.bak
+mv icon_grey_blocker.png icon_grey_blocker.png.bak
+
 if [ $l -eq 1 ]
 then
     rm icon*.png
@@ -110,6 +118,8 @@ else
    fi
 fi
 mv icon_grey.png.bak icon_grey.png
+mv icon_grey_blocker.png.bak icon_grey_blocker.png
+
 cd ..
 
 if [ $b -eq 1 ]

@@ -32,5 +32,6 @@
                     "management", 
                     "webNavigation", 
                     "webRequest", "webRequestBlocking",
-                    "<all_urls>" ]
+                    "<all_urls>" ],
+   "optional_permissions" : [ "contentSettings" ]
 }

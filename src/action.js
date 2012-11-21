@@ -48,29 +48,8 @@ var createActionsMenu = function(items) {
             td2.appendChild(ai2);
 
             if (i.image) {
-                if (i.id && i.userscript) {
-                    var el = function() {
-                        modifyScriptOptions(this.name, 'enabled', !this.oldvalue);
-                    };
-                    
-                    var pt = (i.position > 0) ? ((i.position < 10) ? " " + i.position  : i.position) : null
-                    var g = HtmlUtil.createImageText(i.image,
-                                        i.name,
-                                        "enabled",
-                                        "enabled",
-                                        i.enabled ? chrome.i18n.getMessage('Enabled') : chrome.i18n.getMessage('Disabled'),
-                                        el,
-                                        pt);
-                    g.oldvalue = i.enabled;
-                    td1.appendChild(g);
-
-                    ai2.name = i.name;
-                    ai2.oldvalue = i.enabled;
-                    ai2.addEventListener("click", el);
-                } else {
-                    image = HtmlUtil.createImage(i.image, i.name, i.id, null, "");
-                    td1.appendChild(image);
-                }
+                image = HtmlUtil.createImage(i.image, i.name, i.id, null, "");
+                td1.appendChild(image);
             }
             
             if (i.checkbox) {
@@ -87,19 +66,28 @@ var createActionsMenu = function(items) {
                 span.textContent = i.name;
                 ai2.appendChild(input);
                 ai2.appendChild(span);
-            } else if (i.url) {
-                span = document.createElement('a');
-                span.href = 'javascript://nop/';
-                td2.url = i.url;
-                td2.newtab = i.newtab;
-                var loc = function() {
-                    loadUrl(this.url, this.newtab);
-                }
-                td2.addEventListener("click", loc);
-                td2.setAttribute('class', td2.setAttribute('class') + ' clickable');
-                span.textContent = i.name;
+            } else if (i.url || i.urls) {
+                var rs = i.urls || [ i ];
                 td2.setAttribute("colspan", "2");
-                ai2.appendChild(span);
+                for (var f=0; f<rs.length; f++) {
+                    var j = rs[f];
+                    span = document.createElement('a');
+                    span.href = 'javascript://nop/';
+                    span.url = j.url;
+                    span.newtab = j.newtab;
+                    var loc = function() {
+                        loadUrl(this.url, this.newtab);
+                    }
+                    span.addEventListener("click", loc);
+                    span.setAttribute('class', td2.setAttribute('class') + ' clickable');
+                    span.textContent = j.name;
+                    ai2.appendChild(span);
+                    if (f<rs.length-1) {
+                        var sep = document.createElement('span');
+                        sep.textContent = ' | ';
+                        ai2.appendChild(sep);
+                    }
+                }
             } else if (i.menucmd) {
                 var a = document.createElement('a');
                 a.href = 'javascript://nop/';
@@ -124,6 +112,42 @@ var createActionsMenu = function(items) {
                 a.textContent = i.name;
                 td2.setAttribute("colspan", "2");
                 ai2.appendChild(a);
+            } else if (i.userscript || i.user_agent) {
+                if (i.id) {
+                    var img = i.enabled
+                        ? chrome.extension.getURL('images/greenled.png')
+                        : chrome.extension.getURL('images/redled.png');
+                    
+                    var el = function(event) {
+                        if (event && event.button & 2 || event.button & 1 || event.ctrlKey) {
+                            // TODO: replace this by a call to bg, bg needs to observe option pages
+                            window.open(chrome.extension.getURL('options.html') + '?open=' + this.key);
+                            event.stopPropagation();
+                        } else {
+                            modifyScriptOptions(this.name, 'enabled', !this.oldvalue);
+                        }
+                    };
+                    
+                    var pt = (i.position > 0) ? ((i.position < 10) ? " " + i.position  : i.position) : null
+                        var g = HtmlUtil.createImageText(img,
+                                                         i.name,
+                                                         "enabled",
+                                                         "enabled",
+                                                         i.enabled ? chrome.i18n.getMessage('Enabled') : chrome.i18n.getMessage('Disabled'),
+                                                         el,
+                                                         pt);
+                    g.oldvalue = i.enabled;
+                    td1.appendChild(g);
+                    
+                    ai2.name = i.name;
+                    ai2.oldvalue = i.enabled;
+                    ai2.key = i.id;
+                    ai2.addEventListener("click", el);
+                }
+                span = document.createElement('span');
+                span.textContent = i.name;
+                td2.setAttribute("colspan", "2");
+                ai2.appendChild(span);
             } else {
                 span = document.createElement('span');
                 span.textContent = i.name;

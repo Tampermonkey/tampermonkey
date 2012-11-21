@@ -25,8 +25,7 @@
                 p.insertBefore(f, e);
                 p.removeChild(e);
                 e = f;
-            }
-            if (e) {
+            } else if (e) {
                 e.inserted = true;
             } else {
                 e = document.createElement(tag);
@@ -36,7 +35,7 @@
             if (!e.__removeChild) {
                 e.__removeChild = e.removeChild;
                 e.removeChild = function(elem) {
-                    e.inserted = false;
+                    delete elem.inserted;
                     e.__removeChild(elem);
                 };
             }

@@ -62,17 +62,20 @@ textarea {
 }
 
 .button {
+}
+
+.imgbutton {
   height: 24px;
   width: 24px;
 }
 
-.button_container {
+.imgbutton_container {
   float: left;
   height: 24px;
   width: 28px;
 }
 
-.button_image {
+.imgbutton_image {
   position: relative;
   height: 16px;
   width: 16px;
@@ -486,6 +489,11 @@ textarea {
   width: 16px;
 }
 
+.optiondesc {
+  min-width: 130px !important;
+  display: inline-block;
+}
+
 .tv {
   height: 100%;
   width: 100%;
@@ -657,7 +665,7 @@ textarea {
 }
 
 .curmiddle {
-  position:absolute;
+  position: fixed;
   top: 0px;
   left: 0px;
   z-index:100;
@@ -674,6 +682,7 @@ textarea {
   moz-opacity:0.2; -khtml-opacity:0.2; opacity:0.2;
   filter:alpha(opacity=10);
   background-color:#000000;
+  min-width: 802;
 }
 
 .curtable {
@@ -689,10 +698,10 @@ textarea {
 
 .curtableinner {
   text-align: center;
-  padding-top: 30px;
+  padding-top: 10px;
   vertical-align: middle;
   height:auto;
-  min-width: 802;
+  display: table-cell;
 }
 
 .curouter {
@@ -703,11 +712,14 @@ textarea {
   height:100%;
 }
 
+.curinner {
+  position: absolute;
+}
+
 .curcontainer {
-  position: fixed;
-  display: block;
+  display: table-cell;
   width: 200px;
-  margin: -80px 300px 0 300px;
+  margin: 20px 300px 20px 300px;
 }
 
 .curwaithead {
@@ -726,6 +738,7 @@ textarea {
   min-height: 50px;
   vertical-align: middle;
   background-color: #fefefe;
+  overflow: hidden; 
 }
 
 .notify {
@@ -733,11 +746,14 @@ textarea {
 }
 
 .notify_head {
-  padding-left: 10px;
+  padding-left: 5px;
+  font-size: 1.1em;
 }
 
 .notify_text {
-  padding-left: 10px;
+  padding-top: 5px;
+  padding-left: 5px;
+  font-size: 1.0em;
 }
 
 .section {
@@ -788,4 +804,10 @@ div.cludes {
 div.cludes select {
   display: block;
   width: 300px;
+}
+
+.login_hint {
+  color: red;
+  padding: 0px 10px 0px 10px;
+  font-style:italic;
 }

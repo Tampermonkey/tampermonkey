@@ -12,15 +12,22 @@ if (window.self != window.top &&
         if (elem.childNodes.length > 0) {
             return getSource(elem.childNodes[elem.childNodes.length - 1]);
         } else {
-            return elem.textContent;
+            return elem.innerText;
         }
-    }
+    };
 
     var sendResp = function(event) {
         var data = JSON.parse(event.data);
-        var o = { content: getSource(document),
-                  id: data.id };
-        var s = JSON.stringify(o);
+        var content = null;
+
+        // TODO: getSource might be unnecessary since usage of body.innerText !?
+        if (document.body) {
+            content = document.body.innerText;
+        } else {
+            content = getSource(document);
+        }
+
+        var s = JSON.stringify({ content: content, id: data.id });
         // event.srcElement.postMessage(s, event.origin);
         // event.returnValue = s;
 
@@ -36,7 +43,7 @@ if (window.self != window.top &&
 var _background = true;
 var _webRequest = {};
 var Converter;
-    
+
 var D = false;
 var V = false;
 var EV = false;
@@ -44,20 +51,20 @@ var EMV = false;
 var ENV = false;
 var TS = false;
 var CV =  false;
- 
+
 (function() {
 
 var eDOMATTRMODIFIED = "DOMAttrModified";
 var XMLHttpRequest = window.XMLHttpRequest;
 
-var use = { safeContext: true };
+var use = { safeContext: true, scriptBlocker: false };
 var logLevel = null;
 var allReady = false;
 var wannaRun = false;
 var domLoaded = false;
 var nodeInserted = false;
 var Clean = [];
- 
+
 var adjustLogLevel = function() {
     D |= (logLevel >= 60);
     V |= (logLevel >= 80);
@@ -75,16 +82,16 @@ Registry.require("helper");
 
 var emu = null;
 var env = null;
+var jslint = null;
 
 var xmlhttpRequestHelper = Registry.get('xmlhttprequest');
 var xmlhttpRequest = xmlhttpRequestHelper.run;
 var Helper = Registry.get('helper');
-var ConverterInit = null;
 Converter = Registry.get('convert');
 
 /* ######## eventing #### */
 var domContentLoaded = function() {
-    if (V || EV || D) console.log("content: detected DOMContentLoaded " + contextId);
+    if (V || EV || D) console.log("content: detected DOMContentLoaded " + Eventing.contextId);
     domLoaded = true;
     // help if domcontentloader listener is not installed at the page :-/
     if (allReady) _handler.sendMessage("domContentLoaded = true; if (typeof runAllLoadListeners !== 'undefined') runAllLoadListeners();");
@@ -92,7 +99,7 @@ var domContentLoaded = function() {
 
 var domNodeInserted = function(node) {
     if (!nodeInserted) {
-        if (V || EV || D) console.log("content: first DOMNodeInserted " + contextId);
+        if (V || EV || D) console.log("content: first DOMNodeInserted " + Eventing.contextId);
         nodeInserted = true;
     }
 };
@@ -113,9 +120,10 @@ var _handler = {
         } else if (this.initstate == 1) {
             is += "var ENV = " + (ENV ? "true" : "false") +";\n";
             is += "var TS = " + (TS ? "true" : "false") +";\n";
-            is += "var Converter = " + ConverterInit + ";\n";
+            is += "var Converter = " + Helper.serialize(Converter) + ";\n";
             is += "var TMwin = { backup: {}, use: " + JSON.stringify(use) + " };\n";
             is += "var TMJSON = JSON;\n";
+            is += "var _background = false;\n";
             is += "var console = window['console'];\n";
             is += "var JSON = window['JSON'];\n";
             is += "function JSONcheck() {\n";
@@ -132,27 +140,12 @@ var _handler = {
             is += "        }\n";
             is += "};\n";
             is += "JSONcheck();\n";
-            is += "function eventHandler(evt) {\n";
-            is += "    try {\n";
-            is += "        if (ENV) console.log('page: Event received " + contextId + "' + evt.attrName);\n";
-            is += "        var j = JSON.parse(Converter.decodeR(evt.attrName));\n";
-            is += "        try {\n";
-            is += "            eval(j)\n";
-            is += "            if (TS) console.log('page: it took ' + ((new Date()).getTime() - evt.timeStamp)  + ' ms to process this event -> ' + j.substr(0, 80));\n";
-            is += "        } catch (e) {\n";
-            is += "            console.log('page: Error: processing event! ' + e.message + ' ' + j);\n";
-            is += "        }\n";
-            is += "        j = ''\n";
-            is += "    } catch (e) {\n";
-            is += "        console.log('page: Error: retrieving event! ' + e.message + ' ' + evt.attrName);\n";
-            is += "    }\n";
-            is += "    evt = null;\n";
-            is += "};\n";
-            is += "document.addEventListener('TM_exec"+contextId+"', eventHandler, false);\n";
+            is += "var Eventing = " + Helper.serialize(Eventing) + ";\n";
+            is += "Eventing.init();\n";
             is += "function cleanup(evt) {\n";
-            is += "    document.removeEventListener('TM_exec"+contextId+"', eventHandler, false);\n";
-            is += "    if (ENV) console.log('page: cleanup of "+contextId+"! ');\n";
+            is += "    Eventing.cleanup();\n";
             is += "    window.removeEventListener('unload', cleanup, false);\n";
+            is += "    delete Eventing;\n";
             is += "    delete TMJSON;\n";
             is += "    delete TMwin;\n";
             is += "    delete Converter;\n";
@@ -160,12 +153,13 @@ var _handler = {
             is += "    delete ENV;\n";
             is += "};\n";
             is += "window.addEventListener('unload', cleanup, false);\n";
+            is += "if (ENV) console.log('page: env initialized (" + Eventing.contextId+ ")');\n";
 
             if (!use.safeContext) {
                 is += "function removeScriptTag() {\n";
-                is += "    var st = document.getElementById('TM_script_tag_"+contextId+"');\n";
+                is += "    var st = document.getElementById('TM_script_tag_"+Eventing.contextId+"');\n";
                 is += "    if (st && st.parentNode) {\n";
-                is += "        if (ENV) console.log('page: script tag cleanup ("+contextId+")');\n";
+                is += "        if (ENV) console.log('page: script tag cleanup ("+Eventing.contextId+")');\n";
                 is += "        st.parentNode.removeChild(st);\n";
                 is += "    }\n";
                 is += "};\n";
@@ -174,7 +168,7 @@ var _handler = {
                 var s = document.createElement('script');
                 s.textContent = "(function TM_mother() { " + is + "\n" + msg + "})();";
                 s.setAttribute('name', "TM_internal");
-                s.setAttribute('id', "TM_script_tag_"+contextId);
+                s.setAttribute('id', "TM_script_tag_"+Eventing.contextId);
 
                 (document.head || document.body || document.documentElement || document).appendChild(s);
             } else {
@@ -182,7 +176,7 @@ var _handler = {
             }
             this.initstate = 2;
         } else if (this.initstate == 2) {
-            TM_fireEvent(msg, 'TM_exec'+contextId);
+            Eventing.fireEvent(msg);
         }
     },
     getResponseId : function(callback) {
@@ -219,244 +213,241 @@ var _handler = {
     }
 };
 
-var tmCEinit = function (cId) {
-    return {
-        id: cId,
-        ports: {},
-        log: function(text) {
-            if (_background) {
-                console.log("content: " + text);
-            } else {
-                TM_fireEvent({ fn: "log", args: "page: " + text });
-            }
-        },
+var tmCE = {
+    ports: {},
+    log: function(text) {
+        if (_background) {
+            console.log("content: " + text);
+        } else {
+            Eventing.fireEvent({ fn: "log", args: "page: " + text });
+        }
+    },
 
-	onContentResponse: function(key, tabId, responseId, json) { // (String key, int tabId, long responseId, String json) {
-            if (_background) {
-                if (V) this.log("onContentResponse " + contextId + " " + responseId + " " + json);
-                _handler.runResponse(responseId, Converter.encode(json));
-            } else {
-                var a = arguments;
-                TM_fireEvent({ fn: "onContentResponse", args: a });
-            }
-        },
+    onContentResponse: function(key, tabId, responseId, json) { // (String key, int tabId, long responseId, String json) {
+        if (_background) {
+            if (V) this.log("onContentResponse " + this.id + " " + responseId + " " + json);
+            _handler.runResponse(responseId, Converter.encode(json));
+        } else {
+            var a = arguments;
+            Eventing.fireEvent({ fn: "onContentResponse", args: a });
+        }
+    },
 
-        onResponse: function(key, tabId, responseId, json) { // (String key, int tabId, long responseId, String json) {
-            if (_background) {
-                try {
-                    if (V) this.log("onResponse " + contextId + " " + responseId + " " + json);
-                    var j = Converter.encode(json);
-                    var l = "if (TMwin.chromeEmu) TMwin.chromeEmu.runResponse(" + responseId + ", \"" + j + "\")";
-                    _handler.sendMessage(l);
-                    j = '';
-                    l = '';
-                } catch (e) {
-                    console.log("Error: processing onResponse");
-                }
-            } else {
-                var a = arguments;
-                TM_fireEvent({ fn: "onResponse", args: a });
-            }
-        },
-
-        onConnectResponse: function(key, tabId, responseId, json) { // (String key, int tabId, long responseId, String json) {
-            if (_background) {
-                try {
-                    if (V) this.log("onConnectResponse " + contextId + " " + responseId + " " + json);
-                    var j = Converter.encode(json);
-                    var l = "if (TMwin.chromeEmu) TMwin.chromeEmu.runConnectResponse(" + responseId + ", \"" + j + "\")";
-                    _handler.sendMessage(l);
-                    j = '';
-                    l = '';
-                } catch (e) {
-                    console.log("Error: processing onConnectResponse");
-                }
-            } else {
-                var a = arguments;
-                TM_fireEvent({ fn: "onConnectResponse", args: a });
-            }
-        },
-        
-        onContentRequest : function(request, sender, responseId) {
-            if (_background) {
-                if (V) this.log("onContentRequest " + contextId + " " + responseId + " " + JSON.stringify(request));
-                if (request.id && this.id && request.id != this.id) {
-                    if (V) this.log("filter: " + request.id + "!=" +  this.id);
-                    return;
-                }
-                var j = Converter.encode(JSON.stringify({ sender: sender, request: request}));
-                var l = "if (TMwin.chromeEmu) TMwin.chromeEmu.runContentRequest(" + responseId + ", \"" + j + "\", 0);";
+    onResponse: function(key, tabId, responseId, json) { // (String key, int tabId, long responseId, String json) {
+        if (_background) {
+            try {
+                if (V) this.log("onResponse " + this.id + " " + responseId + " " + json);
+                var j = Converter.encode(json);
+                var l = "if (TMwin.chromeEmu) TMwin.chromeEmu.runResponse(" + responseId + ", \"" + j + "\")";
                 _handler.sendMessage(l);
                 j = '';
                 l = '';
-            } else {
-                console.log("Warn: onContentRequest from non BG not supported");
+            } catch (e) {
+                console.log("Error: processing onResponse");
             }
-	},
+        } else {
+            var a = arguments;
+            Eventing.fireEvent({ fn: "onResponse", args: a });
+        }
+    },
 
-        onMessage : function(request, sender, responseId) {
-            if (_background) {
-                if (V) this.log("onMessage " + contextId + " " + responseId + " " + JSON.stringify(request));
-                if (request.id && this.id && request.id != this.id) {
-                    if (V) this.log("filter: " + request.id + "!=" +  this.id);
-                    return;
-                }
-                var j = Converter.encode(JSON.stringify({ sender: sender, request: request}));
-                var l = "if (TMwin.chromeEmu) TMwin.chromeEmu.runRequest(" + responseId + ", \"" + j + "\", 0)";
+    onConnectResponse: function(key, tabId, responseId, json) { // (String key, int tabId, long responseId, String json) {
+        if (_background) {
+            try {
+                if (V) this.log("onConnectResponse " + this.id + " " + responseId + " " + json);
+                var j = Converter.encode(json);
+                var l = "if (TMwin.chromeEmu) TMwin.chromeEmu.runConnectResponse(" + responseId + ", \"" + j + "\")";
                 _handler.sendMessage(l);
                 j = '';
                 l = '';
-            } else {
-                // var a = arguments;
-                // TM_fireEvent({ fn: "onMessage", args: a });
-                console.log("Warn: onMessage from non BG not supported");
+            } catch (e) {
+                console.log("Error: processing onConnectResponse");
             }
-	},
+        } else {
+            var a = arguments;
+            Eventing.fireEvent({ fn: "onConnectResponse", args: a });
+        }
+    },
 
-        xmlHttpRequest: function(key, details, responseId) {
-            if (_background) {
-                if (V) this.log("xmlHttpRequest " + contextId + " " + responseId + " " + JSON.stringify(details));
-                var obj = JSON.parse(details);
-                if (obj.q_id) {
-                    var q = obj.q_id;
-                    obj = window[q];
-                    delete window[q];
-                }
+    onContentRequest : function(request, sender, responseId) {
+        if (_background) {
+            if (V) this.log("onContentRequest " + this.id + " " + responseId + " " + JSON.stringify(request));
+            if (request.id && this.id && request.id != this.id) {
+                if (V) this.log("filter: " + request.id + "!=" +  this.id);
+                return;
+            }
+            var j = Converter.encode(JSON.stringify({ sender: sender, request: request}));
+            var l = "if (TMwin.chromeEmu) TMwin.chromeEmu.runContentRequest(" + responseId + ", \"" + j + "\", 0);";
+            _handler.sendMessage(l);
+            j = '';
+            l = '';
+        } else {
+            console.log("Warn: onContentRequest from non BG not supported");
+        }
+    },
 
-                var load = function(r) {
-                    // TODO: Waaaaaaaaaaahhhhhhhhh, bypass special objects like ArrayBuffer, cause they are destroyed when sent by an event
-                    var id = '__x__' + Math.floor ( Math.random() * 06121983 + 1 );
-                    window[id] = r.response;
-                    r.response = null;
-                    tmCE.onConnectResponse(key, 0, responseId, JSON.stringify( { onLoad : true, response: r, r_id: id }));
-                };
-                var readystatechange = function(r) {
-                    tmCE.onConnectResponse(key, 0, responseId, JSON.stringify( { onReadyStateChange : true, response: r }));
-                };
-                var error = function(r) {
-                    tmCE.onConnectResponse(key, 0, responseId, JSON.stringify( { onError: true, response: r }));
-                }
-                var done = function(r) {
-                    // add 'onDisconnect' to cleanup all emulation layer listeners
-                    tmCE.onConnectResponse(key, 0, responseId, JSON.stringify( { onDone : true, onDisconnect: true, response: r }));
-                }
-                xmlhttpRequest(obj, load, readystatechange, error, done);
-            } else {
-                var a = arguments;
-                TM_fireEvent({ fn: "xmlHttpRequest", args: a });
+    onMessage : function(request, sender, responseId) {
+        if (_background) {
+            if (V) this.log("onMessage " + this.id + " " + responseId + " " + JSON.stringify(request));
+            if (request.id && this.id && request.id != this.id) {
+                if (V) this.log("filter: " + request.id + "!=" +  this.id);
+                return;
+            }
+            var j = Converter.encode(JSON.stringify({ sender: sender, request: request}));
+            var l = "if (TMwin.chromeEmu) TMwin.chromeEmu.runRequest(" + responseId + ", \"" + j + "\", 0)";
+            _handler.sendMessage(l);
+            j = '';
+            l = '';
+        } else {
+            // var a = arguments;
+            // Eventing.fireEvent({ fn: "onMessage", args: a });
+            console.log("Warn: onMessage from non BG not supported");
+        }
+    },
+
+    xmlHttpRequest: function(key, details, responseId) {
+        if (_background) {
+            if (V) this.log("xmlHttpRequest " + this.id + " " + responseId + " " + JSON.stringify(details));
+            var obj = JSON.parse(details);
+            if (obj.q_id) {
+                var q = obj.q_id;
+                obj = window[q];
+                delete window[q];
             }
 
-        },
+            var load = function(r) {
+                // TODO: Waaaaaaaaaaahhhhhhhhh, bypass special objects like ArrayBuffer, cause they are destroyed when sent by an event
+                var id = '__x__' + Math.floor ( Math.random() * 06121983 + 1 );
+                window[id] = r.response;
+                r.response = null;
+                tmCE.onConnectResponse(key, 0, responseId, JSON.stringify( { onLoad : true, response: r, r_id: id }));
+            };
+            var readystatechange = function(r) {
+                tmCE.onConnectResponse(key, 0, responseId, JSON.stringify( { onReadyStateChange : true, response: r }));
+            };
+            var error = function(r) {
+                tmCE.onConnectResponse(key, 0, responseId, JSON.stringify( { onError: true, response: r }));
+            }
+            var done = function(r) {
+                // add 'onDisconnect' to cleanup all emulation layer listeners
+                tmCE.onConnectResponse(key, 0, responseId, JSON.stringify( { onDone : true, onDisconnect: true, response: r }));
+            }
+            xmlhttpRequest(obj, load, readystatechange, error, done);
+        } else {
+            var a = arguments;
+            Eventing.fireEvent({ fn: "xmlHttpRequest", args: a });
+        }
 
-	runUpdateListener: function() { // (int tabId, String details, String url) {
-            console.log("WARN: not supported!");
-	},
+    },
 
-	getUrl: function() { // (String key, String file) {
-            console.log("WARN: not supported!");
-	},
+    runUpdateListener: function() { // (int tabId, String details, String url) {
+        console.log("WARN: not supported!");
+    },
 
-        sendExtensionMessage: function(key, json, responseId) { //(String key, String json, long responseId) {
-            if (_background) {
-                if (V) this.log("sendExtensionMessage " + contextId + " " + responseId + " " + json);
-                var response = function(resp) {
-                    tmCE.onResponse(key, 0, responseId, JSON.stringify(resp));
-                };
-                var obj = JSON.parse(json);
-                obj.responseId = responseId;
-                chrome.extension.sendMessage(obj, response);
+    getUrl: function() { // (String key, String file) {
+        console.log("WARN: not supported!");
+    },
+
+    sendExtensionMessage: function(key, json, responseId) { //(String key, String json, long responseId) {
+        if (_background) {
+            if (V) this.log("sendExtensionMessage " + this.id + " " + responseId + " " + json);
+            var response = function(resp) {
+                tmCE.onResponse(key, 0, responseId, JSON.stringify(resp));
+            };
+            var obj = JSON.parse(json);
+            obj.responseId = responseId;
+            chrome.extension.sendMessage(obj, response);
+            obj = null;
+        } else {
+            var a = arguments;
+            Eventing.fireEvent({ fn: "sendExtensionMessage", args: a });
+        }
+    },
+
+    sendExtensionConnect: function(key, json, responseId) { //(String key, String json, long responseId) {
+        if (_background) {
+            var obj = JSON.parse(json);
+            obj.responseId = responseId;
+
+            if (V) this.log("sendExtensionConnect " + this.id + " " + responseId + " " + json);
+            var oMresponse = function(resp) {
+                tmCE.onConnectResponse(key, 0, responseId, JSON.stringify({ onMessage: true, msg: resp }));
+            };
+            var oDresponse = function(resp) {
+                tmCE.onConnectResponse(key, 0, responseId, JSON.stringify({ onDisconnect: true, msg: resp }));
                 obj = null;
-            } else {
-                var a = arguments;
-                TM_fireEvent({ fn: "sendExtensionMessage", args: a });
-            }
-	},
+            };
 
-        sendExtensionConnect: function(key, json, responseId) { //(String key, String json, long responseId) {
-            if (_background) {
+            var port = chrome.extension.connect({name: obj});
+            port.onMessage.addListener(oMresponse);
+            port.onDisconnect.addListener(oDresponse);
+            tmCE.ports[responseId] = port;
+        } else {
+            var a = arguments;
+            Eventing.fireEvent({ fn: "sendExtensionConnect", args: a });
+        }
+    },
+
+    sendExtensionPortMessage: function(key, json, responseId) { //(String key, String json, long responseId) {
+        if (_background) {
+            if (V) this.log("sendExtensionPortMessage " + this.id + " " + responseId + " " + json);
+            var port = tmCE.ports[responseId];
+            if (!port) {
+                this.log("Error: sendExtensionPortMessage unable to find port " + responseId);
+            } else {
                 var obj = JSON.parse(json);
                 obj.responseId = responseId;
-
-                if (V) this.log("sendExtensionConnect " + contextId + " " + responseId + " " + json);
-                var oMresponse = function(resp) {
-                    tmCE.onConnectResponse(key, 0, responseId, JSON.stringify({ onMessage: true, msg: resp }));
-                };
-                var oDresponse = function(resp) {
-                    tmCE.onConnectResponse(key, 0, responseId, JSON.stringify({ onDisconnect: true, msg: resp }));
-                    obj = null;
-                };
-
-                var port = chrome.extension.connect({name: obj});
-                port.onMessage.addListener(oMresponse);
-                port.onDisconnect.addListener(oDresponse);
-                tmCE.ports[responseId] = port;
-            } else {
-                var a = arguments;
-                TM_fireEvent({ fn: "sendExtensionConnect", args: a });
+                port.postMessage(obj);
+                obj = null;
             }
-	},
+        } else {
+            var a = arguments;
+            Eventing.fireEvent({ fn: "sendExtensionPortMessage", args: a });
+        }
+    },
 
-        sendExtensionPortMessage: function(key, json, responseId) { //(String key, String json, long responseId) {
-            if (_background) {
-                if (V) this.log("sendExtensionPortMessage " + contextId + " " + responseId + " " + json);
-                var port = tmCE.ports[responseId];
-                if (!port) {
-                    this.log("Error: sendExtensionPortMessage unable to find port " + responseId);
-                } else {
-                    var obj = JSON.parse(json);
-                    obj.responseId = responseId;
-                    port.postMessage(obj);
-                    obj = null;
-                }
-            } else {
-                var a = arguments;
-                TM_fireEvent({ fn: "sendExtensionPortMessage", args: a });
-            }
-	},
-        
-	sendTabsRequest: function() { // (String key, int tabId, String json, long responseId) {
-            console.log("WARN: not supported!");
-	},
+    sendTabsRequest: function() { // (String key, int tabId, String json, long responseId) {
+        console.log("WARN: not supported!");
+    },
 
-	createTab: function () { // (String key, String json) {
-            console.log("WARN: not supported!");
-	},
+    createTab: function () { // (String key, String json) {
+        console.log("WARN: not supported!");
+    },
 
-        getSelected: function () { //(String key, String json, long responseId) {
-            console.log("WARN: not supported!");
-	},
+    getSelected: function () { //(String key, String json, long responseId) {
+        console.log("WARN: not supported!");
+    },
 
-        updateTab: function () { //(String key, String tabId, String json) {
-            console.log("WARN: not supported!");
-	},
+    updateTab: function () { //(String key, String tabId, String json) {
+        console.log("WARN: not supported!");
+    },
 
-        onUpdated: function () { //() {
-            console.log("WARN: not supported!");
-	},
+    onUpdated: function () { //() {
+        console.log("WARN: not supported!");
+    },
 
-	getMessage: function () { //(String key, String json) {
-            console.log("WARN: not supported!");
-	},
+    getMessage: function () { //(String key, String json) {
+        console.log("WARN: not supported!");
+    },
 
-        storageKey: function () { //(String key, String id) {
-            console.log("WARN: not supported!");
-	},
+    storageKey: function () { //(String key, String id) {
+        console.log("WARN: not supported!");
+    },
 
-        storageRemoveItem: function () { //(String key, String vkey) {
-            console.log("WARN: not supported!");
-	},
+    storageRemoveItem: function () { //(String key, String vkey) {
+        console.log("WARN: not supported!");
+    },
 
-        storageSetItem: function () { //(String key, String vkey, String value) {
-            console.log("WARN: not supported!");
-	},
+    storageSetItem: function () { //(String key, String vkey, String value) {
+        console.log("WARN: not supported!");
+    },
 
-        storageGetItem: function () { //(String key, String vkey) {
-            console.log("WARN: not supported!");
-	},
+    storageGetItem: function () { //(String key, String vkey) {
+        console.log("WARN: not supported!");
+    },
 
-        storageLength: function () { //(String key) {
-            console.log("WARN: not supported!");
-	}
+    storageLength: function () { //(String key) {
+        console.log("WARN: not supported!");
     }
 };
 
@@ -481,9 +472,30 @@ var initUnsafe = function() {
         }
 
         var yippieYeah = document.createElement("div");
-        yippieYeah.setAttribute("onclick", "return {" + props + "};");
-        var ret = yippieYeah.onclick();
-        var unsafeWindow = ret.window;
+        var unsafeWindow = null;
+        try {
+            yippieYeah.setAttribute("onclick", "return {" + props + "};");
+            var ret = yippieYeah.onclick();
+            unsafeWindow = ret.window;
+        } catch (e) {
+            unsafeWindow = window;
+            use.scriptBlocker = true;
+            console.log("content: unsafeWindow retrieval failed! Do you use a script blocker like ScriptNo?");
+
+            // http://code.google.com/p/chromium/issues/detail?id=111522
+            var response = function(resp) {
+                if (resp.alert) {
+                    // TODO: alert on response breaks Chrome event magic, but setTimeout doesn't work because of the script blocker :(
+                    alert(chrome.i18n.getMessage("Please_reload_this_page_in_order_to_run_your_userscripts_"));
+                }
+            };
+            var req = { method: "scriptBlockerDetected",
+                        id: Eventing.contextId,
+                        url: window.location.origin + window.location.pathname,
+                        params: window.location.search + window.location.hash };
+
+            chrome.extension.sendMessage(req, response);
+        }
 
         yippieYeah.setAttribute("onclick", null);
         yippieYeah.onclick = null;
@@ -491,7 +503,7 @@ var initUnsafe = function() {
 
         var fi = '__o__' + id;
         var f = 'window.' + fi + ' = {' + props + '};';
-            
+
         // to be on the safe side: register an unsafe event handler to be able to workaround some Chrome security issues
         var is = '';
         is += "function eventHandler(evt) {\n";
@@ -500,7 +512,7 @@ var initUnsafe = function() {
         is += "    } catch (e) {}\n";
         is += "    evt = null;\n";
         is += "};\n";
-        is += "document.addEventListener('TM_do"+contextId+"', eventHandler, false);\n";
+        is += "document.addEventListener('TM_do"+Eventing.contextId+"', eventHandler, false);\n";
         f += is;
 
         var s = unsafeWindow.document.createElement('script');
@@ -508,13 +520,13 @@ var initUnsafe = function() {
         s.innerHTML = f;
         var d = unsafeWindow.document;
         (d.documentElement || d).appendChild(s);
-        
-        var ret = unsafeWindow[fi];
+
+        var ret = unsafeWindow[fi] || { window: window, top: top, frames: frames, parent: parent, opener: opener};
         delete unsafeWindow[fi];
         s.parentNode.removeChild(s);
 
         if (D) console.log("env: init " + window.location.href);
-        
+
         for (var kk in get) {
             if (!get.hasOwnProperty(kk)) continue;
 
@@ -556,7 +568,7 @@ var initUnsafe = function() {
                                 writable: false,
                                 configurable: true
                             };
-                            
+
                             Object.defineProperties(window, prop);
                             written = true;
                             if (D) console.log("env: define " + k + " to " + JSON.stringify(obj));
@@ -565,7 +577,6 @@ var initUnsafe = function() {
                                            prop[k].value = null;
                                            Object.defineProperties(window, prop);
                                        });
-
                         }
                     } catch (e) {
                         console.log(e.message);
@@ -600,7 +611,7 @@ var initUnsafe = function() {
 var TM_do = function(src) {
     if (use.safeContext) {
         var customEvent = document.createEvent("MutationEvent");
-        customEvent.initMutationEvent('TM_do' + contextId,
+        customEvent.initMutationEvent('TM_do' + Eventing.contextId,
                                       false,
                                       false,
                                       null,
@@ -622,26 +633,26 @@ function xhrFix() {
     return;
 
     if (use.safeContext) {
-        var fi = '__o__' + contextId;
+        var fi = '__o__' + Eventing.contextId;
         var f = 'window.' + fi + ' = { XMLHttpRequest: XMLHttpRequest };';
         TM_do(f);
         var ret = unsafeWindow[fi];
         delete unsafeWindow[fi];
-        
+
         if (ret.XMLHttpRequest) {
             window.XMLHttpRequest = ret.XMLHttpRequest;
             if (D) console.log("content: XMLHttpRequest overwritten");
         }
     }
 }
- 
+
 function wrappedJSObjectFix() {
     var arr = [ window['HTMLElement'].prototype, document.__proto__ ];
     for (var o=0; o < arr.length; o++) {
         var wrap = function() {
             var k = arr[o];
             var obj = Object.getOwnPropertyDescriptor(k, 'wrappedJSObject');
-                
+
             if (!obj) {
                 var prop = { 'wrappedJSObject':
                              {
@@ -663,12 +674,12 @@ function wrappedJSObjectFix() {
         wrap();
     }
 };
- 
+
 function domAttrFix() {
     var logged = false;
     var useObserver = true;
-    
-    var testDOMAttr = function() { 
+
+    var testDOMAttr = function() {
         var p = document.createElement("p");
         var flag = false;
 
@@ -679,9 +690,9 @@ function domAttrFix() {
     };
 
     if (testDOMAttr()) return;
-                                
+
     var arr = [ window['HTMLElement'].prototype, document.__proto__ ];
-    
+
     for (var o=0; o < arr.length; o++) {
         var k = arr[o];
         if (!k.___addEventListener) {
@@ -691,7 +702,7 @@ function domAttrFix() {
             k.removeEventListener = function (event, fn, arg1) {
                 this.___removeEventListener(event, fn, arg1);
             };
-            
+
             k.addEventListener = function (event, fn, arg1) {
                 if (event == eDOMATTRMODIFIED) { // not working in chrome
 
@@ -700,7 +711,7 @@ function domAttrFix() {
                         var old = this.outerHTML.split('>')[0] + ' />';
                         var that = this;
                         var node;
-                    
+
                         if (this.parentNode) {
                             node = this.parentNode;
                         } else {
@@ -756,7 +767,7 @@ function domAttrFix() {
                                 // console.log(eDOMATTRMODIFIED + " onSubtree: ");
                                 // console.log(e.target);
                                 // console.log(that);
-                            
+
                                 // was the event send for the element we're watching?
                                 if (e.target == that) {
                                     // create <div class="foo" /> from outerHTML
@@ -810,109 +821,214 @@ function domAttrFix() {
     }
 };
 
-function TM_generateScriptId(){
-    var ret = '';
-    ret += Math.floor ( Math.random() * 06121983 + 1 )
-    ret += ((new Date()).getTime().toString()).substr(10,7);
-    return ret;
-}
+/* ######### Eventing ###################### */
 
-function TM_fireEvent(data, evt) {
-    if (evt == undefined) evt = 'TM_event'+TM_content_context;
-
-    if (ENV) console.log((_background ? "content" : "page") + ": fireEvent " + evt + " -> " + JSON.stringify(data));
-    try {
-        var customEvent = document.createEvent("MutationEvent");
-        customEvent.initMutationEvent(evt,
-                              false,
-                              false,
-                              null,
-                              null,
-                              null,
-                              Converter.encodeR(JSON.stringify(data)),
-                              customEvent.ADDITION);
-        document.dispatchEvent(customEvent);
-    } catch (e) {
-        console.log((_background ? "content" : "page") + ":Error: fire event " + evt + " -> " + JSON.stringify(data) +  " " + e);
-    }
-}
-
-var contextId = TM_generateScriptId();
-var context = "var TM_context_id = '" + contextId + "';\n";
-var back = "var _background = false;\n";
-var tm = "var tmCE = (" + tmCEinit.toString() + ")();\nvar TM_content_context = '" + contextId + "';\n";
-var evt = TM_fireEvent.toString() + "\n";
-var load = "";
-
-function runHlp(arg) {
-    if (!allReady) {
-        if (!document.head && !document.body) {
-            if (arg == undefined) window.setTimeout(runHlp, 100);
+var Eventing = {
+    contextId: null,
+    rEventId: null,
+    sEventId: null,
+    eventSource : null,
+    generateScriptId : function (){
+        var ret = '';
+        ret += Math.floor ( Math.random() * 06121983 + 1 )
+        ret += ((new Date()).getTime().toString()).substr(10,7);
+        return ret;
+    },
+    log : function(m) {
+        console.log((_background ? "content" : "page") + ": " + m);
+    },
+    alternativeEventSource : {
+        // this is only working for code not behind timeouts and events :(
+        dispatchEvent : function(e) {
+            if (!window.AltEventing) window.AltEventing = {};
+            if (window.AltEventing[e.type]) {
+                window.AltEventing[e.type](e);
+            }
+        },
+        addEventListener : function(id, e) {
+            if (!window.AltEventing) window.AltEventing = {};
+            window.AltEventing[id] = e;
+        },
+        removeEventListener : function(id) {
+            if (!window.AltEventing) window.AltEventing = {};
+            delete window.AltEventing[id];
+        }
+    },
+    init: function() {
+        if (!Eventing.contextId) {
+            Eventing.log("Eventing.init() failed!!!");
             return;
+        }
+        var top = "TM_toPage";
+        var toc = "TM_toContent";
+        var u = {};
+
+        if (_background) {
+            u = use;
+            Eventing.rEventId = toc;
+            Eventing.sEventId = top;
+            Eventing.eventHandler = Eventing.eventHandlerContent;
         } else {
-            cleanupHlp();
-            run();
-        }
-    }
-}
-
-function run() {
-    if (!allReady && env && emu) {
-        var debug  = "var V = " + (V ? "true" : "false")+ ";\n";
-        debug += "var EV = " + (EV ? "true" : "false")+ ";\n";
-        debug += "var ENV = " + (ENV ? "true" : "false")+ ";\n";
-        debug += "var EMV = " + (EMV ? "true" : "false")+ ";\n";
-        debug += "var logLevel = " + logLevel + ";\n";
-
-        _handler.sendMessage("console.log('Tampermonkey started');");
-        load = '';
-        if (domLoaded) {
-            load = "TMwin.loadHappened = true;\n";
-            load = "TMwin.domContentLoaded = true;\n";
-            if (V || EV || D) console.log("content: Start ENV with DOMContentLoaded " + contextId);
-        } else if (nodeInserted) {
-            load = "TMwin.loadHappened = true;\n";
-            if (V || EV || D) console.log("content: Start ENV with loadHappened " + contextId);
-        }
-        if (load != '' && (V || EV)) {
-            console.log("content: Start ENV normally " + contextId);
+            u = TMwin.use;
+            Eventing.rEventId = top;
+            Eventing.sEventId = toc;
+            Eventing.eventHandler = Eventing.eventHandlerPage;
         }
 
-        var run = "(function () { " + debug + back + context + tm + emu + env + evt + load + "})();";
-        _handler.sendMessage(run);
-        env = null;
-        emu = null;
-        tm = null;
-        evt = null;
-        allReady = true;
-    }
-}
+        if (u.safeContext && u.scriptBlocker) {
+            if (D) Eventing.log("Eventing: use scriptBlocker workaround!");
+            Eventing.eventSource = Eventing.alternativeEventSource;
+        } else {
+            Eventing.eventSource = document;
+        }
 
-var tmCE = tmCEinit(contextId);
+        if (V) Eventing.log("Eventing initialized (" + Eventing.contextId + ")");
+        Eventing.registerListener();
+    },
 
-function eventHandler(evt) {
-    try {
-        if (V) console.log("content: Event received " +  + contextId + " " + evt.attrName);
-        var j = JSON.parse(Converter.decodeR(evt.attrName));
+    fireEvent: function(data, evt) {
+        if (evt == undefined) {
+            evt = Eventing.sEventId + Eventing.contextId;
+        }
+
+        if (ENV) Eventing.log("fireEvent " + evt + " -> " + JSON.stringify(data));
         try {
-            tmCE[j.fn](j.args[0], j.args[1], j.args[2], j.args[3], j.args[4], j.args[5], j.args[6], j.args[7]);
-            if (TS) console.log('content: it took ' + ((new Date()).getTime() - evt.timeStamp)  + ' ms to process this event ->' + j.fn);
+            var customEvent = document.createEvent("MutationEvent");
+            customEvent.initMutationEvent(evt,
+                                          false,
+                                          false,
+                                          null,
+                                          null,
+                                          null,
+                                          Converter.encodeR(JSON.stringify(data)),
+                                          customEvent.ADDITION);
+            Eventing.eventSource.dispatchEvent(customEvent);
         } catch (e) {
-            console.log("Error: processing event (" + j.fn + ")! " + JSON.stringify(e));
+            Eventing.log("Error: fire event " + evt + " -> " + JSON.stringify(data) +  " " + e);
         }
-        j = '';
-    } catch (e) {
-        console.log("Error: retrieving event! " + e.message);
-        console.log("Error: " + evt.attrName);
-    }
-    evt = null;
-}
+    },
 
+    registerListener: function() {
+        if (ENV) Eventing.log("registerListener " + Eventing.rEventId + Eventing.contextId);
+        if (_background) {
+            Eventing.eventSource.addEventListener(Eventing.rEventId + Eventing.contextId, Eventing.eventHandler, false);
+        } else {
+            Eventing.eventSource.addEventListener(Eventing.rEventId + Eventing.contextId, Eventing.eventHandler, false);
+        }
+    },
+    eventHandlerPage: function(evt) {
+        try {
+            if (ENV) Eventing.log("Event received " + Eventing.rEventId + Eventing.contextId + " " + evt.attrName);
+            var j = JSON.parse(Converter.decodeR(evt.attrName));
+            try {
+                eval(j);
+                if (TS) Eventing.log('it took ' + ((new Date()).getTime() - evt.timeStamp)  + ' ms to process this event ->' + j.fn);
+            } catch (e) {
+                console.log("page:Error: processing event (" + j + ")! " + e.message);
+            }
+            j = '';
+        } catch (e) {
+            Eventing.log("Error: retrieving event! " + e.message);
+            Eventing.log("Error: " + evt.attrName);
+        }
+        evt = null;
+    },
+
+    eventHandlerContent: function(evt) {
+        try {
+            if (V) Eventing.log("Event received " + Eventing.rEventId + Eventing.contextId + " " + evt.attrName);
+            var j = JSON.parse(Converter.decodeR(evt.attrName));
+            try {
+                tmCE[j.fn](j.args[0], j.args[1], j.args[2], j.args[3], j.args[4], j.args[5], j.args[6], j.args[7]);
+                if (TS) Eventing.log('it took ' + ((new Date()).getTime() - evt.timeStamp)  + ' ms to process this event ->' + j.fn);
+            } catch (e) {
+                Eventing.log("Error: processing event (" + j.fn + ")! " + JSON.stringify(e));
+            }
+            j = '';
+        } catch (e) {
+            Eventing.log("Error: retrieving event! " + e.message);
+            Eventing.log("Error: " + evt.attrName);
+        }
+        evt = null;
+    },
+
+    cleanup: function() {
+        Eventing.eventSource.removeEventListener(Eventing.rEventId + Eventing.contextId, Eventing.eventHandler, false);
+    }
+};
+Eventing.contextId = Eventing.generateScriptId();
+tmCE.id = Eventing.contextId;
+
+/* ######### 2n stage ###################### */
+
+var secondStage = {
+    init: function() {
+        window.addEventListener("load", secondStage.runHlp, false);
+        window.addEventListener("DOMNodeInserted", secondStage.runHlp, false);
+        window.addEventListener("DOMContentLoaded", secondStage.runHlp, false);
+    },
+
+    runHlp: function(arg) {
+        if (!allReady) {
+            if (!document.head && !document.body) {
+                if (arg == undefined) window.setTimeout(secondStage.runHlp, 100);
+                return;
+            } else {
+                secondStage.cleanupHlp();
+                secondStage.run();
+            }
+        }
+    },
+
+    run : function() {
+        if (!allReady && env && emu) {
+            var debug  = "var V = " + (V ? "true" : "false")+ ";\n";
+            debug += "var EV = " + (EV ? "true" : "false")+ ";\n";
+            debug += "var ENV = " + (ENV ? "true" : "false")+ ";\n";
+            debug += "var EMV = " + (EMV ? "true" : "false")+ ";\n";
+            debug += "var logLevel = " + logLevel + ";\n";
+
+            var tm = "var tmCE = " + Helper.serialize(tmCE) + ";\n";
+            var context = "var TM_context_id = '" + Eventing.contextId + "';\n";
+            var load = "";
+
+            _handler.sendMessage("console.log('Tampermonkey started');");
+            if (domLoaded) {
+                load = "TMwin.loadHappened = true;\n";
+                load = "TMwin.domContentLoaded = true;\n";
+                if (V || EV || D) console.log("content: Start ENV with DOMContentLoaded " + Eventing.contextId);
+            } else if (nodeInserted) {
+                load = "TMwin.loadHappened = true;\n";
+                if (V || EV || D) console.log("content: Start ENV with loadHappened " + Eventing.contextId);
+            }
+            if (load != '' && (V || EV)) {
+                console.log("content: Start ENV normally " + Eventing.contextId);
+            }
+
+            var run = "(function () { " + debug + context + jslint + tm + emu + env + load + "})();";
+            _handler.sendMessage(run);
+            env = null;
+            emu = null;
+            tm = null;
+            allReady = true;
+        }
+    },
+
+    cleanupHlp: function() {
+        if (!allReady) {
+            window.removeEventListener("load", secondStage.runHlp, false);
+            window.removeEventListener("DOMNodeInserted", secondStage.runHlp, false);
+            window.removeEventListener("DOMContentLoaded", secondStage.runHlp, false);
+        }
+    }
+};
+
+/* ############ unload ############### */
 function cleanup() {
     if (V) console.log("content: cleanup!");
 
     var req = { method: "unLoad",
-                id: contextId,
+                id: Eventing.contextId,
                 topframe: window.self == window.top,
                 url: window.location.origin + window.location.pathname,
                 params: window.location.search + window.location.hash };
@@ -920,29 +1036,27 @@ function cleanup() {
     chrome.extension.sendMessage(req, function(response) {});
 
     try {
-        document.removeEventListener("TM_event"+contextId, eventHandler, false);
-        window.removeEventListener("DOMContentLoaded", domContentLoaded, false);
-        window.removeEventListener("DOMNodeInserted", domNodeInserted, false);
-        window.removeEventListener("unload", cleanup, false);
+        Eventing.cleanup();
+        secondStage.cleanupHlp();
     } catch (e) {
         console.log("cleanup: Error: " + e.message);
     }
 
-    cleanupHlp();
+    window.removeEventListener("DOMContentLoaded", domContentLoaded, false);
+    window.removeEventListener("DOMNodeInserted", domNodeInserted, false);
+    window.removeEventListener("unload", cleanup, false);
 
-    for (var i = 0; i<Clean.length; i++) {
-        Clean[i]();
-    }
-    Clean = null;
-}
-
-function cleanupHlp() {
-    if (!allReady) {
-        window.removeEventListener("load", runHlp, false);
-        window.removeEventListener("DOMNodeInserted", runHlp, false);
-        window.removeEventListener("DOMContentLoaded", runHlp, false);
+    if (Clean != null) {
+        for (var i = 0; i<Clean.length; i++) {
+            Clean[i]();
+        }
+        Clean = null;
+    } else {
+        console.log("content: Warning: multiple unload events detected!!!");
     }
 }
+
+/* ############ run ############### */
 
 // initUnsafe before adding node insert listeners ;)
 initUnsafe();
@@ -955,16 +1069,11 @@ xhrFix();
 window.addEventListener("unload", cleanup, false);
 window.addEventListener("DOMContentLoaded", domContentLoaded, false);
 window.addEventListener("DOMNodeInserted", domNodeInserted, false);
-document.addEventListener("TM_event"+contextId, eventHandler, false);
-
-window.addEventListener("load", runHlp, false);
-window.addEventListener("DOMNodeInserted", runHlp, false);
-window.addEventListener("DOMContentLoaded", runHlp, false);
 
 function reqListerner(request, sender, sendResponse) {
     if (!allReady) {
         window.setTimeout(function() { reqListerner(request, sender, sendResponse); }, 10);
-        return;
+        return true;
     }
     if (wannaRun) {
         var id = _handler.getResponseId(sendResponse);
@@ -976,13 +1085,13 @@ function reqListerner(request, sender, sendResponse) {
 
 chrome.extension.onMessage.addListener(reqListerner);
 _handler.sendMessage();
- 
+
 var xhrRetryCnt = 2;
 var forceTestXhr = function() {
     // TODO: this spams my servers log file! :D
     if (D) console.log("content: create test XHR to check whether webRequest API is working");
     var d = {
-        method: 'GET', 
+        method: 'GET',
         url: 'http://tampermonkey.net/empty.html',
         headers: { "Referer": 'http://doesnt.matter.com' },
     }
@@ -994,29 +1103,24 @@ var forceTestXhr = function() {
         }
         if (V) console.log("content: updated webRequest info");
     };
-    
+
     var done = function() {
         var req = { method: "getWebRequestInfo",
-                    id: contextId };
+                    id: Eventing.contextId };
 
         chrome.extension.sendMessage(req, res);
     };
 
     xmlhttpRequest(d, null, null, null, done);
 };
- 
+
 var initW = 1;
 var init = function() {
     var Femu = "emulation.js";
     var Fenv = "environment.js";
-    var prepareTimeout = null;
-    
-    var updateResponse = function(resp) {
-        if (prepareTimeout != null) {
-            window.clearTimeout(prepareTimeout);
-            prepareTimeout = null;
-        }
+    var Fjslint = "jslint.js";
 
+    var updateResponse = function(resp) {
         if (resp === undefined) {
             if (D) console.log("content: _early_ execution, connection to bg failed -> retry!");
             window.setTimeout(init, initW);
@@ -1025,22 +1129,26 @@ var init = function() {
             return;
         }
 
+        // register listeners for eventing... context ID now is 'stable'
+        Eventing.init();
+
         logLevel = resp.logLevel;
         adjustLogLevel();
 
-        if (V || D) console.log("content: Started (" + contextId + ", " + window.location.origin + window.location.pathname + ")");
+        if (V || D) console.log("content: Started (" + Eventing.contextId + ", " + window.location.origin + window.location.pathname + ")");
 
         if (allReady) {
             // env is already executed -> set loglevel
             _handler.sendMessage("TMwin.adjustLogLevel(" + logLevel + ");\n");
         }
         if (resp.enabledScriptsCount) {
-            if (V || D) console.log('content: start event processing for ' + contextId + ' (' + resp.enabledScriptsCount + ' to run)');
+            if (V || D) console.log('content: start event processing for ' + Eventing.contextId + ' (' + resp.enabledScriptsCount + ' to run)');
             wannaRun = true;
 
-            if (!emu || !env) {
+            if (!emu || !env || !jslint) {
                 emu = resp.raw[Femu] || emu;
                 env = resp.raw[Fenv] || env;
+                jslint = resp.raw[Fjslint] || jslint || "";
             }
 
             if (resp.webRequest) {
@@ -1051,48 +1159,39 @@ var init = function() {
                 }
             }
 
-            runHlp();
+            secondStage.runHlp();
         } else {
-            if (V || D) console.log('content: disable event processing for ' + contextId);
+            if (V || D) console.log('content: disable event processing for ' + Eventing.contextId);
             wannaRun = false;
             allReady = true;
-            cleanupHlp();
+            secondStage.cleanupHlp();
             cleanup();
         }
     };
 
-    ConverterInit = Helper.serialize(Converter);
-
     var raw = [];
-    try { 
+    try {
         emu = Registry.getRaw(Femu);
         env = Registry.getRaw(Fenv);
+        jslint = Registry.getRaw(Fjslint);
     } catch (e) {}
 
-    if (!emu || !env) {
+    if (!emu || !env || !jslint) {
         if (V) console.log("content: getRaw unsupported!");
-        raw = [ Femu, Fenv ];
+        raw = [ Femu, Fenv, Fjslint ];
     }
 
     var req = { method: "prepare",
-                id: contextId,
+                id: Eventing.contextId,
                 raw: raw,
                 topframe: window.self == window.top,
                 url: window.location.origin + window.location.pathname,
                 params: window.location.search + window.location.hash };
 
     chrome.extension.sendMessage(req, updateResponse);
-
-    var checkTimeout = function() {
-        if (V || D) console.log('content: timeout detected for ' + contextId);
-        init();
-    };
-
-    prepareTimeout = window.setTimeout(checkTimeout, 1000);
 };
 
 init();
 
 })();
-
 } // endif

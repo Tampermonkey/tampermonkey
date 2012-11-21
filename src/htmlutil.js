@@ -6,9 +6,11 @@
 
 (function() {
     Registry.require('crcrc');
+    Registry.require('helper');
     
     var cr = Registry.get('crcrc').cr;
     var crc = Registry.get('crcrc').crc;
+    var Helper = Registry.get('helper');
 
 var createImageText = function(src, name, id, append, title, oc, text) {
     var wrap = cr('div', name, id, append, 'wrap', true);
@@ -29,9 +31,9 @@ var createImageText = function(src, name, id, append, title, oc, text) {
     spos.textContent = text;
     wrap.appendChild(spos);
 
-    if (oc) {
+    if (oc && !wrap.inserted) {
         var oco = function(evt) {
-            oc.apply(wrap);
+            oc.apply(wrap, [ evt ]);
         };
         wrap.addEventListener("click", oco);
     }
@@ -40,6 +42,34 @@ var createImageText = function(src, name, id, append, title, oc, text) {
     return wrap;
 }
 
+var createFavicon = function(srcs, name, id, title) {
+    var image = cr('image', name, id, title.match(/[a-zA-Z0-9]/g).join(''));
+    if (image.inserted) return image;
+    
+    image.setAttribute("width", "16px");
+    image.setAttribute("height", "16px");
+
+    var t = Helper.toType(srcs);
+    if (t !== "Array") {
+        srcs = [ srcs ];
+    }
+
+    var load = function() {
+        if (srcs.length == 0) return;
+        var src = srcs.splice(0, 1);
+
+        image.setAttribute("src", src);
+    };
+
+    image.addEventListener("error", load);
+    load();
+
+    if (title) image.title = title;
+    image.alt = ' ?';
+
+    return image;
+};
+ 
 var createImage = function(src, name, id, append, title, oc) {
     var image = cr('image', name, id, append, true);
 
@@ -52,7 +82,7 @@ var createImage = function(src, name, id, append, title, oc) {
     image.name = name;
     image.alt = ' ?';
 
-    if (oc) {
+    if (oc && !image.inserted) {
         image.addEventListener("click", oc);
         image.href = 'javascript://nop/';
     }
@@ -71,13 +101,14 @@ var createFileInput = function(name, id, oc) {
 
 var createTextarea = function(title, i, oc) {
     var s = cr('div', i.name, i.id, 'textarea');
+    s.key = i.id;
     var input = crc('textarea', 'settingsta', i.name, i.id, 'textarea', true);
     input.name = i.name;
     input.key = i.id;
     input.array = i.array;
     input.oldvalue = i.value;
     input.value = (i.value != undefined) ? (i.array ? i.value.join("\n") : i.value) : '';
-    if (oc) input.addEventListener("change", oc);
+    if (oc && !input.inserted) input.addEventListener("change", oc);
     var span1 = cr('span', i.name, i.id, 's1');
     span1.textContent = title + ':';
     s.appendChild(span1);
@@ -95,6 +126,7 @@ var createPassword = function(name, i, oc) {
  
 var createInput = function(name, i, oc) {
     var s = cr('div', i.name, i.id, 'input');
+    s.key = i.id;
     var input = cr('input', i.name, i.id, 'input', true);
     var n = name.split('##');
     input.name = i.name;
@@ -102,20 +134,22 @@ var createInput = function(name, i, oc) {
     input.oldvalue = i.value;
     input.value = (i.value != undefined) ? i.value : '';
     input.type = "text";
-    if (oc) input.addEventListener("change", oc);
-    var span1 = cr('span', i.name, i.id, 's1');
+    if (oc && !input.inserted) input.addEventListener("change", oc);
+    var span1 = crc('span', 'optiondesc', i.name, i.id, 's1');
     var span2 = cr('span', i.name, i.id, 's2');
-    span1.textContent = n[0];
+    span1.textContent = n[0] + ':';
     if (n.length > 1) span2.textContent = n[1];
     s.appendChild(span1);
     s.appendChild(input);
     s.appendChild(span2);
+    if (i.enabledBy) s.setAttribute('name', 'enabled_by_' + i.enabledBy);
 
     return { elem: s, input: input };
 };
 
 var createCheckbox = function(name, i, oc) {
     var s = crc('div', 'checkbox', i.name, i.id, 'cb1');
+    s.key = i.id;
     var input = cr('input', i.name, i.id, 'cb', true);
     input.title = i.desc ? i.desc : '';
     input.name = i.name;
@@ -126,9 +160,7 @@ var createCheckbox = function(name, i, oc) {
     input.checked = i.enabled;
     input.type = "checkbox";
 
-    if (oc) {
-        input.addEventListener("click", oc);
-    }
+    if (oc && !input.inserted) input.addEventListener("click", oc);
     var span = crc('span', 'checkbox_desc', i.name, i.id, 'cb2');
     span.textContent = name;
     s.title = i.desc ? i.desc : '';
@@ -140,30 +172,36 @@ var createCheckbox = function(name, i, oc) {
 
 var createDropDown = function(name, e, values, oc) {
     var s = cr('div', e.name, e.id, 'outer_dd');
+    s.key = e.id;
     var b = cr('select', e.name, e.id, 'dd', true);
 
     for (var k in values) {
         var o1 = cr('option', values[k].name, values[k].name, 'dd' + name);
         o1.textContent = values[k].name;
         o1.value = values[k].value;
+        if (values[k].enabledBy) o1.setAttribute('name', 'enabled_by_' + values[k].enabledBy);
+        if (e.enabler &&values[k].enable) o1.setAttribute('enables', JSON.stringify(values[k].enable));
         if (values[k].value == e.value) o1.selected = true;
         b.appendChild(o1);
     }
 
     b.key = e.id;
     b.name = e.name;
-    b.addEventListener("change", oc);
+    if (oc && !b.inserted) b.addEventListener("change", oc);
 
-    var span = cr('span', e.name, e.id, 'inner_dd');
+    var span = crc('span', 'optiondesc', e.name, e.id, 'inner_dd');
     span.textContent = name + ": ";
     s.appendChild(span);
     s.appendChild(b);
-    return s;
+    s.title = e.desc ? e.desc : '';
+    if (e.enabledBy) s.setAttribute('name', 'enabled_by_' + e.enabledBy);
+
+    return { elem: s, select: b };
 };
 
 var createScriptStartDropDown = function(name, e, oc) {
     var s = cr('div', e.name, e.id, 'outer_dd');
-    var b = cr('select', e.name, e.id, 'dd');
+    var b = cr('select', e.name, e.id, 'dd', true);
 
     var o1 = cr('option', e.name, e.id, 'dd1');
     var i1 = "document-start";
@@ -186,9 +224,7 @@ var createScriptStartDropDown = function(name, e, oc) {
 
     b.key = e.id;
     b.name = e.name;
-    if (!b.inserted) {
-        b.addEventListener("change", oc);
-    }
+    if (oc && !b.inserted) b.addEventListener("change", oc);
 
     var span = cr('span', e.name, e.id, 'inner_dd');
     span.textContent = name;
@@ -197,37 +233,76 @@ var createScriptStartDropDown = function(name, e, oc) {
     return s;
 };
 
-var createButton = function(name, id, value, text, oc, img) {
+var createImageButton = function(name, id, text, img, oc) {
     var b = null;
     var c = null;
     var i = null;
 
-    if (img) {
-        b = crc('input', 'button', name, id, 'bu');
-        c = crc('div', 'button_container', name, id, 'bu_container');
-        c.appendChild(b);
-    } else {
-        b = cr('input', 'button' , name, id, 'bu');
-    }
+    b = crc('input', 'imgbutton button', name, id, 'bu', true);
+    c = crc('div', 'imgbutton_container', name, id, 'bu_container');
+    c.appendChild(b);
+
     b.name = name;
     b.key = id;
     b.type = "button";
-    b.oldvalue = value;
-    if (!img) {
-        b.value = text;
-    } else {
-        i = crc('img', 'button_image', name, id, 'bu_img');
-        i.src = img;
-        c.appendChild(i);
-        b.setAttribute('title', text);
-        i.setAttribute('title', text);
-    }
+
+    i = crc('img', 'imgbutton_image', name, id, 'bu_img', true);
+    i.src = img;
+    c.appendChild(i);
+    b.setAttribute('title', text);
+    i.setAttribute('title', text);
+
     if (!b.inserted && oc)  {
         b.addEventListener("click", oc);
-        if (img) i.addEventListener("click", oc);
+        i.addEventListener("click", oc);
     }
 
-    return img ? c : b;
+    return c;
+};
+
+var createItemButton = function(name, i, oc) {
+    var b = null;
+
+    b = crc('input', 'button' , name, i.id, 'bu', true);
+    b.name = i.name;
+    b.key = i.id;
+    b.type = "button";
+    b.value = i.name;
+    b.reload = i.reload;
+    b.ignore = i.ignore || i.reload;
+    b.warning = i.warning;
+    if (i.enabledBy) b.setAttribute('name', 'enabled_by_' + i.enabledBy);
+
+    if (!b.inserted && oc)  {
+        b.addEventListener("click", oc);
+    }
+
+    return b;
+};
+
+var createSimpleButton = function(name, id, text, oc) {
+    var b = null;
+    var i = null;
+
+    b = crc('input', 'button', name, id, 'bu', true);
+    b.name = name;
+    b.key = id;
+    b.type = "button";
+    b.value = text;
+    
+    if (!b.inserted && oc)  {
+        b.addEventListener("click", oc);
+    }
+
+    return b;
+};
+ 
+var createButton = function(name, id, text, oc) {
+    if (Helper.toType(id) === "Object") {
+        return createItemButton.apply(this, arguments);
+    } else {
+        return createSimpleButton.apply(this, arguments);
+    }
 };
 
 var createPosition = function(name, e, oc) {
@@ -241,7 +316,7 @@ var createPosition = function(name, e, oc) {
     }
     b.key = e.id;
     b.name = e.name;
-    b.addEventListener("change", oc);
+    if (oc && !b.inserted) b.addEventListener("change", oc);
 
     var span = cr('span', e.name, e.id, 'pos2');
     span.textContent = name;
@@ -286,6 +361,7 @@ var createSearchBox = function(tabURL) {
 Registry.register('htmlutil', {
                           createImageText : createImageText,
                           createImage : createImage,
+                          createFavicon: createFavicon,
                           createFileInput : createFileInput,
                           createTextarea : createTextarea,
                           createInput : createInput,
@@ -293,6 +369,7 @@ Registry.register('htmlutil', {
                           createCheckbox : createCheckbox,
                           createDropDown : createDropDown,
                           createScriptStartDropDown : createScriptStartDropDown,
+                          createImageButton: createImageButton,
                           createButton : createButton,
                           createPosition : createPosition,
                           createSearchBox : createSearchBox});

@@ -46,8 +46,7 @@ var Script = function() {
     this.excludes = [];
     this.resources = [];
     this.lastUpdated = 0;
-    this.sync = { fromRemote: false,
-                  seenOnServer: 0 },
+    this.sync = { imported: false },
     this.options = {
         compat_for_requires : true,
         compat_metadata : false,
@@ -59,13 +58,16 @@ var Script = function() {
         noframes: false,
         awareOfChrome: false,
         run_at : '',
-        do_sync: false,
+        user_agent : '',
         override: { includes: false, merge_includes: true, use_includes: [], orig_includes: [],
                     matches : false, merge_matches : true, use_matches : [], orig_matches : [],
                     excludes: false, merge_excludes: true, use_excludes: [], orig_excludes: [] }
     };
 };
 
+var headerStart = '==UserScript==';
+var headerStop = '==/UserScript==';
+        
 var scriptParser = {
     Script : Script,
     getScriptId : getScriptId,
@@ -109,7 +111,7 @@ var scriptParser = {
         header = header.replace(/[^|\n][ \t]+\/\//g, '//')
 
         for (var t in tags) {
-            script[tags[t]] = Helper.getStringBetweenTags(header, '@'+tags[t], '\n').trim();;
+            script[tags[t]] = Helper.getStringBetweenTags(header, '@'+tags[t], '\n').trim();
         }
 
         var s, t, i, l, c, o, lines = header.split('\n');
@@ -183,6 +185,11 @@ var scriptParser = {
                 if (V) console.log("c " + c);
                 if (c.trim() != "") script.options.run_at = c.trim();
             }
+            if (l.search(/^@user-agent/) != -1) {
+                c = l.replace(/^@user-agent/gi, '').trim().replace(/[\r\n]/gi, '');
+                if (V) console.log("c " + c);
+                if (c.trim() != "") script.options.user_agent = c.trim();
+            }
             if (l.search(/^@noframes/) != -1) {
                 script.options.noframes = true;
             }
@@ -209,11 +216,13 @@ var scriptParser = {
         return script;
     },
 
-    getHeader : function(src) {
-        var t1 = '==UserScript==';
-        var t2 = '==/UserScript==';
+    getHeaderTags : function() {
+        return { start: headerStart,
+                 stop: headerStop };
+    },
 
-        var header = Helper.getStringBetweenTags(src, t1, t2);
+    getHeader : function(src) {
+        var header = Helper.getStringBetweenTags(src, headerStart, headerStop);
 
         if (!header || header == '') {
             return null;
@@ -221,7 +230,7 @@ var scriptParser = {
 
         var b1 = '<html>';
         var b2 = '<body>';
-        var p0 = src.search(t1);
+        var p0 = src.search(headerStart);
         var p1 = src.search(b1);
         var p2 = src.search(b2);
 
@@ -235,6 +244,9 @@ var scriptParser = {
     },
     
     createScriptFromSrc : function(src) {
+        // there still seem to be some mac users outside...
+        src = src.replace(/\r/g, '\n');
+        src = src.replace(/\n\n/g, '\n');
         // save some space ;)
         src = src.replace(/\r/g, '');
 

@@ -123,6 +123,28 @@
         return ({}).toString.apply(obj).match(/\s([a-z|A-Z]+)/)[1];
     };
 
+    var forEach = function(arr, fn) {
+        var t = toType(arr);
+        if (t === "Array" ||
+            t === "NodeList") {
+            
+            for (var r=0; r<arr.length; r++) {
+                fn(arr[r], r);
+            }
+        } else if (t === "XPathResult") {
+            var thisNode = arr.iterateNext();
+            while (thisNode) {
+                fn(thisNode);
+                thisNode = arr.iterateNext();
+            }
+        } else {
+            for (var k in arr) {
+                if (!arr.hasOwnProperty(k)) continue;
+                fn(arr[k], k);
+            }
+        }
+    };
+
     var serialize = function(o) {
         var ret = '';
         for (var k in o) {
@@ -130,11 +152,27 @@
             if (ret != '') ret += ',';
             if (toType(o[k]) == 'Object') {
                 ret += k + ':' + serialize(o[k]);
-            } else {
+            } else if (o[k] === undefined) {
+                ret += k + ':' + 'undefined';
+            } else if (o[k] === null) {
+                ret += k + ':' + 'null';
+            } else if (toType(o[k]) == 'Function') {
                 ret += k + ':' + o[k].toString();
+            } else {
+                ret += k + ':"' + o[k].toString() + '"';
             }
         }
         return '{' + ret + '}';
+    };
+
+    var decodeHtml = function(str) {
+        return str.replace( /(?:&#x([a-fA-F0-9]+);|&#([0-9]+);)/g, function(full, m1, m2 ) {
+                                if (m1) {
+                                    return String.fromCharCode(parseInt(m1, 16));
+                                } else {
+                                    return String.fromCharCode(parseInt(m2, 10));
+                                }
+                            });
     };
 
     Registry.register('helper', {
@@ -149,6 +187,8 @@
                               confirm : doConfirm,
                               serialize: serialize,
                               toType : toType,
+                              forEach : forEach,
+                              decodeHtml : decodeHtml,
                               staticVars : {
                                   urlAllHttp: urlAllHttp,
                                   urlAllHttps: urlAllHttps,

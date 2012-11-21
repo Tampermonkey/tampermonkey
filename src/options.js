@@ -17,17 +17,8 @@ Registry.require('convert');
 
 var V = false;
 
-var initialized = false;
-var allItems = null;
-var gOptions = {};
-var doneListener = [];
-var version = '0.0.0';
-var gNoWarn = false;
-var stCache = {};
-
 if (!window.requestFileSystem) window.requestFileSystem = window.webkitRequestFileSystem;
 if (!window.BlobBuilder) window.BlobBuilder = window.WebKitBlobBuilder;
-
 
 var cr = Registry.get('crcrc').cr;
 var crc = Registry.get('crcrc').crc;
@@ -38,24 +29,59 @@ var Helper = Registry.get('helper');
 var Converter = Registry.get('convert');
 var pp = Registry.get('pingpong');
 
-/* ########### main ############## */
+var initialized = false;
+var allItems = null;
+var gOptions = {};
+var doneListener = [];
+var version = '0.0.0';
+var gNoWarn = false;
+var stCache = {};
+var gArgs = Helper.getUrlArgs();
  
-var itemsToMenu = function(items, tabv) {
+/* ########### callbacks ############## */
+var gCallbacks = {};
+var gCb = function(id, fn) {
+     if (gCallbacks[id] &&
+         gCallbacks[id][fn]) {
+         gCallbacks[id][fn].apply(this, Array.prototype.slice.call(arguments, 2));
+     } else {
+         console.log("option: WARN: unable to find callback '" + fn + "' for id '" + id + "'");
+     }
+};
 
-    var table = null;
+/* ########### main ############## */
+
+var itemsToMenu = function(items, tabv) {
+    var tobj = null;
     var current_elem = null;
     var scripts = [];
 
     var getTable = function(i) {
-        var t = null;
-        var r = [];
+        var t, tr, trf, b, f, h;
+        var r = [], u = [];
+
+        b = cr('tbody', i.name, i.id, 'body');
+        f = cr('tfoot', i.name, i.id, 'foot');
+        h = cr('thead', i.name, i.id, 'head');
+
         if (i.scriptTab) {
+            var multi = createMultiSelectActions(i);
             t = crc('table', "scripttable", i.name, i.id, 'main');
+            var t0 = crc('th', "", i.name, i.id, 'thead_sel');
+            t0.appendChild(multi.selAll);
+            var f0 = crc('td', "", i.name, i.id, 'tfoot_sel');
+
             var t1 = crc('th', "", i.name, i.id, 'thead_en');
+            var f1 = crc('td', "", i.name, i.id, 'tfoot_en');
+            f1.setAttribute("colspan", "9");
+            f1.appendChild(multi.actionBox);
+
             var t2 = crc('th', "settingsth", i.name, i.id, 'thead_name');
             t2.textContent = chrome.i18n.getMessage('Name');
-            var t25 = crc('th', "settingsth", i.name, i.id, 'thead_ver');
-            t25.textContent = chrome.i18n.getMessage('Version');
+            var t24 = crc('th', "settingsth", i.name, i.id, 'thead_ver');
+            t24.textContent = chrome.i18n.getMessage('Version');
+            var t25 = crc('th', "settingsth", i.name, i.id, 'thead_type');
+            t25.textContent = chrome.i18n.getMessage('Type');
             var t26 = crc('th', "settingsth", i.name, i.id, 'thead_sync');
             t26.textContent = "";
             var t3 = crc('th', "settingsth", i.name, i.id, 'thead_sites');
@@ -71,29 +97,40 @@ var itemsToMenu = function(items, tabv) {
             t7.textContent = chrome.i18n.getMessage('Sort');
             var t8 = crc('th', "settingsth", i.name, i.id, 'thead_del');
             t8.textContent = chrome.i18n.getMessage('Delete');
-
             var later = function() {
-                if (gOptions.sync_enabled) t26.textContent = chrome.i18n.getMessage('Sync');
+                if (gOptions.sync_enabled) t26.textContent = chrome.i18n.getMessage('Imported');
             };
             doneListener.push(later);
 
-            r = r.concat([t1, t2, t25, t26, t3, t4, t5, t6, t7, t8]);
-        } else {
-            t = crc('table', "settingstable", i.name, i.id, 'main');
-        }
+            r = r.concat([t0, t1, t2, t24, t25, t26, t3, t4, t5, t6, t7, t8]);
+            tr = crc('tr', 'settingstr filler', i.name, i.id, 'filler');
+            for (var o=0; o<r.length; o++) {
+                tr.appendChild(r[o]);
+            }
 
-        var tr = crc('tr', 'settingstr filler', i.name, i.id, 'filler');
-        for (var o=0; o<r.length; o++) {
-            tr.appendChild(r[o]);
-        }
+            u = u.concat([f0, f1]);
+            trf = crc('tr', 'settingstr filler', i.name, i.id, 'footer');
+            for (var o=0; o<u.length; o++) {
+                trf.appendChild(u[o]);
+            }
 
-        if (i.scriptTab) {
             var td = crc('td', 'settingstd filler', i.name, i.id, 'filler_td' + i.id);
             // td.width = "100%";
             tr.appendChild(td);
+            h.appendChild(tr);
+            f.appendChild(trf);
+
+        } else {
+            t = crc('table', "settingstable", i.name, i.id, 'main');
+            tr = crc('tr', 'settingstr filler', i.name, i.id, 'filler');
+            b.appendChild(tr);
         }
-        t.appendChild(tr);
-        return t;
+
+        t.appendChild(h);
+        t.appendChild(b);
+        t.appendChild(f);
+
+        return { table: t, head: h, body: b, foot: f };
     };
 
     var section = null;
@@ -119,26 +156,7 @@ var itemsToMenu = function(items, tabv) {
             var td1 = cr('td', i.name, i.id, '1');
             if (i.image) {
                 td1.setAttribute("class", "imagetd");
-                if (i.id && (i.userscript || i.nativeScript)) {
-                    var el = function() {
-                        modifyScriptOption(this.name, this.key, !this.oldvalue);
-                    };
-                    var nel = function() {
-                        modifyNativeScriptOption(this.name, this.key, !this.oldvalue);
-                    };
-                    var pt = (i.position > 0) ? ((i.position < 10) ? " " + i.position  : i.position) : null
-                    var g = HtmlUtil.createImageText(i.image,
-                                        i.nativeScript ? i.id : i.name,
-                                        "enabled",
-                                        "enabled",
-                                        i.enabled ? chrome.i18n.getMessage('Enabled') : chrome.i18n.getMessage('Disabled'),
-                                        i.nativeScript ? nel : el,
-                                        i.nativeScript ? '' : pt);
-                    g.oldvalue = i.enabled;
-                    td1.appendChild(g);
-                } else {
-                    td1.appendChild(HtmlUtil.createImage(i.image, i.name, i.id));
-                }
+                td1.appendChild(HtmlUtil.createImage(i.image, i.name, i.id));
             }
             var td2 = crc('td', 'settingstd', i.name, i.id, '2');
             if (i.option) {
@@ -155,8 +173,8 @@ var itemsToMenu = function(items, tabv) {
                         if (!doit) this.checked = !this.checked;
                     }
                     if (doit) {
-                        if (this.reload) window.location.href = window.location.href;
                         setOption(this.key, this.checked, this.reload);
+                        if (this.reload) window.location.reload();
                     }
                 }
                 if (section && section_need_save) {
@@ -173,6 +191,26 @@ var itemsToMenu = function(items, tabv) {
                     td2.appendChild(input.elem);
                 }
                 input.elem.setAttribute('style', (i.level > gOptions.configMode) ? Helper.staticVars.invisible : Helper.staticVars.visible);
+            } else if (i.button) {
+                var oco = function() {
+                    var doit = true;
+                    if (this.warning) {
+                        doit = confirm(this.warning);
+                    }
+                    if (doit) {
+                        buttonPress(this.key, true, this.ignore, this.reload);
+                    }
+                }
+
+                var input = HtmlUtil.createButton(i.name, i, oco);
+
+                if (section) {
+                    section.appendChild(input);
+                    tr = null;
+                } else {
+                    td2.appendChild(input);
+                }
+                input.setAttribute('style', (i.level > gOptions.configMode) ? Helper.staticVars.invisible : Helper.staticVars.visible);
             } else if (i.input) {
                 var input = HtmlUtil.createTextarea(i.name, i);
                 if (section) {
@@ -188,7 +226,7 @@ var itemsToMenu = function(items, tabv) {
                     td2.appendChild(input.elem);
                 }
                 input.elem.setAttribute('style', (i.level > gOptions.configMode) ? Helper.staticVars.invisible : Helper.staticVars.visible);
-            } else if (i.mail) {
+            } else if (i.text) {
                 var input = HtmlUtil.createInput(i.name, i);
                 if (section) {
                     section.appendChild(input.elem);
@@ -216,15 +254,47 @@ var itemsToMenu = function(items, tabv) {
             } else if (i.select) {
                 var oc = function() {
                     setOption(this.key, this.value);
+                };
+
+                if (section && section_need_save) {
+                    // checkbox value will by stored by "Save" button
+                    oc = null;
+                    if (i.enabler) {
+                        // only applicable if section has a save button
+                        oc = function() {
+                            var es = document.getElementsByName('enabled_by_' + this.key);
+                            var selected = (this.selectedIndex < this.options.length) ? this.options[this.selectedIndex] : this.options[0];
+                            var enabless = selected.getAttribute('enables');
+                            var enables = enabless ? JSON.parse(enabless) : {};
+                            
+                            Helper.forEach(es, function(e) {
+                                               if (enables[e.key] === undefined || enables[e.key] == 1) {
+                                                   e.setAttribute('style', Helper.staticVars.visible);
+                                               } else {
+                                                   e.setAttribute('style', Helper.staticVars.invisible);
+                                               }
+                                           });
+                        }
+                    }
                 }
+
                 var input = HtmlUtil.createDropDown(i.name, i, i.select, oc);
                 if (section) {
-                    section.appendChild(input);
+                    section.appendChild(input.elem);
                     tr = null;
                 } else {
-                    td2.appendChild(input);
+                    td2.appendChild(input.elem);
                 }
-                input.setAttribute('style', (i.level > gOptions.configMode) ? Helper.staticVars.invisible : Helper.staticVars.visible);
+                input.elem.setAttribute('style', (i.level > gOptions.configMode) ? Helper.staticVars.invisible : Helper.staticVars.visible);
+                if (section && i.enabler) {
+                    // schedule initial setup
+                    var wrap = function() {
+                        var foc = oc;
+                        var felem = input;
+                        doneListener.push(function() { foc.apply(felem.select, []); });
+                    };
+                    wrap();
+                }
             } else if (i.url) {
                 var a = cr('a', i.name, i.id);
                 a.href = 'javascript://nop/';
@@ -237,18 +307,24 @@ var itemsToMenu = function(items, tabv) {
                     a.addEventListener("click", oc);
                 }
                 a.textContent = i.name;
-                td2.setAttribute("colspan", "2");
-                td2.appendChild(a);
+                if (section) {
+                    section.appendChild(a);
+                    tr = null;
+                } else {
+                    td2.setAttribute("colspan", "2");
+                    td2.appendChild(a);
+                }
             } else if (i.heading) {
                 var h = cr('span', i.name, i.id);
                 h.textContent = i.name;
-                table = getTable(i);
+                tobj = getTable(i);
                 current_elem = cr('div', i.name, i.id, 'tab_content');
-                current_elem.appendChild(table);
+                current_elem.appendChild(tobj.table);
                 tr = null;
                 var tab = tabv.appendTab(Helper.createUniqueId(i.name, i.id), h, current_elem);
             } else if (i.section) {
                 if (section && section_need_save) {
+                    // finalize previous section...
                     var b = cr('input', section.name, section.id, 'Save');
                     if (!b.inserted) {
                         b.type = 'button';
@@ -258,20 +334,17 @@ var itemsToMenu = function(items, tabv) {
                         var s = function() {
                             var elems = Array.prototype.slice.call(this.section.getElementsByTagName('textarea'));
                             var app = function(iterator) {
-                                var thisNode = iterator.iterateNext();
-                                while (thisNode) {
-                                    // TODO: hack alert! -> 'sync_'
-                                    if (thisNode.key && thisNode.key.search('sync_') != -1) elems.push(thisNode); // dunno why!?!?!!
-                                    thisNode = iterator.iterateNext();
-                                }
+                                Helper.forEach(iterator, function (e) { elems.push(e); });
                             };
-                            app(document.evaluate('//input', this.section, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null));
+                            app(document.evaluate('//div[@id="' + this.section.id + '"]//input', this.section, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null));
+                            app(document.evaluate('//div[@id="' + this.section.id + '"]//select', this.section, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null));
 
                             for (var o=0; o<elems.length; o++) {
                                 var val = null;
                                 var elem = elems[o];
+                                var k = elem.key;
                                 if (elem.tagName.toLowerCase() == "textarea") {
-                                    if (elem.array) { 
+                                    if (elem.array) {
                                         var ar = elem.value.split("\n");
                                         var nar = [];
                                         for (var u=0; u<ar.length; u++) {
@@ -283,10 +356,19 @@ var itemsToMenu = function(items, tabv) {
                                     }
                                 } else if (elem.getAttribute('type') == 'checkbox') {
                                     val = elem.checked;
+                                } else if (elem.getAttribute('type') == 'select') {
+                                    var l = 0;
+                                    if (elem.selectedIndex >= 0 &&
+                                        elem.selectedIndex < elem.options.length) {
+                                        l = elem.selectedIndex;
+                                    }
+                                    val = elem[l] ? elem[l].value : elem.options[0].value;
+                                } else if (elem.getAttribute('type') == 'button') {
+                                    // ignore
                                 } else {
                                     val = elem.value;
                                 }
-                                setOption(elem.key, val);
+                                if (k) setOption(k, val);
                             }
                         };
                         b.addEventListener('click', s, false);
@@ -322,7 +404,7 @@ var itemsToMenu = function(items, tabv) {
                 span.textContent = i.name;
                 td2.setAttribute("colspan", "2");
                 td2.appendChild(span);
-            } else if (i.userscript || i.nativeScript) {
+            } else if (i.userscript || i.nativeScript || i.user_agent) {
                 td2.setAttribute("colspan", "2");
                 var tds = createScriptItem(i, tr, tabv);
                 tr.setAttribute('class', 'scripttr');
@@ -332,7 +414,8 @@ var itemsToMenu = function(items, tabv) {
                 for (var u=0; u<tds.length;u++) {
                     tr.appendChild(tds[u]);
                 }
-                if (i.userscript) scripts.push({ script: tr, pos: i.position, posof: i.positionof });
+                if (i.userscript || i.user_agent) scripts.push({ script: tr, pos: i.position, posof: i.positionof });
+                td1 = null;
             } else if (i.version) {
                 version = i.value;
                 tr = null;
@@ -351,11 +434,12 @@ var itemsToMenu = function(items, tabv) {
             }
         }
 
-        if (table && tr) table.appendChild(tr);
+        if (tobj && tr) tobj.body.appendChild(tr);
     }
 
     sortScripts(scripts);
-    return table;
+
+    doneListener.push(gCallbacks['multiselect']['single_click']);
 };
 
 var createUtilTab = function(tabv) {
@@ -380,7 +464,7 @@ var createUtilTab = function(tabv) {
 
         for (var o in allItems) {
             var c = allItems[o];
-            if (c.userscript && c.id && !c.system) {
+            if ((c.userscript || i.user_agent) && c.id && !c.system) {
                 var p = { name: c.name, options: c.options, enabled: c.enabled, position: c.position };
                 if (c.file_url && c.file_url.trim() != "") {
                     p.file_url = c.file_url;
@@ -541,17 +625,17 @@ var createUtilTab = function(tabv) {
 
     var expo_doc = function() {
         var ta_value = expo();
-	var bb = new BlobBuilder();
-	bb.append(ta_value);
-	saveAs(bb.getBlob("text/plain"), "tmScripts.txt");
+        var bb = new BlobBuilder();
+        bb.append(ta_value);
+        saveAs(bb.getBlob("text/plain"), "tmScripts.txt");
     };
 
     var expo_textarea = function() {
         ta.value = expo();
     };
 
-    var imp_ta = HtmlUtil.createButton(i.name, i.id + '_i_ta', null, chrome.i18n.getMessage('Import_from_Textarea'), impo_textarea);
-    var imp_ls = HtmlUtil.createButton(i.name, i.id + '_i_ls', null, chrome.i18n.getMessage('Import_from_SandboxFS'), impo_ls);
+    var imp_ta = HtmlUtil.createButton(i.name, i.id + '_i_ta', chrome.i18n.getMessage('Import_from_Textarea'), impo_textarea);
+    var imp_ls = HtmlUtil.createButton(i.name, i.id + '_i_ls', chrome.i18n.getMessage('Import_from_SandboxFS'), impo_ls);
     var imp_file = cr('input', i.name, i.id + '_i_file', 'file');
 
     var handleFileSelect = function (evt) {
@@ -561,7 +645,7 @@ var createUtilTab = function(tabv) {
         var run_impo = function() {
             impo(data.pop());
         };
-        
+
         for (var i = 0, f; f = files[i]; i++) {
             var reader = new FileReader();
             // Closure to capture the file information.
@@ -580,9 +664,9 @@ var createUtilTab = function(tabv) {
         imp_file.addEventListener('change', handleFileSelect, false);
     }
 
-    var exp_ta = HtmlUtil.createButton(i.name, i.id + '_e_ta', null, chrome.i18n.getMessage('Export_to_Textarea'), expo_textarea);
-    var exp_doc = HtmlUtil.createButton(i.name, i.id + '_e_doc', null, chrome.i18n.getMessage('Export_to_file'), expo_doc);
-    var exp_ls = HtmlUtil.createButton(i.name, i.id + '_e_ls', null, chrome.i18n.getMessage('Export_to_SandboxFS'), expo_ls);
+    var exp_ta = HtmlUtil.createButton(i.name, i.id + '_e_ta', chrome.i18n.getMessage('Export_to_Textarea'), expo_textarea);
+    var exp_doc = HtmlUtil.createButton(i.name, i.id + '_e_doc', chrome.i18n.getMessage('Export_to_file'), expo_doc);
+    var exp_ls = HtmlUtil.createButton(i.name, i.id + '_e_ls', chrome.i18n.getMessage('Export_to_SandboxFS'), expo_ls);
 
     var ta = crc('textarea', 'importta', i.name, i.id, 'ta');
     var sta = crc('div', 'section', i.name, i.id, 'ta');
@@ -701,14 +785,14 @@ var createCludesEditor = function(name, type, other_name) {
     var i = type.item;
     var id = i.id + type.id;
     var key = (other_name ? 'orig_' : 'use_') + type.id;
-	
+
     var selId = function(k){
         return 'select_' + Helper.createUniqueId(k, i.id) + '_sel1';
     };
 
     var s = crc('div', 'cludes', name, id, 'cb1');
     if (document.getElementById(selId(key))) return { elem: s };
-    
+
     var span = cr('span', i.name, id, 'cb2');
     if (other_name) {
         var co = function() {
@@ -718,7 +802,7 @@ var createCludesEditor = function(name, type, other_name) {
         };
         var kk = 'merge_' + type.id;
         var vv = (i.options && i.options.override && i.options.override[kk]) ? true : false;
-        
+
         var cbs = HtmlUtil.createCheckbox(name,
                               { id: kk, name: i.name, enabled: vv },
                               co);
@@ -727,7 +811,7 @@ var createCludesEditor = function(name, type, other_name) {
         span.textContent = name;
     }
     s.title = i.desc ? i.desc : '';
-    
+
     var values = (i.options && i.options.override && i.options.override[key]) ? i.options.override[key] : [];
     var sel = crc('select', 'cludes', key, i.id, 'sel1');
     sel.setAttribute('size', '6');
@@ -739,8 +823,8 @@ var createCludesEditor = function(name, type, other_name) {
 
     s.appendChild(span);
     s.appendChild(sel);
-	
-    var addToOther = function(){
+
+    var addToOther = function() {
         var uid = selId('use_' + (type.id == 'excludes' ? 'includes' : 'excludes'));
         var other_sel = document.getElementById(uid);
         var op = sel.options[sel.selectedIndex];
@@ -760,7 +844,7 @@ var createCludesEditor = function(name, type, other_name) {
             saveChanges();
         }
     };
-	
+
     var editRule = function(){
         var op = sel.options[sel.selectedIndex];
         if (!op) return;
@@ -770,7 +854,7 @@ var createCludesEditor = function(name, type, other_name) {
             saveChanges();
         }
     };
-	
+
     var delRule = function(){
         var op = sel.options[sel.selectedIndex];
         if (!op) return;
@@ -785,14 +869,14 @@ var createCludesEditor = function(name, type, other_name) {
         }
         return arr;
     };
-	
+
     var saveChanges = function() {
         var options = {
             includes: optsToArr(document.getElementById(selId('use_includes'))),
             matches: optsToArr(document.getElementById(selId('use_matches'))),
             excludes: optsToArr(document.getElementById(selId('use_excludes')))
         };
-	
+
         //save and merge original and user *cludes
         modifyScriptOptions(i.name, options);
         return true;
@@ -810,12 +894,12 @@ var createCludesEditor = function(name, type, other_name) {
         btn_add.innerHTML = chrome.i18n.getMessage('Add') + '...';
         btn_add.addEventListener('click', addRule, false);
         s.appendChild(btn_add);
-		
+
         var btn_edit = cr('button', i.name, id, 'btn3');
         btn_edit.innerHTML = chrome.i18n.getMessage('Edit') + '...';
         btn_edit.addEventListener('click', editRule, false);
         s.appendChild(btn_edit);
-		
+
         var btn_del = cr('button', i.name, id, 'btn4');
         btn_del.innerHTML = chrome.i18n.getMessage('Remove');
         btn_del.addEventListener('click', delRule, false);
@@ -847,7 +931,7 @@ var sortScripts = function(scripts) {
         var e = scripts[i].script;
         var tr = first(e, 'TR');
         if (tr) {
-            var p = first(tr, 'TABLE');
+            var p = first(tr, 'TBODY');
             if (!parent) {
                 parent = p;
             } else if (parent != p) {
@@ -868,7 +952,6 @@ var sortScripts = function(scripts) {
 };
 
 var savedScript = {};
-
 var createScriptDetailsTabView = function(tab, i, tr, parent, closeTab) {
     var tab_head = crc('div', '', i.name, i.id, 'script_tab_head');
 
@@ -1017,7 +1100,7 @@ var createScriptSettingsTab = function(i, tabd) {
                                   { id: 'excludes', item: i },
                                   chrome.i18n.getMessage('User_includes'));
     var clear_cludes = crc('div', 'clear', i.name, i.id, 'clear');
-									
+
     var e_ui = createCludesEditor(chrome.i18n.getMessage('User_includes'),
                                   { id: 'includes', item: i });
     var e_um = createCludesEditor(chrome.i18n.getMessage('User_matches'),
@@ -1025,9 +1108,6 @@ var createScriptSettingsTab = function(i, tabd) {
     var e_ue = createCludesEditor(chrome.i18n.getMessage('User_excludes'),
                                   { id: 'excludes', item: i });
 
-    var i_ds = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Enable_sync'),
-                              { id: 'do_sync', name: i.name, enabled: i.do_sync },
-                              co);
     var i_re = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Apply_compatibility_options_to_required_script_too'),
                               { id: 'compat_for_requires', name: i.name, enabled: i.compat_for_requires },
                               co);
@@ -1064,7 +1144,7 @@ var createScriptSettingsTab = function(i, tabd) {
     section_cludes_head.textContent = chrome.i18n.getMessage('Includes_Excludes');
     section_cludes.appendChild(section_cludes_head);
     section_cludes.appendChild(section_cludes_content);
-    
+
     var section_compat = crc('div', 'section', i.name, i.id, 'ta_compat');
     var section_compat_head = crc('div', 'section_head', i.name, i.id, 'head_ta_compat');
     var section_compat_content = crc('div', 'section_content', i.name, i.id, 'content_ta_compat');
@@ -1074,9 +1154,10 @@ var createScriptSettingsTab = function(i, tabd) {
     section_compat.appendChild(section_compat_content);
 
     section_opt_content.appendChild(i_pos);
-    section_opt_content.appendChild(i_ra);
-    section_opt_content.appendChild(i_ds.elem);
-    
+    if (!i.user_agent) {
+        section_opt_content.appendChild(i_ra);
+    }
+
     section_cludes_content.appendChild(e_oi.elem);
     section_cludes_content.appendChild(e_om.elem);
     section_cludes_content.appendChild(e_oe.elem);
@@ -1085,23 +1166,25 @@ var createScriptSettingsTab = function(i, tabd) {
     section_cludes_content.appendChild(e_um.elem);
     section_cludes_content.appendChild(e_ue.elem);
 
-    for (var u=0; u<i_compats.length; u++) {
-        section_compat_content.appendChild(i_compats[u].elem);
-    }
-
-    if (i.awareOfChrome) {
-        for (var k in i_compats) {
-            i_compats[k].input.setAttribute("disabled", "disabled");
-            i_compats[k].elem.setAttribute("title", chrome.i18n.getMessage('This_script_runs_in_Chrome_mode'));
-        }
-    }
-
     var h = cr('span', i.name, i.id);
     h.textContent = chrome.i18n.getMessage('Settings');
     var content = cr('div', i.name, i.id, 'tab_content_settings');
     content.appendChild(section_opt);
     content.appendChild(section_cludes);
-    content.appendChild(section_compat);
+
+    if (!i.user_agent) {
+        for (var u=0; u<i_compats.length; u++) {
+            section_compat_content.appendChild(i_compats[u].elem);
+        }
+        if (i.awareOfChrome) {
+            for (var k in i_compats) {
+                i_compats[k].input.setAttribute("disabled", "disabled");
+                i_compats[k].elem.setAttribute("title", chrome.i18n.getMessage('This_script_runs_in_Chrome_mode'));
+            }
+        }
+        content.appendChild(section_compat);
+    }
+
     tabc.appendChild(content);
 
     var tab = tabd.appendTab('script_settings_tab' + Helper.createUniqueId(i.name, i.id), tabh, tabc);
@@ -1165,7 +1248,7 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
         var ou = i_uu.input ? i_uu.input.oldvalue : "";
         var nu = i_uu.input ? i_uu.input.value : "";
 
-        saveScript(i.name, null, ou, nu, true, cb);
+        saveScript(i.name, null, ou, nu, true, true, cb);
     };
 
     var resetScript = function() {
@@ -1180,10 +1263,10 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
         }
     };
 
-    var i_sc_save =   HtmlUtil.createButton(i.name, 'save',         null, chrome.i18n.getMessage('Save'),         saveEditor, chrome.extension.getURL('images/filesave.png'));
-    var i_sc_cancel = HtmlUtil.createButton(i.name, 'cancel',       null, chrome.i18n.getMessage('Editor_reset'), resetScript, chrome.extension.getURL('images/editor_cancel.png'));
-    var i_sc_reset =  HtmlUtil.createButton(i.name, 'reset',        null, chrome.i18n.getMessage('Full_reset'),   fullReset, chrome.extension.getURL('images/script_cancel.png'));
-    var i_sc_close =  HtmlUtil.createButton(i.name, 'close_script', null, chrome.i18n.getMessage('Close'),        closeEditor, chrome.extension.getURL('images/exit.png') );
+    var i_sc_save =   HtmlUtil.createImageButton(i.name, 'save',         chrome.i18n.getMessage('Save'),         chrome.extension.getURL('images/filesave.png'),      saveEditor);
+    var i_sc_cancel = HtmlUtil.createImageButton(i.name, 'cancel',       chrome.i18n.getMessage('Editor_reset'), chrome.extension.getURL('images/editor_cancel.png'), resetScript);
+    var i_sc_reset =  HtmlUtil.createImageButton(i.name, 'reset',        chrome.i18n.getMessage('Full_reset'),   chrome.extension.getURL('images/script_cancel.png'), fullReset);
+    var i_sc_close =  HtmlUtil.createImageButton(i.name, 'close_script', chrome.i18n.getMessage('Close'),        chrome.extension.getURL('images/exit.png'),          closeEditor);
 
     var i_uu = HtmlUtil.createInput(chrome.i18n.getMessage('Update_URL_'),
                            { id: 'file_url', name: i.name, value: i.file_url });
@@ -1228,7 +1311,7 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
         saveEm = function(value) {
             var doIt = true;
             var e = document.getElementById('input_Show_fixed_source_showFixedSrc_cb');
-            if (e && e.checked) {
+            if (e && e.checked && !i.user_agent) {
                 doIt = confirm(chrome.i18n.getMessage("Do_you_really_want_to_store_fixed_code_", chrome.i18n.getMessage('Show_fixed_source')));
             }
             var value = container.editor && gOptions.editor_enabled ? container.editor.mirror.getValue() : input.value;
@@ -1243,8 +1326,8 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
                 }
                 var ou = i_uu.input ? i_uu.input.oldvalue : "";
                 var nu = i_uu.input ? i_uu.input.value : "";
-        
-                saveScript(i.name, value, ou, nu, false, cb);
+
+                saveScript(i.name, value, ou, nu, false, true, cb);
             }
             return doIt;
         };
@@ -1363,6 +1446,7 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
 };
 
 var createScriptItem = function(i, tr, tabv) {
+    if (!gCallbacks[i.id]) gCallbacks[i.id] = {};
 
     // tab stuff for later use
     var tab;
@@ -1400,12 +1484,12 @@ var createScriptItem = function(i, tr, tabv) {
             tab = null;
         }
     };
-    
+
     var removeScriptItem = function() {
         sname.parentNode.removeChild(sname);
         // sname_name.setAttribute('open', 'false');
     };
-    
+
     var doRecreateScriptItem = function() {
         var run = function() {
             for (var o in allItems) {
@@ -1420,7 +1504,7 @@ var createScriptItem = function(i, tr, tabv) {
         }
         window.setTimeout(run, 1);
     };
-    
+
     var doClose = function() {
         var recreate = true;
         if (scriptdetails.beforeClose) {
@@ -1543,10 +1627,12 @@ var createScriptItem = function(i, tr, tabv) {
         };
 
         if (!sname_name.inserted) {
-            last_updated.addEventListener('click', scriptUpdate);
+            last_updated.addEventListener('click', function()  { gCb(i.id, 'scriptUpdate'); });
             last_updated.style.cursor = "pointer";
             last_updated.title = chrome.i18n.getMessage('Check_for_Updates');
         }
+
+        gCallbacks[i.id]['scriptUpdate'] = scriptUpdate;
 
         if (i.lastUpdated) {
             try {
@@ -1560,42 +1646,21 @@ var createScriptItem = function(i, tr, tabv) {
     }
     last_updated.textContent = lUp;
 
-    var sync = crc('div', 'center p100100', i.name, i.id, 'do_sync');
+    var sync = cr('div', i.name, i.id, 'imported');
     var lSync = '';
     var later = function() {
         if (gOptions.sync_enabled) {
             if (i.nativeScript || !i.id || i.system) {
                 lSync = '';
             } else {
-                var change = function() {
-                    modifyScriptOption(this.name, "do_sync", !this.oldvalue);
-                };
-
-                if (!sname_name.inserted) {
-                    sync.addEventListener('click', change);
-                    sync.style.cursor = "pointer";
-                    sync.name = i.name;
-                }
-                sync.oldvalue = i.do_sync;
-
-                if (!i.do_sync) {
-                    sync.title = chrome.i18n.getMessage('Enable_sync');
-                    lSync = '<img src="images/no.png" class="icon16" />';
+                if (i.sync && i.sync.imported) {
+                    lSync = '<img src="images/update.png" class="icon16" />';
                 } else {
-                    if (i.sync && i.sync.seenOnServer == -1) {
-                        sync.title = chrome.i18n.getMessage('Conflict_remove_or_disable_sync');
-                        lSync = '<img src="images/critical.png" class="icon16" />';
-                    } else  {
-                        sync.title = chrome.i18n.getMessage('Disable_sync');
-                        if (i.sync && i.sync.seenOnServer == 0) {
-                            lSync = '<img src="images/download.gif" class="icon16" />';
-                        } else {
-                            lSync = '<img src="images/update.png" class="icon16" />';
-                        }
-                    }
+                    lSync = '<img src="images/no.png" class="icon16" />';
                 }
             }
             sync.innerHTML = lSync;
+            sync = null;
         }
     };
     doneListener.push(later);
@@ -1619,26 +1684,65 @@ var createScriptItem = function(i, tr, tabv) {
         }
     }
 
+    gCallbacks[i.id]['deleteScript'] = function(e, dontask) {
+        if (i.nativeScript) {
+            var c = dontask || confirm(chrome.i18n.getMessage('Really_delete_this_extension__'));
+            if (c == true) {
+                modifyNativeScriptOption(i.name, 'installed', !dontask);
+                tr.parentNode.removeChild(tr);
+            }
+        } else {
+            var c = dontask || confirm(chrome.i18n.getMessage('Really_delete_this_script__'));
+            if (c == true) {
+                saveScript(i.name, null, null, null, null, !dontask);
+                tr.parentNode.removeChild(tr);
+            }
+        }
+    };
+
     var img_delete = HtmlUtil.createImage(chrome.extension.getURL('images/delete.png'),
                                  i.nativeScript ? i.id : i.name,
                                  "delete",
                                  "delete",
                                  chrome.i18n.getMessage("Delete"),
-                                 function() {
-                                     if (i.nativeScript) {
-                                         var c = confirm(chrome.i18n.getMessage('Really_delete_this_extension__'));
-                                         if (c == true) {
-                                             modifyNativeScriptOption(this.name, 'installed', 'false');
-                                             tr.parentNode.removeChild(tr);
-                                         }
-                                     } else {
-                                         var c = confirm(chrome.i18n.getMessage('Really_delete_this_script__'));
-                                         if (c == true) {
-                                             saveScript(i.name, null, null, null, null);
-                                             tr.parentNode.removeChild(tr);
-                                         }
-                                     }
-                                 });
+                                 function()  { gCb(i.id, 'deleteScript'); });
+
+
+    var createEnableImageTD = function() {
+        var img = i.enabled
+            ? chrome.extension.getURL('images/greenled.png')
+            : chrome.extension.getURL('images/redled.png');
+
+        var td1 = getTD(i, sname, 'script_td05', 'scripttd_enable');
+        td1.setAttribute("class", "imagetd");
+
+        var en = function() {
+            gCb(i.id, i.nativeScript ? 'switchNativeEnabled' : 'switchEnabled');
+        };
+
+        var pt = (i.position > 0) ? ((i.position < 10) ? " " + i.position  : i.position) : null
+        var g = HtmlUtil.createImageText(img,
+                                         i.nativeScript ? i.id : i.name,
+                                         "enabled",
+                                         "enabled",
+                                         i.enabled ? chrome.i18n.getMessage('Enabled') : chrome.i18n.getMessage('Disabled'),
+                                         en,
+                                         i.nativeScript ? '' : pt);
+
+        gCallbacks[i.id]['switchEnabled'] = function(e, o, reload) {
+            if (o === undefined) o = !i.enabled;
+            modifyScriptOption(i.name, "enabled", o, reload);
+        };
+        gCallbacks[i.id]['switchNativeEnabled'] = function(e, o, reload) {
+            if (o === undefined) o = !i.enabled;
+            modifyNativeScriptOption(i.id, "enabled", o, reload);
+        };
+
+        td1.appendChild(g);
+        g = null;
+
+        return td1;
+    };
 
     if (!sname.inserted && !i.nativeScript) {
         sname.addEventListener('click', scriptClick);
@@ -1648,9 +1752,17 @@ var createScriptItem = function(i, tr, tabv) {
     var sname_td = getTD(i, sname, 'script_td1', 'scripttd_name');
     sname_td.title = i.description ? i.name + '\n\n' + i.description : i.name;
 
+    var sel_td = getTD(i, sname, 'script_td0', 'scripttd_sel');
+    if (i.id && !i.system) {
+        sel_td.appendChild(getSingleMultiSelectCheckbox(i));
+    }
+
+    ret.push(sel_td);
+    ret.push(createEnableImageTD());
     ret.push(sname_td);
-    ret.push(getTD(i, sversion, 'script_td25', 'scripttd_version'));
-    ret.push(getTD(i, sync, 'script_td26', 'scripttd_sync'));
+    ret.push(getTD(i, sversion, 'script_td24', 'scripttd'));
+    ret.push(getTD(i, createTypeImageFromScript(i), 'script_td25', 'scripttd'));
+    ret.push(getTD(i, sync, 'script_td26', 'scripttd'));
     ret.push(getTD(i, createImagesFromScript(i), 'script_td3'));
     ret.push(getTD(i, createFeatureImagesFromScript(i), 'script_td4'));
     ret.push(getTD(i, hp_script, 'script_td5'));
@@ -1667,7 +1779,11 @@ var createScriptItem = function(i, tr, tabv) {
             scriptClick(null, true);
         };
         window.setTimeout(show, 100);
-        if (!initialized && window.location.href.search('new=1') != -1) {
+        if (!initialized && gArgs.open === "0") {
+            window.setTimeout(scriptClick, 1000);
+        }
+    } else if (gArgs.open) {
+        if (i.id === gArgs.open) {
             window.setTimeout(scriptClick, 1000);
         }
     }
@@ -1675,13 +1791,52 @@ var createScriptItem = function(i, tr, tabv) {
     return ret;
 };
 
+var createTypeImageFromScript = function(i) {
+    var span = cr('span', i.name, i.id, 'pos_type', true);
+
+    if (!i.id) return span;
+
+    if (i.user_agent) {
+        var m = HtmlUtil.createImage('images/user_agent.png',
+                            i.name,
+                            i.id,
+                            "user_agent",
+                            chrome.i18n.getMessage("This_only_changes_the_user_agent_string"));
+        span.appendChild(m);
+    } else if (i.nativeScript) {
+        var m = HtmlUtil.createImage(i.icon,
+                            i.name,
+                            i.id,
+                            "chrome_ext",
+                            chrome.i18n.getMessage("This_is_a_chrome_extension"));
+        span.appendChild(m);
+    } else if (i.userscript) {
+        var m = HtmlUtil.createImage('images/txt.png',
+                                     i.name,
+                                     i.id,
+                                     "user_agent",
+                                     chrome.i18n.getMessage("This_is_a_userscript"));
+        span.appendChild(m);
+    }
+
+    return span;
+};
 
 var createFeatureImagesFromScript = function(i) {
     var span = cr('span', i.name, i.id, 'pos_features', true);
 
     if (!i.id) return span;
 
-    if (i.awareOfChrome) {
+    if (i.system) {
+        var m = HtmlUtil.createImage(chrome.extension.getURL('images/lock.png'),
+                            i.name,
+                            i.id,
+                            "lock",
+                            chrome.i18n.getMessage("This_is_a_system_script"));
+        span.appendChild(m);
+    }
+
+    if (i.awareOfChrome || i.nativeScript) {
         var m = HtmlUtil.createImage('http://www.google.com/images/icons/product/chrome-16.png',
                             i.name,
                             i.id,
@@ -1689,16 +1844,31 @@ var createFeatureImagesFromScript = function(i) {
                             chrome.i18n.getMessage("This_script_runs_in_Chrome_mode"));
         span.appendChild(m);
     }
-    if (i.nativeScript) {
-        var m = HtmlUtil.createImage(i.icon,
-                            i.name,
-                            i.id,
-                            "chrome_ext",
-                            chrome.i18n.getMessage("This_is_a_chrome_extension"));
-        span.appendChild(m);
-    }
 
     if (i.nativeScript) return span;
+
+    var https_found = false;
+    var https_check = { "includes": true, "matches": true};
+    for (var k in https_check) {
+        if (!i[k]) continue;
+        for (var o=0; o<i[k].length; o++) {
+            if (i[k][o] &&
+                (i[k][o].search('https') != -1 ||
+                 i[k][o].search(/^\*:\/\//) != -1)) {
+                var m = HtmlUtil.createImage(chrome.extension.getURL('images/halfencrypted.png'),
+                                             i.name,
+                                             i.id,
+                                             "encrypt",
+                                             chrome.i18n.getMessage("This_script_has_access_to_https_pages"));
+                span.appendChild(m);
+                https_found = true;
+                break;
+            }
+        }
+        if (https_found) break;
+    }
+
+    if (i.user_agent) return span;
 
     if (i.code.search('GM_xmlhttpRequest') != -1) {
         var m = HtmlUtil.createImage(chrome.extension.getURL('images/web.png'),
@@ -1724,19 +1894,9 @@ var createFeatureImagesFromScript = function(i) {
                             chrome.i18n.getMessage("This_script_has_access_to_webpage_scripts"));
         span.appendChild(m);
     }
-    for (var o=0; o<i.includes.length; o++) {
-        if (i.includes[o] && i.includes[o].search('https') != -1) {
-            var m = HtmlUtil.createImage(chrome.extension.getURL('images/halfencrypted.png'),
-                                i.name,
-                                i.id,
-                                "encrypt",
-                                chrome.i18n.getMessage("This_script_has_access_to_https_pages"));
-            span.appendChild(m);
-            break;
-        }
-    }
     for (var k in i.options) {
-        if (k.search('compat') != -1 && i.options[k]) {
+        if (k != 'compat_for_requires' &&
+            k.search('compat') != -1 && i.options[k]) {
             var m = HtmlUtil.createImage(chrome.extension.getURL('images/critical.png'),
                                 i.name,
                                 i.id,
@@ -1745,14 +1905,6 @@ var createFeatureImagesFromScript = function(i) {
             span.appendChild(m);
             break;
         }
-    }
-    if (i.system) {
-        var m = HtmlUtil.createImage(chrome.extension.getURL('images/lock.png'),
-                            i.name,
-                            i.id,
-                            "lock",
-                            chrome.i18n.getMessage("This_is_a_system_script"));
-        span.appendChild(m);
     }
 
     return span;
@@ -1800,8 +1952,17 @@ var createPosImagesFromScript = function(i) {
 };
 
 var createImagesFromScript = function(i) {
-    var span = cr('span', i.name, i.id, 'site_images', true);
+    var span = cr('span', i.name, i.id, 'site_images');
+    var oldspan = null;
+    if (span.inserted) {
+        // cache image sif possible, but remove not used though
+        oldspan = span;
+        oldspan.setAttribute('id', oldspan.id + "foo");
+        span = cr('span', i.name, i.id, 'site_images');
+    }
+
     var getInfo = function(inc) {
+        inc = inc.replace(/^\*:\/\//, 'http://');
         if (inc.search("http") != 0) inc = "http://" + inc;
         var sl = inc.split('/');
         if (sl.length < 3) return null;
@@ -1817,32 +1978,47 @@ var createImagesFromScript = function(i) {
         return {tld: tld, dom: dom, predom: predom.reverse()};
     };
 
-    if (i.includes) {
+    if (i.includes || i.matches)  {
         var d = 0;
-        for (var o=0; o<i.includes.length;o++) {
-            var inc = i.includes[o];
+        var incl = i.includes.length ? i.includes : i.matches;
+        for (var o=0; o<incl.length;o++) {
+            var inc = incl[o];
             if (!inc) {
                 console.log("o: Warn: script '" + i.name + "' has invalid include (index: " + o + ")");
                 continue; // issue 93 ?!
             }
-            
+
             if (inc.search(/htt(ps|p):\/\/(\*\/\*|\*)*$/) != -1 ||
+                inc.search(/\*:\/\/(\*\/\*|\*)*$/) != -1 ||
                 inc == "*") {
                 var img = HtmlUtil.createImage(chrome.extension.getURL('images/web.png'),
                                       i.name,
                                       i.id,
-                                      i.includes[o],
-                                      i.includes[o]);
+                                      inc,
+                                      inc);
                 span.appendChild(img);
                 break;
                 continue;
             }
+
             var inf = getInfo(inc);
-            if (inf == null) continue;
+            if (inf == null) {
+                var img = HtmlUtil.createFavicon('?',
+                                                 i.name,
+                                                 i.id,
+                                                 inc,
+                                                 inc);
+                if (img.inserted && oldspan) {
+                    img.parentNode.removeChild(img);
+                }
+                span.appendChild(img);
+                continue;
+            }
+
             var drin = false;
             for (var p=0; p<o; p++) {
-                var pinc = i.includes[p];
-                if (pinc) { 
+                var pinc = incl[p];
+                if (pinc) {
                     var pinf = getInfo(pinc);
                     if (pinf == null) continue;
                     if (pinf.dom == inf.dom) {
@@ -1856,16 +2032,23 @@ var createImagesFromScript = function(i) {
                 var predom = '';
                 if (inf.tld != '*' && inf.tld != 'tld') tld = inf.tld;
                 if (inf.predom.length) predom = inf.predom.join('.') + '.';
-                // var ico = ("chrome://favicon/http://" + predom + inf.dom + "." + tld + "/").replace(/\*/g, '');
-                var ico = ("http://" + predom + inf.dom + '.' + tld + '/favicon.ico').replace(/\*/g, '');
-                if (ico.search('http://userscripts.org/') == 0 ||
-                    ico.search('http://userscripts.com/') == 0) ico = Helper.staticVars.USOicon;
+                var ico2 = ("chrome://favicon/http://" + predom + inf.dom + "." + tld + "/").replace(/\*/g, '');
+                var ico1 = ("http://" + predom + inf.dom + '.' + tld + '/favicon.ico').replace(/\*/g, '');
+                var ico = [ ico1, ico2 ];
 
-                var img = HtmlUtil.createImage(ico,
+                if (ico1.search('http://userscripts.org/') == 0 ||
+                    ico1.search('http://userscripts.com/') == 0) {
+
+                    ico = Helper.staticVars.USOicon;
+                }
+                var img = HtmlUtil.createFavicon(ico,
                                       i.name,
                                       i.id,
-                                      i.includes[o],
-                                      i.includes[o]);
+                                      inc,
+                                      inc);
+                if (img.inserted && oldspan) {
+                    img.parentNode.removeChild(img);
+                }
                 span.appendChild(img);
                 d++;
             }
@@ -1875,12 +2058,208 @@ var createImagesFromScript = function(i) {
                               i.id,
                               "tbc");
                 tbc.textContent = '...';
+                if (tbc.inserted && oldspan) {
+                    tbc.parentNode.removeChild(tbc);
+                }
+
                 span.appendChild(tbc);
                 break;
             }
         }
     }
+
+    if (oldspan) {
+        oldspan.parentNode.removeChild(oldspan);
+    }
+
     return span;
+};
+
+/* ########### MultiSelect ############## */
+
+var getMultiSelectedCnt = function() {
+    var all = document.getElementsByName('scriptselectors')
+    var c = 0;
+    for (var a = 0; a < all.length; a++) {
+        if (all[a].checked) c++;
+    }
+};
+
+var initMultiSelect= function() {
+    var mode = 0;
+    gCallbacks['multiselect'] = {};
+
+    gCallbacks['multiselect']['single_click'] = function() {
+        var m = 0;
+
+        var all = document.getElementsByName('scriptselectors')
+        var all_native = true;
+        var any_native = false;
+        var found_native = false;
+        var all_scripts = true;
+        var any_script = false;
+        var found_scripts = false;
+
+        for (var a = 0; a < all.length; a++) {
+            if (all[a].s_type == 'n') {
+                found_native = true;
+                all_native = all_native && all[a].checked;
+                any_native = any_native || all[a].checked;
+            } else if (all[a].s_type == 's') {
+                found_scripts = true;
+                all_scripts = all_scripts && all[a].checked;
+                any_script = any_script || all[a].checked;
+            }
+        }
+
+        if (found_native) {
+            if (all_native && !any_script) {
+                m = 1;
+            } else if (all_scripts && !any_native && any_script) {
+                m = 2;
+            }
+        } else if (found_scripts && all_scripts) {
+            m = 3;
+        }
+        if (m != mode) {
+            mode = m;
+            var ch = cr('input', 'sms', 'all');
+            ch.checked = (m != 0);
+        }
+    };
+
+    gCallbacks['multiselect']['un_selectAll'] = function() {
+        if (++mode > 3) mode = 0;
+        var any_script = false;
+
+        var all = document.getElementsByName('scriptselectors')
+        for (var a = 0; a < all.length; a++) {
+            if (a == 0 && (mode == 1 || mode == 3) && all[a].s_type == 's') {
+                // first element shows that no native scripts are installed :(
+                if (++mode > 3) mode = 0;
+            }
+            any_script |= (all[a].s_type == 's');
+
+            all[a].checked = (mode == 3 || mode == 1 && all[a].s_type == 'n' || mode == 2 && all[a].s_type == 's');
+        }
+        if (mode > 1 && !any_script) mode = 0;
+
+        this.checked = (mode != 0);
+    };
+};
+
+var getSingleMultiSelectCheckbox = function(i) {
+    var input = cr('input', i.name, i.id, 'sel');
+    input.type = "checkbox";
+    input.s_id = i.id;
+    input.name = "scriptselectors";
+    input.s_type = i.nativeScript ? 'n' : 's';
+    if (!input.inserted) {
+        input.addEventListener('click', function() { gCallbacks['multiselect']['single_click'](); });
+    }
+    return input;
+};
+
+var createMultiSelectActions = function(i) {
+    var input = cr('input', 'sms', 'all', null, true);
+    input.type = "checkbox";
+    input.mode = 0;
+    input.addEventListener('click', gCallbacks['multiselect']['un_selectAll']);
+    var value = 0;
+
+    var select = [
+        { name: chrome.i18n.getMessage('__Please_choose__'), value: 0 },
+        { name: chrome.i18n.getMessage('Enable'), value: 1 },
+        { name: chrome.i18n.getMessage('Disable'), value: 2 },
+        { name: chrome.i18n.getMessage('Trigger_Update'), value: 5 },
+        { name: chrome.i18n.getMessage('Remove'), value: 6 } ];
+
+    var e = { value : 0, id: "sms", name: "select" };
+    var enable_button = function() {
+        if (this.value == 0) {
+            bu.setAttribute('disabled' , "true");
+        } else {
+            bu.removeAttribute('disabled');
+        }
+        value = this.value;
+    };
+    var dd = HtmlUtil.createDropDown(chrome.i18n.getMessage('Apply_this_action_to_the_selected_scripts'), e, select, enable_button);
+    dd.elem.setAttribute("class", "float");
+
+    var run = function() {
+        if (value == 0) {
+            console.log("option: ?!?!");
+            return;
+        }
+
+        if (value == 6) {
+            if (!confirm(chrome.i18n.getMessage("Really_delete_the_selected_items_"))) {
+                return;
+            }
+        }
+
+        var alle = document.getElementsByName('scriptselectors')
+        var all = [];
+        // alle is resized on node removal -> copy
+        for (var a = 0; a < alle.length; a++) {
+            all.push(alle[a]);
+        }
+
+        var fn, reload = false, reloadt = 100;
+        for (var a = 0; a < all.length; a++) {
+            if (!all[a].checked) continue;
+
+            if (value == 1 || value == 2) {
+                fn = (all[a].s_type == 'n') ? 'switchNativeEnabled' : 'switchEnabled';
+                gCb(all[a].s_id, fn, null, (value == 1), false);
+                reload = true;
+            } else if (value == 5) {
+                fn = 'scriptUpdate';
+                gCb(all[a].s_id, fn);
+            } else if (value == 6) {
+                fn = 'deleteScript';
+                gCb(all[a].s_id, fn, null, true);
+                reload = true;
+                reloadt = 1500;
+            }
+        }
+
+        if (reload) {
+            Please.wait();
+            window.setTimeout(function() {
+                                  modifyScriptOption(null, false, null, true);
+                              }, reloadt);
+        }
+    };
+    var bu =  HtmlUtil.createButton('MultiSelectButton', 'button', chrome.i18n.getMessage('Start'), run);
+    bu.setAttribute('disabled' , 'true');
+    bu.setAttribute('style' , 'height: 19px; top: 2px; position: relative; padding-top: -1px;');
+
+    var actions = cr('div', i.name, i.id, 'actions');
+    actions.appendChild(dd.elem);
+    actions.appendChild(bu);
+
+    return { selAll : input, actionBox : actions };
+};
+initMultiSelect();
+
+/* ########### extension messaging  ############## */
+var reCreateTo = null;
+var reCreateArgs = null;
+
+var scheduleReCreate = function(items, noWarn) {
+    if (reCreateTo != null) {
+        window.clearTimeout(reCreateTo);
+        reCreateTo = null;
+        scheduleReCreate(items ? items : reCreateArgs.items, noWarn || reCreateArgs.noWarn);
+    } else {
+        reCreateArgs = {items: items, noWarn: noWarn };
+        reCreateTo = window.setTimeout(function() {
+                                           reCreateTo = null;
+                                           createOptionsMenu(reCreateArgs.items, reCreateArgs.noWarn);
+                                           reCreateArgs = null;
+                                       }, 50);
+    }
 };
 
 var loadUrl = function(url, newtab) {
@@ -1901,7 +2280,9 @@ var loadUrl = function(url, newtab) {
     }
 };
 
-var saveScript = function(name, code, old_url, new_url, clean, cb) {
+var saveScript = function(name, code, old_url, new_url, clean, reload, cb) {
+    if (reload === undefined) reload = true;
+
     try {
         var ou = old_url ? old_url : "";
         var nu = (new_url && new_url != old_url) ? new_url : "";
@@ -1911,10 +2292,13 @@ var saveScript = function(name, code, old_url, new_url, clean, cb) {
                                       code: code,
                                       clean : clean,
                                       file_url: ou,
-                                      force_url: nu },
+                                      force_url: nu,
+                                      reload: reload },
                                      function(response) {
-                                         if (response.items) createOptionsMenu(response.items, name && true);
-                                         if (!code) {
+                                         if (response.items) {
+                                             scheduleReCreate(response.items, name && true);
+                                         }
+                                         if (!code && reload) {
                                              Please.hide();
                                          }
                                          if (cb) {
@@ -1931,7 +2315,27 @@ var setOption = function(name, value, ignore) {
     try {
         chrome.extension.sendMessage({method: "setOption", name: name, value: value},
                                      function(response) {
-                                         if (!ignore) createOptionsMenu(response.items);
+                                         if (!ignore) {
+                                             scheduleReCreate(response.items);
+                                         }
+                                     });
+        Please.wait();
+    } catch (e) {
+        console.log("sO: " + e.message);
+    }
+};
+
+var buttonPress = function(name, value, ignore, reload) {
+    try {
+        chrome.extension.sendMessage({method: "buttonPress", name: name},
+                                     function(response) {
+                                         if (reload) {
+                                             window.location.reload();
+                                         } else if (!ignore) {
+                                             scheduleReCreate(response.items);
+                                         } else {
+                                             Please.hide();
+                                         }
                                      });
         Please.wait();
     } catch (e) {
@@ -1952,7 +2356,9 @@ var modifyScriptOptions = function(name, options, reload, reorder) {
         if (V) console.log("modifyScriptOptions sendReq");
         chrome.extension.sendMessage(s,
                                      function(response) {
-                                         if (response.items) createOptionsMenu(response.items, name && true);
+                                         if (response.items) {
+                                             scheduleReCreate(response.items, name && true);
+                                         }
                                      });
         Please.wait();
     } catch (e) {
@@ -1962,7 +2368,7 @@ var modifyScriptOptions = function(name, options, reload, reorder) {
 
 var modifyScriptOption = function(name, id, value, reload, reorder) {
     if (V) console.log("run modifyScriptOption");
-    if (reload == undefined) reload = true;
+    if (reload === undefined) reload = true;
     try {
         var s = { method: "modifyScriptOptions", name: name, reload: reload, reorder: reorder };
         if (id && id != '') s[id] = value;
@@ -1970,7 +2376,9 @@ var modifyScriptOption = function(name, id, value, reload, reorder) {
         if (V) console.log("modifyScriptOption sendReq");
         chrome.extension.sendMessage(s,
                                      function(response) {
-                                         if (response && response.items) createOptionsMenu(response.items, name && true);
+                                         if (response && response.items) {
+                                             scheduleReCreate(response.items, name && true);
+                                         }
                                      });
         Please.wait();
     } catch (e) {
@@ -1980,14 +2388,16 @@ var modifyScriptOption = function(name, id, value, reload, reorder) {
 
 var modifyNativeScriptOption = function(nid, id, value, reload) {
     if (V) console.log("run modifyNativeScriptOption");
-    if (reload == undefined) reload = true;
+    if (reload === undefined) reload = true;
     try {
         var s = { method: "modifyNativeScript", nid: nid, actionid: id, value: value, reload: reload };
 
         if (V) console.log("modifyNativeScriptOption sendReq");
         chrome.extension.sendMessage(s,
                                      function(response) {
-                                         if (response.items) createOptionsMenu(response.items, name && true);
+                                         if (response.items) {
+                                             scheduleReCreate(response.items, name && true);
+                                         }
                                      });
         Please.wait();
     } catch (e) {
@@ -2010,7 +2420,7 @@ chrome.extension.onMessage.addListener(
     function(request, sender, sendResponse) {
         if (V) console.log("o: method " + request.method);
         if (request.method == "updateOptions") {
-            createOptionsMenu(request.items);
+            scheduleReCreate(request.items);
             sendResponse({});
         } else if (request.method == "confirm") {
             var resp = function(c) {

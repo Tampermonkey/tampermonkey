@@ -1,7 +1,7 @@
 {
    "manifest_version": 2,
    "content_security_policy": "script-src 'self'; object-src 'self'",
-   "minimum_chrome_version": "17.0.0.0",
+   "minimum_chrome_version": "19.0.0.0",
    "content_scripts": [ {
       "js": [ "registry.js",
               "convert.js",
@@ -14,6 +14,7 @@
    } ],
    "web_accessible_resources": [
       "emulation.js",
+      "jslint.js",
       "environment.js"
    ],
    "browser_action": {
@@ -25,7 +26,7 @@
    	      "48": "images/icon48.png",
        	     "128": "images/icon128.png" },
    "name": "Tampermonkey",
-   "version": "2.6.0",
+   "version": "2.8.0",
    "description": "the most popular userscript manager for Google Chrome",
    "default_locale": "en",
    "background": {
@@ -38,5 +39,6 @@
                     "management", 
                     "webNavigation", 
                     "webRequest", "webRequestBlocking",
-                    "<all_urls>" ]
+                    "<all_urls>" ],
+   "optional_permissions" : [ "contentSettings", "storage" ]
 }

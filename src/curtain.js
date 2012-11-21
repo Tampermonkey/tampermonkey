@@ -11,6 +11,7 @@
     var CRC = Registry.get('crcrc');
     var cr = CRC.cr;
     var crc = CRC.crc;
+    var type = 0;
 
     var createCenterTable = function(elem, name, id, app, clas) {
         if (!app) app = '';
@@ -51,6 +52,7 @@
 
         p.show = function() { p.setAttribute('class', 'curouter block'); };
         p.hide = function() { p.setAttribute('class', 'curouter hide'); };
+        p.remove = function() { if (p.parentNode) { p.parentNode.removeChild(p); } };
         p.setText = function(elem) { p.text = elem; };
         p.print = function(msg) { if (p.text) p.text.textContent = msg; };
 
@@ -68,6 +70,11 @@
     };
 
     var pleaseWait = function(msg) {
+        if (curtain && type != 0) {
+            curtain.remove();
+            curtain = null;
+        }
+        
         if (msg == undefined) msg = chrome.i18n.getMessage("Please_wait___");
         if (curtain) {
             curtain.print(msg);
@@ -86,14 +93,17 @@
             var dimg = document.createElement('div');
             var t = document.createElement('div');
             t.textContent = text;
-            t.innerHTML += '<br><br>';
             t.setAttribute('class','curtext');
+
+            var a = document.createElement('div');
+            a.innerHTML = '<br>';
 
             var img = document.createElement('img')
             img.src = chrome.extension.getURL('images/large-loading.gif');
             dimg.appendChild(img);
 
             msg.appendChild(dimg);
+            msg.appendChild(a);
             msg.appendChild(t);
 
             outer.appendChild(head);
@@ -102,6 +112,7 @@
             return { all: outer, text: t };
         };
 
+        type = 0;
         var m = createCurtainWaitMsg(msg);
         curtain = createCurtain(m.all);
         // setTextNode
@@ -109,7 +120,99 @@
         curtain.show();
     };
 
-    var wait = { wait: pleaseWait, hide: hideWait };
+    var pleaseLogin = function(callback, info) {
+        if (curtain) {
+            curtain.remove();
+            curtain = null;
+        }
+
+        var createCurtainLoging = function(info) {
+            var outer = document.createElement('div');
+            outer.setAttribute('class', 'curcontainer');
+
+            var head = document.createElement('div');
+            head.setAttribute('class', 'curwaithead');
+            var msg = document.createElement('div');
+            msg.setAttribute('class', 'curwaitmsg');
+            var f = document.createElement('form');
+            f.setAttribute("action", "#login");
+
+            var t = document.createElement('table');
+            var tr0 = document.createElement('tr');
+            
+            var tr1 = document.createElement('tr');
+            var tr2 = document.createElement('tr');
+            var tr3 = document.createElement('tr');
+
+            var td0 = document.createElement('td');
+            td0.setAttribute("colspan", "2");
+            td0.setAttribute("class", "login_hint");
+
+            var td11 = document.createElement('td');
+            var td12 = document.createElement('td');
+            var td21 = document.createElement('td');
+            var td22 = document.createElement('td');
+            var td3 = document.createElement('td');
+            td3.setAttribute("colspan", "2");
+
+            var msg_t = document.createElement('span');
+            var login_t = document.createElement('span');
+            var pass_t = document.createElement('span');
+            var login = document.createElement('input');
+            var pass = document.createElement('input');
+            var button = document.createElement('input');
+
+            if (info) t.appendChild(tr0);
+            t.appendChild(tr1);
+            t.appendChild(tr2);
+            t.appendChild(tr3);
+
+            tr0.appendChild(td0);
+            tr1.appendChild(td11);
+            tr1.appendChild(td12);
+
+            tr2.appendChild(td21);
+            tr2.appendChild(td22);
+
+            tr3.appendChild(td3);
+
+            td11.appendChild(login_t);
+            td12.appendChild(login);
+
+            td21.appendChild(pass_t);
+            td22.appendChild(pass);
+
+            td3.appendChild(button);
+
+            f.appendChild(t);
+            msg.appendChild(f);
+
+            outer.appendChild(head);
+            outer.appendChild(msg);
+
+            if (info) td0.textContent = info;
+            login_t.textContent = chrome.i18n.getMessage("Username");
+            pass_t.textContent = chrome.i18n.getMessage("Password");
+            button.value = chrome.i18n.getMessage("Login");
+            
+            login.setAttribute('type', 'text');
+            login.setAttribute('label', 'username');
+            pass.setAttribute('type', 'password');
+            pass.setAttribute('label', 'password');
+            button.setAttribute('type', 'submit');
+            
+            button.addEventListener('click', function() { if (callback) callback(login.value, pass.value); });
+            
+            return { all: outer, text: t };
+        };
+
+        type = 1;
+        var m = createCurtainLoging(info);
+        curtain = createCurtain(m.all);
+        curtain.show();
+    };
+    
+    var wait = { wait: pleaseWait, hide: hideWait, login: pleaseLogin };
     
     Registry.register('curtain', wait);
 })();

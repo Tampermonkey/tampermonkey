@@ -201,6 +201,12 @@
   "About_Tampermonkey": {
     "message": "Über Tampermonkey"
   },
+  "About": {
+    "message": "Über"
+  },
+  "Changelog": {
+    "message": "Änderungen"
+  },
   "Tampermonkey_Options": {
     "message": "Tampermonkey"
   },
@@ -291,7 +297,7 @@
     "message": "Dieses Script speichert Daten via Tampermonkey."
   },
   "This_script_has_access_to_https_pages": {
-    "message": "Dieses Script hat Zugriff auf verschlüsselte Seiten."
+    "message": "Dieses Element hat Zugriff auf verschlüsselte Seiten."
   },
   "One_or_more_compatibility_options_are_set": {
     "message": "Eine oder mehrere Kompatibilitätsoptionen sind aktiviert."
@@ -308,6 +314,12 @@
   "This_script_runs_in_Chrome_mode": {
     "message": "Diese Script läuft im Chrome-Modus"
   },
+  "This_only_changes_the_user_agent_string": {
+    "message": "Dieses Element verändert den User-Agent bei allen inkludierten Seiten"
+  },
+  "This_is_a_userscript": {
+    "message": "Dieses Element ist ein Userscript geschrieben in Javascript"
+  },
   "Really_delete_this_script__": {
     "message": "Soll dieses Script wirklich gelöscht werden?"
   },
@@ -318,7 +330,7 @@
     "message": "Script bearbeiten"
   },
   "This_script_has_access_to_webpage_scripts": {
-    "message": "Dieses Script hat vollen Zugriff auf die Web-Seite."
+    "message": "Dieses Element hat vollen Zugriff auf die Web-Seite."
   },
   "Utilities": {
     "message": "Hilfsmittel"
@@ -367,16 +379,16 @@
   "Just_another_service_provided_by_your_friendly_script_updater_": {
     "message": "Script-Updater:"
   },
-  "Welcome_": {
-    "message": "Willkommen!"
-  },
-  "Have_fun_with_Tampermonkey": {
-    "message": "Viel Spaß mit Tampermonkey $version$! :)",
+  "Updated_to__0version0": {
+    "message": "Aktualisiert auf $version$",
     "placeholders": {
       "version": {
          "content": "$1"
       }
     }
+  },
+  "Click_here_to_see_the_recent_changes": {
+    "message": "Klicken Sie hier um die aktuellen Änderungen zu sehen"
   },
   "General": {
     "message": "Allgemein"
@@ -578,6 +590,9 @@
   "Version": {
     "message": "Version"
   },
+  "Type": {
+    "message": "Typ"
+  },
   "Update_needed": {
     "message": "Update notwendig"
   },
@@ -651,7 +666,7 @@
     "message": "Userscripte"
   },
   "New_script_template_": {
-    "message": "Maske für neue Userscripte"
+    "message": "Maske für neue Userscripts"
   },
   "Icon_badge_info": {
     "message": "Erweiterte Icon Info"
@@ -724,29 +739,23 @@
   "An_internal_error_occured_Do_you_want_to_visit_the_forum_": {
     "message": "Ein interner Fehler ist aufgetreten. Bitte melden Sie dieses Problem im Tampermonkey Forum, falls es weiterhin besteht.\n\nWollen Sie das Forum jetzt besuchen?"
   },
-  "Script_Syncer": {
-    "message": "Script Syncronistation"
+  "TESLC": {
+    "message": "TESLC"
   },
-  "Enable_Script_Sync": {
-    "message": "Aktiviere Script Syncronistation"
+  "Enable_TESLC": {
+    "message": "Aktiviere TESLC"
   },
-  "Username": {
-    "message": "E-Mail Adresse"
+  "Tampermonkey_External_Script_List_Control": {
+    "message": "Tampermonkey External Script List Control"
   },
-  "Password": {
-    "message": "Passwort"
+  "Sync_Type": {
+    "message": "Typ"
   },
-  "Account_is_verified": {
-    "message": "Die Sync Account Informationen sind gültig."
+  "Sync_Id": {
+    "message": "Id"
   },
-  "Credentials_are_submitted__Please_check_your_email_account_for_verification_details": {
-    "message": "Die Sync Account Informationen wurden übermittelt. Bitte prüfen Sie Ihr e-Mail Postfach für die Verifizierung."
-  },
-  "Credentials_are_invalid_": {
-    "message": "Die gespeicherten Sync Account Informationen sind ungültig!"
-  },
-  "Please_enter_your_existing_credentials_or_use_new_ones_": {
-    "message": "Bitte geben Sie Ihre Sync Account Informationen ein oder verwenden sie neue."
+  "Imported": {
+    "message": "Importiert"
   },
   "Import_Mode": {
     "message": "Import Modus"
@@ -757,11 +766,8 @@
   "Create_and_remove": {
     "message": "Erstellen und Entfernen"
   },
-  "This_options_sets_up_how_to_handle_changes_from_the_sync_server_": {
-   "message": "Diese Option stellt ein, wie mit Scripts vom Server umgegangen wird: a) Feature deaktiviert, b) es werden Scripts vom Server lokal erstellt, c) wird ein Script vom Server gelöscht, wird es auch lokal entfernt"
-  },
-  "This_options_sets_up_how_to_sync_local_changes_to_the_server_": {
-    "message": "Diese Option stellt ein, wie lokale Änderungen verarbeitet werden: a) Feature deaktiviert, b) es werden nur lokale Scripts zum Server gesendet, c) wird ein lokales Script gelöscht, wird es auch auf dem Server gelöscht."
+  "Sync": {
+    "message": "Sync"
   },
   "Export_Mode": {
     "message": "Export Modus"
@@ -772,11 +778,17 @@
   "Enable_sync": {
     "message": "Aktiviere Synchronisation"
   },
-  "Conflict_remove_or_disable_sync": {
-    "message": "Es wurde in Konflikt mit der Server-Version festgestellt. Bitte löschen Sie das lokale Script oder deaktivieren sie die Synchronisation für dieses Userscript"
+  "This_options_sets_up_how_to_sync_local_changes_to_the_server_": {
+    "message": "Diese Option stellt ein, wie lokale Änderungen verarbeitet werden: a) Feature deaktiviert, b) es werden nur lokale Scripts zum Server gesendet, c) wird ein lokales Script gelöscht, wird es auch auf dem Server gelöscht." 
   },
-  "Sync": {
-    "message": "Sync"
+  "This_options_sets_up_how_to_handle_changes_from_the_sync_server_": {
+   "message": "Diese Option stellt ein, wie mit Scripts vom Server umgegangen wird: a) es werden Scripts vom Server lokal erstellt, b) wird ein Script vom Server gelöscht, wird es auch lokal entfernt"
+  },
+  "Create_Exportable_Data": {
+    "message": "Erstelle TESLC Daten"
+  },
+  "Copy_exportable_data_to_clipboard_Ok_": {
+    "message": "Kopiere TESLC Daten in die Zwischenablage. Ok?"
   },
   "Allow_headers_to_be_modified_by_scripts": {
     "message": "Erlaube Modifikation der HTTP-Header durch Scripte"
@@ -789,6 +801,75 @@
   },
   "Auto": {
     "message": "Auto"
+  },
+  "__Please_choose__": {
+    "message": "-- Bitte wähle eine Aktion aus --"
+  },
+  "Enable": {
+    "message": "Aktivieren"
+  },
+  "Disable": {
+    "message": "Deaktivieren"
+  },
+  "Trigger_Update": {
+    "message": "Aktualisieren"
+  },
+  "Apply_this_action_to_the_selected_scripts": {
+    "message": "Anwenden der gewählten Aktion auf alle markierten Skripte"
+  },
+  "Start": {
+    "message": "Start"
+  },
+  "Really_delete_the_selected_items_": {
+    "message": "Sollen wirklich alle ausgewählten Elemente gelöscht werden?"
+  },
+  "Conflict_Handling": {
+    "message": "Konfliktbehandlung"
+  },
+  "Warning": {
+    "message": "Zeige eine Warnung"
+  },
+  "Use_local": {
+    "message": "Nutze die lokale Script-Version"
+  },
+  "Use_remote": {
+    "message": "Nutze die Script-Version vom Server"
+  },
+  "A_script_blocker_was_detected_": {
+    "message": "Ein Script-Blocker wurde entdeckt!"
+  },
+  "Storage_permission_is_needed_": {
+    "message": "Die Storage Berechtigung wird benötigt!"
+  },
+  "Click_here_to_allow_TM_to_override_the_script_blocker": {
+    "message": "Bitte klicken, um Tampermonkey zu erlauben, die Einstellungen des Script-Blockers zu überschreiben."
+  },
+  "Click_here_to_allow_TM_to_use_Google_sync": {
+    "message": "Bitte klicken, um Tampermonkey zu erlauben, Googly Sync zu benutzen."
+  },
+  "Please_reload_this_page_in_order_to_run_your_userscripts_": {
+    "message": "Bitte laden sie die Seite neu, damit die Userscripts ausgeführt werden können."
+  },
+  "Reset_Section": {
+    "message": "Reset"
+  },
+  "Restart_Tampermonkey": {
+    "message": "Neustart"
+  },
+  "This_will_restart_Tampermonkey_Ok_": {
+    "message": "Tampermonkey jetzt neustarten?"
+  },
+  "Factory_Reset": {
+    "message": "Werkseinstellungen"
+  },
+  "This_will_remove_all_scripts_and_reset_all_settings_Ok_": {
+    "message": "Sollen wirklich alle Scripte und Einstellungen gelöscht werden?"
+  },
+  "Enable_autoSave": {
+    "message": "Automatischen Speichern wenn der Editor den Fokus verliert"
+  },
+  "Enable_easySave": {
+    "message": "Speichere ohne Bestätigungsdialog"
   },
   "EOF": {
     "message": "EOF"
