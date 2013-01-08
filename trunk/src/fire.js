@@ -32,6 +32,7 @@ Registry.require('helper');
 Registry.require('tabview');
 Registry.require('convert');
 Registry.require('htmlutil');
+Registry.require('i18n');
  
 var cr = Registry.get('crcrc').cr;
 var crc = Registry.get('crcrc').crc;
@@ -41,7 +42,8 @@ var TabView = Registry.get('tabview');
 var Converter = Registry.get('convert');
 var HtmlUtil = Registry.get('htmlutil');
 var pp = Registry.get('pingpong');
-
+var I18N = Registry.get('i18n');
+ 
 /* ########### main ############## */
 var gArgs = Helper.getUrlArgs();
     
@@ -189,7 +191,7 @@ var createScriptTable = function(ts) {
                 scriptOrder = cmp;
                 sortScripts(scriptItems, scriptOrder, scriptOrderDown, cb);
             };
-            Please.wait();
+            Please.wait(I18N.getMessage("Please_wait___"));
             window.setTimeout(run, 1);
         };
         var sortUp = function() {
@@ -198,7 +200,7 @@ var createScriptTable = function(ts) {
                 scriptOrder = cmp;
                 sortScripts(scriptItems, scriptOrder, scriptOrderDown, cb);
             };
-            Please.wait();
+            Please.wait(I18N.getMessage("Please_wait___"));
             window.setTimeout(run, 1);
         };
         var sortDown = function() {
@@ -207,7 +209,7 @@ var createScriptTable = function(ts) {
                 scriptOrder = cmp;
                 sortScripts(scriptItems, scriptOrder, scriptOrderDown, cb);
             };
-            Please.wait();
+            Please.wait(I18N.getMessage("Please_wait___"));
             window.setTimeout(run, 1);
         };
 
@@ -238,18 +240,18 @@ var createScriptTable = function(ts) {
     var t = crc('div', "scripttable", i.name, i.id, 'main');
     var t1 = crc('div', "settingsth_fill", i.name, i.id, 'thead_en');
     var tf1 = crc('div', "settingsth_fill", i.name, i.id, 'thead_fill1');
-    var t2 = createSortable(i, 'thead_name', chrome.i18n.getMessage('Name'), "name");
+    var t2 = createSortable(i, 'thead_name', I18N.getMessage('Name'), "name");
     var tf2 = crc('div', "settingsth_fill", i.name, i.id, 'thead_fill');
-    var t3 = createSortable(i, 'thead_score', chrome.i18n.getMessage('Rank'), "rank", true);
+    var t3 = createSortable(i, 'thead_score', I18N.getMessage('Rank'), "rank", true);
     var t4 = crc('div', "settingsth", i.name, i.id, 'thead_sites');
     t4.width = "25%";
-    t4.textContent = chrome.i18n.getMessage('Sites');
-    var t5 = createSortable(i, 'thead_installs', chrome.i18n.getMessage('Installs'), "installs");
-    var t6 = createSortable(i, 'thead_rating', chrome.i18n.getMessage('Rating'), "rating");
-    var t7 = createSortable(i, 'thead_fans', chrome.i18n.getMessage('Fans'), "fans");
-    var t8 = createSortable(i, 'thead_timestamp', chrome.i18n.getMessage('Last_Changed'), "timestamp");
+    t4.textContent = I18N.getMessage('Sites');
+    var t5 = createSortable(i, 'thead_installs', I18N.getMessage('Installs'), "installs");
+    var t6 = createSortable(i, 'thead_rating', I18N.getMessage('Rating'), "rating");
+    var t7 = createSortable(i, 'thead_fans', I18N.getMessage('Fans'), "fans");
+    var t8 = createSortable(i, 'thead_timestamp', I18N.getMessage('Last_Changed'), "timestamp");
     var t9 = crc('div', "settingsth", i.name, i.id, 'thead_homepage');
-    t9.textContent = chrome.i18n.getMessage('Homepage');
+    t9.textContent = I18N.getMessage('Homepage');
 
     if (!t.inserted) {
         r = r.concat([t1, tf1, tf2, t2, t3, t4, t5, t6, t7, t8]);
@@ -689,14 +691,14 @@ var createScriptUsoTab = function(i, tabd, closeEditor) {
     container.appendChild(info_outer);
     container_menu.appendChild(menu);
 
-    var i_sc_close = HtmlUtil.createButton(i.name, 'close_script', chrome.i18n.getMessage('Close'), closeEditor);
+    var i_sc_close = HtmlUtil.createButton(i.name, 'close_script', I18N.getMessage('Close'), closeEditor);
 
     var install = function() {
         var cb = function(resp) {
             if (resp.found) {
                 // if (resp.installed) {}
             } else {
-                alert(chrome.i18n.getMessage("Unable_to_get_UserScript__Sry_"));
+                alert(I18N.getMessage("Unable_to_get_UserScript__Sry_"));
             }
         }
         chrome.extension.sendMessage({ method: "scriptClick",
@@ -704,7 +706,7 @@ var createScriptUsoTab = function(i, tabd, closeEditor) {
                                        cb);
     };
 
-    var install_button = HtmlUtil.createButton(i.name, 'save', chrome.i18n.getMessage('Install'), install);
+    var install_button = HtmlUtil.createButton(i.name, 'save', I18N.getMessage('Install'), install);
 
     menu.appendChild(install_button);
     menu.appendChild(i_sc_close);
@@ -771,6 +773,7 @@ var createScriptDetailsTabView = function(tab, i, tr, parent, closeTab) {
         "td_content" : 'td_content td_content_alt',
         "td_tabs" : 'td_tabs td_tabs_alt',
         "tv_tabs_align" : 'tv_tabs_align tv_tabs_align_alt',
+        "tv_tabs_fill" : 'tv_tabs_fill tv_tabs_fill_alt',
         "tv_tabs_table" : 'tv_tabs_table tv_tabs_table_alt',
         "tv_contents" : 'tv_contents tv_contents_alt',
         "tv_tab_selected" : 'tv_tab tv_selected tv_tab_alt tv_selected_alt',
@@ -1040,7 +1043,7 @@ var getFireItems = function(tab, url) {
                     if (response.progress.state && response.progress.state.of) {
                         p = ' ' + Math.round(response.progress.state.n * 100 / response.progress.state.of) + '%';
                     }
-                    var c = (a != "" || p != "") ? a + p : null;
+                    var c = (a != "" || p != "") ? a + p : I18N.getMessage("Please_wait___");
                     Please.wait(c);
                     var retry = function() {
                         getFireItems(tab, url);
@@ -1064,7 +1067,7 @@ var getFireItems = function(tab, url) {
         };
 
         chrome.extension.sendMessage(s, onResp);
-        Please.wait();
+        Please.wait(I18N.getMessage("Please_wait___"));
     } catch (e) {
         console.log("mSo: " + e.message);
     }
@@ -1080,12 +1083,12 @@ var startFireUpdate = function(force, cb) {
         chrome.extension.sendMessage(s, function(response) {
                                          if (response.suc === false) {
                                              Please.hide();
-                                             alert(chrome.i18n.getMessage('TamperFire_is_up_to_date_'));
+                                             alert(I18N.getMessage('TamperFire_is_up_to_date_'));
                                          } else {
                                              window.setTimeout(refresh, 1000);
                                          }
                                      });
-        Please.wait();
+        Please.wait(I18N.getMessage("Please_wait___"));
     } catch (e) {
         console.log("mSo: " + e.message);
     }
@@ -1103,7 +1106,7 @@ chrome.extension.onMessage.addListener(
             alert(request.msg);
             sendResponse({});
         } else {
-            if (V) console.log("f: " + chrome.i18n.getMessage("Unknown_method_0name0" , request.method));
+            if (V) console.log("f: " + I18N.getMessage("Unknown_method_0name0" , request.method));
             return false;
         }
 
@@ -1119,13 +1122,13 @@ var domListener = function() {
     };
 
     var fail = function() {
-        if (confirm(chrome.i18n.getMessage("An_internal_error_occured_Do_you_want_to_visit_the_forum_"))) {
+        if (confirm(I18N.getMessage("An_internal_error_occured_Do_you_want_to_visit_the_forum_"))) {
             window.location.href = 'http://tampermonkey.net/bug'
         }
     };
 
     pp.ping(suc, fail);
-    Please.wait();
+    Please.wait(I18N.getMessage("Please_wait___"));
 };
 
 window.addEventListener('DOMContentLoaded', domListener, false);

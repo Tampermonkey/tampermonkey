@@ -110,7 +110,7 @@ var createTextarea = function(title, i, oc) {
     input.value = (i.value != undefined) ? (i.array ? i.value.join("\n") : i.value) : '';
     if (oc && !input.inserted) input.addEventListener("change", oc);
     var span1 = cr('span', i.name, i.id, 's1');
-    span1.textContent = title + ':';
+    if (title) span1.textContent = title + ':';
     s.appendChild(span1);
     s.appendChild(input);
 
@@ -177,7 +177,7 @@ var createDropDown = function(name, e, values, oc) {
 
     for (var k in values) {
         var o1 = cr('option', values[k].name, values[k].name, 'dd' + name);
-        o1.textContent = values[k].name;
+        o1.textContent = Helper.decodeHtml(values[k].name);
         o1.value = values[k].value;
         if (values[k].enabledBy) o1.setAttribute('name', 'enabled_by_' + values[k].enabledBy);
         if (e.enabler &&values[k].enable) o1.setAttribute('enables', JSON.stringify(values[k].enable));
@@ -187,6 +187,10 @@ var createDropDown = function(name, e, values, oc) {
 
     b.key = e.id;
     b.name = e.name;
+    b.reload = e.reload;
+    b.warning = e.warning;
+    b.oldvalue = e.value;
+
     if (oc && !b.inserted) b.addEventListener("change", oc);
 
     var span = crc('span', 'optiondesc', e.name, e.id, 'inner_dd');

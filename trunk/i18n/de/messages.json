@@ -211,13 +211,16 @@
     "message": "Tampermonkey"
   },
   "Position_": {
-    "message": "Position:"
+    "message": "Position"
   },
   "Close": {
     "message": "Schließen"
   },
   "GM_compat_options_": {
-    "message": "GM/FF Kompatibilitäts-Optionen:"
+    "message": "GM/FF Kompatibilitäts-Optionen"
+  },
+  "Comment": {
+    "message": "Kommentar"
   },
   "Apply_compatibility_options_to_required_script_too": {
     "message": "Anwenden der Kompatibilitätsoptionen auf @require Scripte"
@@ -247,10 +250,10 @@
     "message": "aller ## ms"
   },
   "Run_at": {
-    "message": "Starte wenn:"
+    "message": "Starte wenn"
   },
   "Update_URL_": {
-    "message": "Update URL:"
+    "message": "Update URL"
   },
   "Save": {
     "message": "Speichern"
@@ -428,6 +431,9 @@
    },
   "Editor": {
     "message": "Editor"
+  },
+  "Key_Mapping": {
+    "message": "Tastenbelegung"
   },
   "Indentation_Width": {
     "message": "Einrückungsbreite"
@@ -656,6 +662,9 @@
   "Full_reset": {
     "message": "Script Zurücksetzen"
   },
+  "Run_syntax_check": {
+    "message": "Starte Syntax-Check"
+  },
   "Do_you_really_want_to_factory_reset_this_script_": {
     "message": "Soll das Script wirklick komplett zurückgesetzt werden?"
   },
@@ -737,16 +746,13 @@
     "message": "Nutzer Exclude"
   },
   "An_internal_error_occured_Do_you_want_to_visit_the_forum_": {
-    "message": "Ein interner Fehler ist aufgetreten. Bitte melden Sie dieses Problem im Tampermonkey Forum, falls es weiterhin besteht.\n\nWollen Sie das Forum jetzt besuchen?"
+    "message": "Ein interner Fehler ist aufgetreten. Bitte melden Sie dieses Problem im Tampermonkey Forum, falls es auch nach einem Neustart von Chrome weiterhin besteht.\n\nWollen Sie das Forum jetzt besuchen?"
   },
-  "TESLC": {
-    "message": "TESLC"
+  "TESLA": {
+    "message": "TESLA"
   },
-  "Enable_TESLC": {
-    "message": "Aktiviere TESLC"
-  },
-  "Tampermonkey_External_Script_List_Control": {
-    "message": "Tampermonkey External Script List Control"
+  "Enable_TESLA": {
+    "message": "Aktiviere TESLA"
   },
   "Sync_Type": {
     "message": "Typ"
@@ -757,20 +763,8 @@
   "Imported": {
     "message": "Importiert"
   },
-  "Import_Mode": {
-    "message": "Import Modus"
-  },
-  "Create_only": {
-    "message": "Nur Erstellen"
-  },
-  "Create_and_remove": {
-    "message": "Erstellen und Entfernen"
-  },
   "Sync": {
     "message": "Sync"
-  },
-  "Export_Mode": {
-    "message": "Export Modus"
   },
   "Disable_sync": {
     "message": "Deaktiviere Synchronisation"
@@ -778,29 +772,29 @@
   "Enable_sync": {
     "message": "Aktiviere Synchronisation"
   },
-  "This_options_sets_up_how_to_sync_local_changes_to_the_server_": {
-    "message": "Diese Option stellt ein, wie lokale Änderungen verarbeitet werden: a) Feature deaktiviert, b) es werden nur lokale Scripts zum Server gesendet, c) wird ein lokales Script gelöscht, wird es auch auf dem Server gelöscht." 
-  },
-  "This_options_sets_up_how_to_handle_changes_from_the_sync_server_": {
-   "message": "Diese Option stellt ein, wie mit Scripts vom Server umgegangen wird: a) es werden Scripts vom Server lokal erstellt, b) wird ein Script vom Server gelöscht, wird es auch lokal entfernt"
-  },
   "Create_Exportable_Data": {
-    "message": "Erstelle TESLC Daten"
+    "message": "Erstelle TESLA Daten"
   },
   "Copy_exportable_data_to_clipboard_Ok_": {
-    "message": "Kopiere TESLC Daten in die Zwischenablage. Ok?"
+    "message": "Kopiere TESLA Daten in die Zwischenablage. Ok?"
   },
   "Allow_headers_to_be_modified_by_scripts": {
     "message": "Erlaube Modifikation der HTTP-Header durch Scripte"
   },
+  "Allow_overwrite_javascript_settings": {
+    "message": "Erlaube das Überschreiben der Javascript Einstellungen"
+  },
+  "Tampermonkey_can_not_work_when_javascript_is_disabled": {
+    "message": "Tampermonkey kann nicht arbeiten, wenn auf einer Seite kein Javascript aktiviert ist. Diese Einstellung erlaubt TM diese einstellunge zu überschreiben, falls Javascript z.B. durch einen Script-Blocker deaktiviert wurde. Hiervon sind nur direkt in der Seite enthaltenen Scripte betroffen. "
+  },
   "Yes": {
-    "message": "Yes"
+    "message": "Ja"
   },
   "No": {
-    "message": "No"
+    "message": "Nein"
   },
   "Auto": {
-    "message": "Auto"
+    "message": "Automatisch"
   },
   "__Please_choose__": {
     "message": "-- Bitte wähle eine Aktion aus --"
@@ -822,18 +816,6 @@
   },
   "Really_delete_the_selected_items_": {
     "message": "Sollen wirklich alle ausgewählten Elemente gelöscht werden?"
-  },
-  "Conflict_Handling": {
-    "message": "Konfliktbehandlung"
-  },
-  "Warning": {
-    "message": "Zeige eine Warnung"
-  },
-  "Use_local": {
-    "message": "Nutze die lokale Script-Version"
-  },
-  "Use_remote": {
-    "message": "Nutze die Script-Version vom Server"
   },
   "A_script_blocker_was_detected_": {
     "message": "Ein Script-Blocker wurde entdeckt!"
@@ -865,11 +847,26 @@
   "This_will_remove_all_scripts_and_reset_all_settings_Ok_": {
     "message": "Sollen wirklich alle Scripte und Einstellungen gelöscht werden?"
   },
+  "Chrome_Sync_Reset": {
+    "message": "Chrome Sync Reset"
+  },
+  "This_will_remove_all_stored_data_from_google_sync_Ok_": {
+    "message": "Sollen wirklich alle Daten von Google Sync gelöscht werden?"
+  },
   "Enable_autoSave": {
     "message": "Automatischen Speichern wenn der Editor den Fokus verliert"
   },
   "Enable_easySave": {
     "message": "Speichere ohne Bestätigungsdialog"
+  },
+  "Default": {
+    "message": "Standard"
+  },
+  "Add_TM_to_CSP": {
+    "message": "Füge Tampermonkey zur Content Security Policy (CSP) der geladenen Seiten hinzu"
+  },
+  "Tampermonkey_might_not_be_able_to_provide_access_to_the_unsafe_context_when_this_is_disabled": {
+    "message": "Tampermonkey kann ohne diese Option möglicherweise keinen Zugriff auf den unsicheren Kontext (unsafeWindow, globale Funktionen und Variables) bereitstellen"
   },
   "EOF": {
     "message": "EOF"

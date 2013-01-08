@@ -6,6 +6,8 @@
 
 // var EMV = false;
 
+Registry.registerRaw('emulation.js', function() {
+
 if (!window.console && !console) {
     console = {
         log: function(text) {
@@ -322,3 +324,5 @@ if (!TMwin.chromeEmu) Object.defineProperties(TMwin,
         },
      }
 );
+
+});

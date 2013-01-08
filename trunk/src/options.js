@@ -5,6 +5,7 @@
  */
 
 /* ########### include ############## */
+Registry.require('xmlhttprequest');
 Registry.require('pingpong');
 Registry.require('crcrc');
 Registry.require('curtain');
@@ -12,13 +13,14 @@ Registry.require('tabview');
 Registry.require('htmlutil');
 Registry.require('helper');
 Registry.require('convert');
+Registry.require('i18n');
+Registry.require('syncinfo');
 
 (function() {
 
 var V = false;
-
+ 
 if (!window.requestFileSystem) window.requestFileSystem = window.webkitRequestFileSystem;
-if (!window.BlobBuilder) window.BlobBuilder = window.WebKitBlobBuilder;
 
 var cr = Registry.get('crcrc').cr;
 var crc = Registry.get('crcrc').crc;
@@ -28,6 +30,8 @@ var HtmlUtil = Registry.get('htmlutil');
 var Helper = Registry.get('helper');
 var Converter = Registry.get('convert');
 var pp = Registry.get('pingpong');
+var I18N = Registry.get('i18n');
+var SyncInfo = Registry.get('syncinfo');
 
 var initialized = false;
 var allItems = null;
@@ -77,28 +81,28 @@ var itemsToMenu = function(items, tabv) {
             f1.appendChild(multi.actionBox);
 
             var t2 = crc('th', "settingsth", i.name, i.id, 'thead_name');
-            t2.textContent = chrome.i18n.getMessage('Name');
+            t2.textContent = I18N.getMessage('Name');
             var t24 = crc('th', "settingsth", i.name, i.id, 'thead_ver');
-            t24.textContent = chrome.i18n.getMessage('Version');
+            t24.textContent = I18N.getMessage('Version');
             var t25 = crc('th', "settingsth", i.name, i.id, 'thead_type');
-            t25.textContent = chrome.i18n.getMessage('Type');
+            t25.textContent = I18N.getMessage('Type');
             var t26 = crc('th', "settingsth", i.name, i.id, 'thead_sync');
             t26.textContent = "";
             var t3 = crc('th', "settingsth", i.name, i.id, 'thead_sites');
             t3.width = "25%";
-            t3.textContent = chrome.i18n.getMessage('Sites');
+            t3.textContent = I18N.getMessage('Sites');
             var t4 = crc('th', "settingsth", i.name, i.id, 'thead_features');
-            t4.textContent = chrome.i18n.getMessage('Features');
+            t4.textContent = I18N.getMessage('Features');
             var t5 = crc('th', "settingsth", i.name, i.id, 'thead_edit');
-            t5.textContent = chrome.i18n.getMessage('Homepage');
+            t5.textContent = I18N.getMessage('Homepage');
             var t6 = crc('th', "settingsth", i.name, i.id, 'thead_updated');
-            t6.textContent = chrome.i18n.getMessage('Last_Updated');
+            t6.textContent = I18N.getMessage('Last_Updated');
             var t7 = crc('th', "settingsth", i.name, i.id, 'thead_sort');
-            t7.textContent = chrome.i18n.getMessage('Sort');
+            t7.textContent = I18N.getMessage('Sort');
             var t8 = crc('th', "settingsth", i.name, i.id, 'thead_del');
-            t8.textContent = chrome.i18n.getMessage('Delete');
+            t8.textContent = I18N.getMessage('Delete');
             var later = function() {
-                if (gOptions.sync_enabled) t26.textContent = chrome.i18n.getMessage('Imported');
+                if (gOptions.sync_enabled) t26.textContent = I18N.getMessage('Imported');
             };
             doneListener.push(later);
 
@@ -253,7 +257,15 @@ var itemsToMenu = function(items, tabv) {
                 input.elem.setAttribute('style', (i.level > gOptions.configMode) ? Helper.staticVars.invisible : Helper.staticVars.visible);
             } else if (i.select) {
                 var oc = function() {
-                    setOption(this.key, this.value);
+                    var doit = true;
+                    if (this.warning) {
+                        doit = confirm(this.warning);
+                        if (!doit) this.value = this.oldvalue;
+                    }
+                    if (doit) {
+                        setOption(this.key, this.value, this.reload);
+                        if (this.reload) window.location.reload();
+                    }
                 };
 
                 if (section && section_need_save) {
@@ -329,7 +341,7 @@ var itemsToMenu = function(items, tabv) {
                     if (!b.inserted) {
                         b.type = 'button';
                         b.section = section;
-                        b.value = chrome.i18n.getMessage('Save');
+                        b.value = I18N.getMessage('Save');
 
                         var s = function() {
                             var elems = Array.prototype.slice.call(this.section.getElementsByTagName('textarea'));
@@ -446,7 +458,7 @@ var createUtilTab = function(tabv) {
     var i = {name: 'utils', id: 'utils'};
 
     var h = cr('div', i.name, i.id, 'tab_util_h');
-    h.textContent = chrome.i18n.getMessage('Utilities');
+    h.textContent = I18N.getMessage('Utilities');
     var util = cr('div', i.name, i.id, 'tab_util');
     var tab = tabv.appendTab(Helper.createUniqueId(i.name, i.id), h, util);
 
@@ -499,7 +511,7 @@ var createUtilTab = function(tabv) {
                         impo(src);
                     }
                 } else {
-                    Helper.alert(chrome.i18n.getMessage('Unable_to_parse_this_'));
+                    Helper.alert(I18N.getMessage('Unable_to_parse_this_'));
                 }
                 return;
             }
@@ -538,7 +550,7 @@ var createUtilTab = function(tabv) {
                 processScript(p[o]);
             }
             if (err) {
-                Helper.alert(chrome.i18n.getMessage("An_error_occured_during_import_"));
+                Helper.alert(I18N.getMessage("An_error_occured_during_import_"));
             }
         }
     };
@@ -611,9 +623,8 @@ var createUtilTab = function(tabv) {
                                                            };
 
                                                            // Create a new Blob and write it to log.txt.
-                                                           var bb = new BlobBuilder();
-                                                           bb.append(ta_value);
-                                                           fileWriter.write(bb.getBlob('text/plain'));
+                                                           var bb = new Blob([ta_value], {type: 'text/plain'});
+                                                           fileWriter.write(bb);
 
                                                        }, errorHandler);
 
@@ -625,17 +636,16 @@ var createUtilTab = function(tabv) {
 
     var expo_doc = function() {
         var ta_value = expo();
-        var bb = new BlobBuilder();
-        bb.append(ta_value);
-        saveAs(bb.getBlob("text/plain"), "tmScripts.txt");
+        var bb = new Blob([ta_value], {type: 'text/plain'});
+        saveAs(bb, "tmScripts.txt");
     };
 
     var expo_textarea = function() {
         ta.value = expo();
     };
 
-    var imp_ta = HtmlUtil.createButton(i.name, i.id + '_i_ta', chrome.i18n.getMessage('Import_from_Textarea'), impo_textarea);
-    var imp_ls = HtmlUtil.createButton(i.name, i.id + '_i_ls', chrome.i18n.getMessage('Import_from_SandboxFS'), impo_ls);
+    var imp_ta = HtmlUtil.createButton(i.name, i.id + '_i_ta', I18N.getMessage('Import_from_Textarea'), impo_textarea);
+    var imp_ls = HtmlUtil.createButton(i.name, i.id + '_i_ls', I18N.getMessage('Import_from_SandboxFS'), impo_ls);
     var imp_file = cr('input', i.name, i.id + '_i_file', 'file');
 
     var handleFileSelect = function (evt) {
@@ -664,9 +674,9 @@ var createUtilTab = function(tabv) {
         imp_file.addEventListener('change', handleFileSelect, false);
     }
 
-    var exp_ta = HtmlUtil.createButton(i.name, i.id + '_e_ta', chrome.i18n.getMessage('Export_to_Textarea'), expo_textarea);
-    var exp_doc = HtmlUtil.createButton(i.name, i.id + '_e_doc', chrome.i18n.getMessage('Export_to_file'), expo_doc);
-    var exp_ls = HtmlUtil.createButton(i.name, i.id + '_e_ls', chrome.i18n.getMessage('Export_to_SandboxFS'), expo_ls);
+    var exp_ta = HtmlUtil.createButton(i.name, i.id + '_e_ta', I18N.getMessage('Export_to_Textarea'), expo_textarea);
+    var exp_doc = HtmlUtil.createButton(i.name, i.id + '_e_doc', I18N.getMessage('Export_to_file'), expo_doc);
+    var exp_ls = HtmlUtil.createButton(i.name, i.id + '_e_ls', I18N.getMessage('Export_to_SandboxFS'), expo_ls);
 
     var ta = crc('textarea', 'importta', i.name, i.id, 'ta');
     var sta = crc('div', 'section', i.name, i.id, 'ta');
@@ -836,7 +846,7 @@ var createCludesEditor = function(name, type, other_name) {
     };
 
     var addRule = function(){
-        var rule = prompt(chrome.i18n.getMessage('Enter_the_new_rule'));
+        var rule = prompt(I18N.getMessage('Enter_the_new_rule'));
         if (rule) {
             var op = document.createElement('option');
             op.value = op.text = rule.trim();
@@ -848,7 +858,7 @@ var createCludesEditor = function(name, type, other_name) {
     var editRule = function(){
         var op = sel.options[sel.selectedIndex];
         if (!op) return;
-        var rule = prompt(chrome.i18n.getMessage('Enter_the_new_rule'), op.value);
+        var rule = prompt(I18N.getMessage('Enter_the_new_rule'), op.value);
         if (rule) {
             op.value = op.text = rule.trim();
             saveChanges();
@@ -885,23 +895,23 @@ var createCludesEditor = function(name, type, other_name) {
     if (other_name) {
         //this is the original (in/ex)clude list; items can be added to the user (ex/in)clude list
         var btn = cr('button', i.name, id, 'btn1');
-        btn.innerHTML = chrome.i18n.getMessage('Add_as_0clude0', other_name);
+        btn.innerHTML = I18N.getMessage('Add_as_0clude0', other_name);
         btn.addEventListener('click', addToOther, false);
         s.appendChild(btn);
     } else {
         //this is a user *clude; append add, edit an remove buttons for this list
         var btn_add = cr('button', i.name, id, 'btn2');
-        btn_add.innerHTML = chrome.i18n.getMessage('Add') + '...';
+        btn_add.innerHTML = I18N.getMessage('Add') + '...';
         btn_add.addEventListener('click', addRule, false);
         s.appendChild(btn_add);
 
         var btn_edit = cr('button', i.name, id, 'btn3');
-        btn_edit.innerHTML = chrome.i18n.getMessage('Edit') + '...';
+        btn_edit.innerHTML = I18N.getMessage('Edit') + '...';
         btn_edit.addEventListener('click', editRule, false);
         s.appendChild(btn_edit);
 
         var btn_del = cr('button', i.name, id, 'btn4');
-        btn_del.innerHTML = chrome.i18n.getMessage('Remove');
+        btn_del.innerHTML = I18N.getMessage('Remove');
         btn_del.addEventListener('click', delRule, false);
         s.appendChild(btn_del);
     }
@@ -999,6 +1009,7 @@ var createScriptDetailsTabView = function(tab, i, tr, parent, closeTab) {
         "td_content" : 'td_content td_content_alt',
         "td_tabs" : 'td_tabs td_tabs_alt',
         "tv_tabs_align" : 'tv_tabs_align tv_tabs_align_alt',
+        "tv_tabs_fill" : 'tv_tabs_fill tv_tabs_fill_alt',
         "tv_tabs_table" : 'tv_tabs_table tv_tabs_table_alt',
         "tv_contents" : 'tv_contents tv_contents_alt',
         "tv_tab_selected" : 'tv_tab tv_selected tv_tab_alt tv_selected_alt',
@@ -1020,19 +1031,21 @@ var createScriptDetailsTabView = function(tab, i, tr, parent, closeTab) {
 
         if (e.type != "keydown") return;
         if (e.keyCode == 27 /* ESC */) {
-            if (tab.isSelected()) {
-                closeTab();
+            if (gOptions.editor_keyMap == 'windows') {
+                if (tab.isSelected()) {
+                    closeTab();
+                }
+                cancel = true;
             }
-            cancel = true;
         }
 
         if (cancel) e.stopPropagation();
     };
 
-    var beforeClose = function() {
+    var beforeClose = function(force) {
         var leafmealone = false;
-        if (sst.beforeClose) leafmealone |= sst.beforeClose();
-        if (set.beforeClose) leafmealone |= set.beforeClose();
+        if (sst.beforeClose) leafmealone |= sst.beforeClose(force);
+        if (set.beforeClose) leafmealone |= set.beforeClose(force);
         return leafmealone;
     };
 
@@ -1042,12 +1055,12 @@ var createScriptDetailsTabView = function(tab, i, tr, parent, closeTab) {
         window.addEventListener('keydown', onKey, false);
     };
 
-    var onClose = function() {
+    var onClose = function(force) {
         if (sst.onClose) {
-            if (sst.onClose()) return true;
+            if (sst.onClose(force)) return true;
         }
         if (set.onClose) {
-            if (set.onClose()) return true;
+            if (set.onClose(force)) return true;
         }
         window.removeEventListener('keydown', onKey, false);
     };
@@ -1073,57 +1086,57 @@ var createScriptSettingsTab = function(i, tabd) {
     var tabh = cr('div', i.name, i.id, 'script_setting_h');
     var old = tabh.inserted;
 
-    tabh.textContent = chrome.i18n.getMessage('Settings');
+    tabh.textContent = I18N.getMessage('Settings');
     var tabc = cr('td', i.name, i.id, 'script_settings_c');
 
     var co = function() {
         if (this.type == 'checkbox' || this.type == 'button') {
             modifyScriptOption(this.name, this.key, !this.oldvalue);
-        } else if (this.type == 'text' || this.type == 'select-one') {
+        } else if (this.type == 'text' || this.type == 'textarea' || this.type == 'select-one') {
             modifyScriptOption(this.name, this.key, this.value);
         }
     };
 
-    var i_pos = HtmlUtil.createPosition(chrome.i18n.getMessage('Position_') + ' ', { id: 'position', name: i.name, pos: i.position, posof: i.positionof }, co);
+    var i_pos = HtmlUtil.createPosition(I18N.getMessage('Position_') + ': ', { id: 'position', name: i.name, pos: i.position, posof: i.positionof }, co);
 
-    var i_ra = HtmlUtil.createScriptStartDropDown(chrome.i18n.getMessage('Run_at'),
+    var i_ra = HtmlUtil.createScriptStartDropDown(I18N.getMessage('Run_at') + ': ',
                               { id: 'run_at', name: i.name, value: i.run_at },
                               co);
 
-    var e_oi = createCludesEditor(chrome.i18n.getMessage('Original_includes'),
+    var e_oi = createCludesEditor(I18N.getMessage('Original_includes'),
                                   { id: 'includes', item: i },
-                                  chrome.i18n.getMessage('User_excludes'));
-    var e_om = createCludesEditor(chrome.i18n.getMessage('Original_matches'),
+                                  I18N.getMessage('User_excludes'));
+    var e_om = createCludesEditor(I18N.getMessage('Original_matches'),
                                   { id: 'matches', item: i },
-                                  chrome.i18n.getMessage('User_excludes'));
-    var e_oe = createCludesEditor(chrome.i18n.getMessage('Original_excludes'),
+                                  I18N.getMessage('User_excludes'));
+    var e_oe = createCludesEditor(I18N.getMessage('Original_excludes'),
                                   { id: 'excludes', item: i },
-                                  chrome.i18n.getMessage('User_includes'));
+                                  I18N.getMessage('User_includes'));
     var clear_cludes = crc('div', 'clear', i.name, i.id, 'clear');
 
-    var e_ui = createCludesEditor(chrome.i18n.getMessage('User_includes'),
+    var e_ui = createCludesEditor(I18N.getMessage('User_includes'),
                                   { id: 'includes', item: i });
-    var e_um = createCludesEditor(chrome.i18n.getMessage('User_matches'),
+    var e_um = createCludesEditor(I18N.getMessage('User_matches'),
                                   { id: 'matches', item: i });
-    var e_ue = createCludesEditor(chrome.i18n.getMessage('User_excludes'),
+    var e_ue = createCludesEditor(I18N.getMessage('User_excludes'),
                                   { id: 'excludes', item: i });
 
-    var i_re = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Apply_compatibility_options_to_required_script_too'),
-                              { id: 'compat_for_requires', name: i.name, enabled: i.compat_for_requires },
+    var i_re = HtmlUtil.createCheckbox(I18N.getMessage('Apply_compatibility_options_to_required_script_too'),
+                              { id: 'compatopts_for_requires', name: i.name, enabled: i.compatopts_for_requires },
                               co);
-    var i_md = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Convert_CDATA_sections_into_a_chrome_compatible_format'),
+    var i_md = HtmlUtil.createCheckbox(I18N.getMessage('Convert_CDATA_sections_into_a_chrome_compatible_format'),
                               { id: 'compat_metadata', name: i.name, enabled: i.compat_metadata },
                               co);
-    var i_fe = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Replace_for_each_statements'),
+    var i_fe = HtmlUtil.createCheckbox(I18N.getMessage('Replace_for_each_statements'),
                               { id: 'compat_foreach', name: i.name, enabled: i.compat_foreach },
                               co);
-    var i_vi = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Fix_for_var_in_statements'),
+    var i_vi = HtmlUtil.createCheckbox(I18N.getMessage('Fix_for_var_in_statements'),
                               { id: 'compat_forvarin', name: i.name, enabled: i.compat_forvarin },
                               co);
-    var i_al = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Convert_Array_Assignements'),
+    var i_al = HtmlUtil.createCheckbox(I18N.getMessage('Convert_Array_Assignements'),
                               { id: 'compat_arrayleft', name: i.name, enabled: i.compat_arrayleft },
                               co);
-    var i_ts = HtmlUtil.createCheckbox(chrome.i18n.getMessage('Add_toSource_function_to_Object_Prototype'),
+    var i_ts = HtmlUtil.createCheckbox(I18N.getMessage('Add_toSource_function_to_Object_Prototype'),
                               { id: 'compat_prototypes', name: i.name, enabled: i.compat_prototypes },
                               co);
 
@@ -1133,7 +1146,7 @@ var createScriptSettingsTab = function(i, tabd) {
     var section_opt_head = crc('div', 'section_head', i.name, i.id, 'head_ta_opt');
     var section_opt_content = crc('div', 'section_content', i.name, i.id, 'content_ta_opt');
 
-    section_opt_head.textContent = chrome.i18n.getMessage('Settings');
+    section_opt_head.textContent = I18N.getMessage('Settings');
     section_opt.appendChild(section_opt_head);
     section_opt.appendChild(section_opt_content);
 
@@ -1141,7 +1154,7 @@ var createScriptSettingsTab = function(i, tabd) {
     var section_cludes_head = crc('div', 'section_head', i.name, i.id, 'head_ta_cludes');
     var section_cludes_content = crc('div', 'section_content', i.name, i.id, 'content_ta_cludes');
 
-    section_cludes_head.textContent = chrome.i18n.getMessage('Includes_Excludes');
+    section_cludes_head.textContent = I18N.getMessage('Includes_Excludes');
     section_cludes.appendChild(section_cludes_head);
     section_cludes.appendChild(section_cludes_content);
 
@@ -1149,7 +1162,7 @@ var createScriptSettingsTab = function(i, tabd) {
     var section_compat_head = crc('div', 'section_head', i.name, i.id, 'head_ta_compat');
     var section_compat_content = crc('div', 'section_content', i.name, i.id, 'content_ta_compat');
 
-    section_compat_head.textContent = chrome.i18n.getMessage('GM_compat_options_');
+    section_compat_head.textContent = I18N.getMessage('GM_compat_options_');
     section_compat.appendChild(section_compat_head);
     section_compat.appendChild(section_compat_content);
 
@@ -1167,7 +1180,7 @@ var createScriptSettingsTab = function(i, tabd) {
     section_cludes_content.appendChild(e_ue.elem);
 
     var h = cr('span', i.name, i.id);
-    h.textContent = chrome.i18n.getMessage('Settings');
+    h.textContent = I18N.getMessage('Settings');
     var content = cr('div', i.name, i.id, 'tab_content_settings');
     content.appendChild(section_opt);
     content.appendChild(section_cludes);
@@ -1179,11 +1192,32 @@ var createScriptSettingsTab = function(i, tabd) {
         if (i.awareOfChrome) {
             for (var k in i_compats) {
                 i_compats[k].input.setAttribute("disabled", "disabled");
-                i_compats[k].elem.setAttribute("title", chrome.i18n.getMessage('This_script_runs_in_Chrome_mode'));
+                i_compats[k].elem.setAttribute("title", I18N.getMessage('This_script_runs_in_Chrome_mode'));
             }
         }
         content.appendChild(section_compat);
     }
+
+    var t = { name: i.name, id: 'comment', value: i.options.comment };
+    var i_comment = HtmlUtil.createTextarea(null, t);
+    i_comment.elem.setAttribute('class', 'script_setting_wrapper');
+    var save_comment = function() {
+        co.apply(i_comment.textarea, []);
+    };
+    var i_comment_save = cr('div', i.name, i.id, 'save');
+    var i_comment_save_button = HtmlUtil.createButton(i.name, i.id, I18N.getMessage('Save'), save_comment);
+    i_comment_save.appendChild(i_comment_save_button);
+    var section_comment = crc('div', 'section', i.name, i.id, 'ta_comment');
+    var section_comment_head = crc('div', 'section_head', i.name, i.id, 'head_ta_comment');
+    var section_comment_content = crc('div', 'section_content', i.name, i.id, 'content_ta_comment');
+
+    section_comment_head.textContent = I18N.getMessage('Comment');
+    section_comment.appendChild(section_comment_head);
+    section_comment.appendChild(section_comment_content);
+    section_comment_content.appendChild(i_comment.elem);
+    section_comment_content.appendChild(i_comment_save);
+
+    content.appendChild(section_comment);
 
     tabc.appendChild(content);
 
@@ -1211,14 +1245,14 @@ var createScriptSettingsTab = function(i, tabd) {
     return e;
 };
 
-var createScriptEditorTab = function(i, tabd, closeEditor) {
+var createScriptEditorTab = function(i, tabd, close_cb) {
 
     var saveEm = null;
 
     var tabh = cr('div', i.name, i.id, 'script_editor_h');
     var old = tabh.inserted;
 
-    tabh.textContent = chrome.i18n.getMessage('Editor');
+    tabh.textContent = I18N.getMessage('Editor');
     var tabc = cr('td', i.name, i.id, 'script_editor_c');
 
     var container = crc('tr', 'editor_container p100100', i.name, i.id, 'container');
@@ -1229,13 +1263,17 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
     container_o.appendChild(container);
     tabc.appendChild(container_o);
 
-    var saveEditor = function() {
+    var saveEditor = function(cm, force) {
         if (saveEm) {
-            if (saveEm()) {
+            if (saveEm(force)) {
                 savedScript[i.id] = true;
                 if (container.editor && gOptions.editor_enabled) container.editor.mirror.clearHistory();
             }
         }
+    };
+
+    var closeEditor = function(cm, force) {
+        if (close_cb) close_cb(force);
     };
 
     var fullReset = function() {
@@ -1248,11 +1286,15 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
         var ou = i_uu.input ? i_uu.input.oldvalue : "";
         var nu = i_uu.input ? i_uu.input.value : "";
 
-        saveScript(i.name, null, ou, nu, true, true, cb);
+        var options = { old_url: ou,
+                        new_url: nu,
+                        clean: true,
+                        reload: true };
+        saveScript(i.name, null, options, cb);
     };
 
     var resetScript = function() {
-        var c = confirm(chrome.i18n.getMessage("Really_reset_all_changes_"));
+        var c = confirm(I18N.getMessage("Really_reset_all_changes_"));
         if (c) {
             if (container.editor && gOptions.editor_enabled) {
                 // set value clears history too
@@ -1263,12 +1305,22 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
         }
     };
 
-    var i_sc_save =   HtmlUtil.createImageButton(i.name, 'save',         chrome.i18n.getMessage('Save'),         chrome.extension.getURL('images/filesave.png'),      saveEditor);
-    var i_sc_cancel = HtmlUtil.createImageButton(i.name, 'cancel',       chrome.i18n.getMessage('Editor_reset'), chrome.extension.getURL('images/editor_cancel.png'), resetScript);
-    var i_sc_reset =  HtmlUtil.createImageButton(i.name, 'reset',        chrome.i18n.getMessage('Full_reset'),   chrome.extension.getURL('images/script_cancel.png'), fullReset);
-    var i_sc_close =  HtmlUtil.createImageButton(i.name, 'close_script', chrome.i18n.getMessage('Close'),        chrome.extension.getURL('images/exit.png'),          closeEditor);
+    var lintScript = function() {
+        Please.wait();
+        var run = function() {
+            myLINT.run(container.editor);
+            Please.hide();
+        };
+        window.setTimeout(run, 1);
+    };
 
-    var i_uu = HtmlUtil.createInput(chrome.i18n.getMessage('Update_URL_'),
+    var i_sc_save =   HtmlUtil.createImageButton(i.name, 'save',         I18N.getMessage('Save'),         chrome.extension.getURL('images/filesave.png'),      saveEditor);
+    var i_sc_cancel = HtmlUtil.createImageButton(i.name, 'cancel',       I18N.getMessage('Editor_reset'), chrome.extension.getURL('images/editor_cancel.png'), resetScript);
+    var i_sc_reset =  HtmlUtil.createImageButton(i.name, 'reset',        I18N.getMessage('Full_reset'),   chrome.extension.getURL('images/script_cancel.png'), fullReset);
+    var i_sc_close =  HtmlUtil.createImageButton(i.name, 'close_script', I18N.getMessage('Close'),        chrome.extension.getURL('images/exit.png'),          closeEditor);
+    var i_sc_lint =   HtmlUtil.createImageButton(i.name, 'lint_script',  I18N.getMessage('Run_syntax_check'), chrome.extension.getURL('images/check.png'),          lintScript);
+
+    var i_uu = HtmlUtil.createInput(I18N.getMessage('Update_URL_'),
                            { id: 'file_url', name: i.name, value: i.file_url });
     i_uu.input.setAttribute("class", "updateurl_input");
     i_uu.elem.setAttribute("class", "updateurl");
@@ -1285,7 +1337,7 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
             return [];
         } else if (!i.nnew) {
             // huh! script item is recreated but editor is open!
-            Helper.alert(chrome.i18n.getMessage('Script_modified_in_background'));
+            Helper.alert(I18N.getMessage('Script_modified_in_background'));
             return [];
         }
     }
@@ -1308,11 +1360,10 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
     } */
 
     if (!i.system) {
-        saveEm = function(value) {
+        saveEm = function(force) {
             var doIt = true;
-            var e = document.getElementById('input_Show_fixed_source_showFixedSrc_cb');
-            if (e && e.checked && !i.user_agent) {
-                doIt = confirm(chrome.i18n.getMessage("Do_you_really_want_to_store_fixed_code_", chrome.i18n.getMessage('Show_fixed_source')));
+            if (gOptions.showFixedSrc && !i.user_agent) {
+                doIt = confirm(I18N.getMessage("Do_you_really_want_to_store_fixed_code_", I18N.getMessage('Show_fixed_source')));
             }
             var value = container.editor && gOptions.editor_enabled ? container.editor.mirror.getValue() : input.value;
             if (doIt) {
@@ -1327,7 +1378,12 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
                 var ou = i_uu.input ? i_uu.input.oldvalue : "";
                 var nu = i_uu.input ? i_uu.input.value : "";
 
-                saveScript(i.name, value, ou, nu, false, true, cb);
+                var options = { old_url: ou,
+                                new_url: nu,
+                                clean: false,
+                                reload: true,
+                                force: force };
+                saveScript(i.name, value, options, cb);
             }
             return doIt;
         };
@@ -1341,6 +1397,10 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
     }
     menu.appendChild(i_sc_close);
 
+    if (!i.system && gOptions.editor_enabled) {
+        menu.appendChild(i_sc_lint);
+    }
+
     var tab = tabd.appendTab('script_editor_tab' + Helper.createUniqueId(i.name, i.id), tabh, tabc);
 
     if (old) {
@@ -1351,36 +1411,6 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
         if (container.editor) {
             container.editor.mirror.refresh();
         }
-    };
-
-    var onEditorKey = function(editor, e) {
-        var cancel = false;
-
-        if (e.type != "keydown") return;
-        if (e.ctrlKey && e.keyCode == 83 /* CTRL-s */) {
-            saveEditor();
-            cancel = true;
-        } else if (e.ctrlKey && e.keyCode == 81 /* CTRL-q */) {
-            closeEditor();
-            cancel = true;
-        } else if (e.ctrlKey && e.keyCode == 70 /* CTRL-f */) {
-            container.editor.searchText = container.editor.search();
-            cancel = true;
-        } else if (e.keyCode == 114 && e.keyIdentifier == "F3" /* F3 */) {
-            container.editor.searchText = container.editor.search(container.editor.searchText);
-            cancel = true;
-        } else if (e.ctrlKey && e.keyCode == 82 /* CTRL-r */) {
-            container.editor.replace();
-            cancel = true;
-        } else if (e.ctrlKey && e.keyCode == 71 /* CTRL-g */) {
-            container.editor.jump();
-            cancel = true;
-        } else if (e.keyCode == 27 /* ESC */) {
-            closeEditor();
-            cancel = true;
-        }
-
-        if (cancel) e.stop();
     };
 
     var onShow = function() {
@@ -1400,9 +1430,16 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
                         enterMode: gOptions.editor_enterMode,
                         electricChars: gOptions.editor_electricChars.toString() == 'true',
                         lineNumbers: gOptions.editor_lineNumbers.toString() == 'true',
-                        onKeyEvent: onEditorKey,
-                        // saveFunction: saveEditor,
-                        matchBrackets: true});
+                        extraKeys: {"Enter": "newlineAndIndentContinueComment"},
+                        keyMap: gOptions.editor_keyMap,
+                        gutter: true,
+                        matchBrackets: true },
+                        {
+                            "save" : saveEditor,
+                            "close" : closeEditor,
+                            "find" : function(cm) { container.editor.searchText = container.editor.search(); },
+                            "findNext" : function(cm) { container.editor.searchText = container.editor.search(container.editor.searchText); },
+                        });
                 } else {
                     textarea.value = i.code;
                 }
@@ -1413,7 +1450,7 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
     var e = {
         onSelect: onSelect,
         onShow: onShow,
-        onClose: function() {
+        onClose: function(force) {
             var doIt = function () {
                 container.editor = null;
             };
@@ -1428,8 +1465,8 @@ var createScriptEditorTab = function(i, tabd, closeEditor) {
             } else {
                 uc = (input.value != i.code);
             }
-            if (uc) {
-                var c = confirm(chrome.i18n.getMessage('There_are_unsaved_changed_'));
+            if (uc && !force) {
+                var c = confirm(I18N.getMessage('There_are_unsaved_changed_'));
                 if (c) doIt();
                 return !c;
 
@@ -1505,12 +1542,12 @@ var createScriptItem = function(i, tr, tabv) {
         window.setTimeout(run, 1);
     };
 
-    var doClose = function() {
+    var doClose = function(force) {
         var recreate = true;
         if (scriptdetails.beforeClose) {
-            recreate = !scriptdetails.beforeClose();
+            recreate = !scriptdetails.beforeClose(force);
         }
-        if (scriptdetails.onClose && scriptdetails.onClose()) return;
+        if (scriptdetails.onClose && scriptdetails.onClose(force)) return;
 
         closeAndRemoveTab();
         removeScriptItem();
@@ -1530,7 +1567,7 @@ var createScriptItem = function(i, tr, tabv) {
             tabh.appendChild(HtmlUtil.createImage(i.image, i.name, i.id, 'new_script_head'));
         } else {
             tabh = crc('div', '', i.name, i.id, 'details_h');
-            tabh.textContent = chrome.i18n.getMessage('Edit') + ' - ' + (i.name.length > 25 ? i.name.substr(0,25) + '...' : i.name);
+            tabh.textContent = I18N.getMessage('Edit') + ' - ' + (i.name.length > 25 ? i.name.substr(0,25) + '...' : i.name);
         }
 
         var tabc = cr('td', i.name, i.id, 'details_c');
@@ -1611,7 +1648,7 @@ var createScriptItem = function(i, tr, tabv) {
                 last_updated.textContent = t;
                 if (up) {
                     last_updated.style.color = 'green';
-                    last_updated.title = chrome.i18n.getMessage('There_is_an_update_for_0name0_avaiable_', i.name);
+                    last_updated.title = I18N.getMessage('There_is_an_update_for_0name0_avaiable_', i.name);
                     // close and remove tab
                     closeAndRemoveTab();
                     removeScriptItem();
@@ -1619,7 +1656,7 @@ var createScriptItem = function(i, tr, tabv) {
                     modifyScriptOption(null, false);
                 } else {
                     last_updated.style.color = 'red';
-                    last_updated.title = chrome.i18n.getMessage('No_update_found__sry_');
+                    last_updated.title = I18N.getMessage('No_update_found__sry_');
                 }
             };
 
@@ -1629,7 +1666,7 @@ var createScriptItem = function(i, tr, tabv) {
         if (!sname_name.inserted) {
             last_updated.addEventListener('click', function()  { gCb(i.id, 'scriptUpdate'); });
             last_updated.style.cursor = "pointer";
-            last_updated.title = chrome.i18n.getMessage('Check_for_Updates');
+            last_updated.title = I18N.getMessage('Check_for_Updates');
         }
 
         gCallbacks[i.id]['scriptUpdate'] = scriptUpdate;
@@ -1654,7 +1691,15 @@ var createScriptItem = function(i, tr, tabv) {
                 lSync = '';
             } else {
                 if (i.sync && i.sync.imported) {
-                    lSync = '<img src="images/update.png" class="icon16" />';
+                    if (i.sync.imported === true ||
+                        i.sync.imported == SyncInfo.types.ePASTEBIN) {
+                        
+                        lSync = '<img src="http://pastebin.com/favicon.ico" class="icon16" title="pastebin.com"/>';
+                    } else if (i.sync.imported == SyncInfo.types.eCHROMESYNC) {
+                        lSync = '<img src="http://www.google.com/images/icons/product/chrome-16.png" class="icon16" title="Google Sync"/>';
+                    } else {
+                        lSync = '<img src="images/update.png" class="icon16" />';
+                    } 
                 } else {
                     lSync = '<img src="images/no.png" class="icon16" />';
                 }
@@ -1686,15 +1731,16 @@ var createScriptItem = function(i, tr, tabv) {
 
     gCallbacks[i.id]['deleteScript'] = function(e, dontask) {
         if (i.nativeScript) {
-            var c = dontask || confirm(chrome.i18n.getMessage('Really_delete_this_extension__'));
+            var c = dontask || confirm(I18N.getMessage('Really_delete_this_extension__'));
             if (c == true) {
                 modifyNativeScriptOption(i.name, 'installed', !dontask);
                 tr.parentNode.removeChild(tr);
             }
         } else {
-            var c = dontask || confirm(chrome.i18n.getMessage('Really_delete_this_script__'));
+            var c = dontask || confirm(I18N.getMessage('Really_delete_this_script__'));
             if (c == true) {
-                saveScript(i.name, null, null, null, null, !dontask);
+                var options = { reload: !dontask };
+                saveScript(i.name, null, options);
                 tr.parentNode.removeChild(tr);
             }
         }
@@ -1704,7 +1750,7 @@ var createScriptItem = function(i, tr, tabv) {
                                  i.nativeScript ? i.id : i.name,
                                  "delete",
                                  "delete",
-                                 chrome.i18n.getMessage("Delete"),
+                                 I18N.getMessage("Delete"),
                                  function()  { gCb(i.id, 'deleteScript'); });
 
 
@@ -1725,7 +1771,7 @@ var createScriptItem = function(i, tr, tabv) {
                                          i.nativeScript ? i.id : i.name,
                                          "enabled",
                                          "enabled",
-                                         i.enabled ? chrome.i18n.getMessage('Enabled') : chrome.i18n.getMessage('Disabled'),
+                                         i.enabled ? I18N.getMessage('Enabled') : I18N.getMessage('Disabled'),
                                          en,
                                          i.nativeScript ? '' : pt);
 
@@ -1801,21 +1847,21 @@ var createTypeImageFromScript = function(i) {
                             i.name,
                             i.id,
                             "user_agent",
-                            chrome.i18n.getMessage("This_only_changes_the_user_agent_string"));
+                            I18N.getMessage("This_only_changes_the_user_agent_string"));
         span.appendChild(m);
     } else if (i.nativeScript) {
         var m = HtmlUtil.createImage(i.icon,
                             i.name,
                             i.id,
                             "chrome_ext",
-                            chrome.i18n.getMessage("This_is_a_chrome_extension"));
+                            I18N.getMessage("This_is_a_chrome_extension"));
         span.appendChild(m);
     } else if (i.userscript) {
         var m = HtmlUtil.createImage('images/txt.png',
                                      i.name,
                                      i.id,
                                      "user_agent",
-                                     chrome.i18n.getMessage("This_is_a_userscript"));
+                                     I18N.getMessage("This_is_a_userscript"));
         span.appendChild(m);
     }
 
@@ -1832,7 +1878,7 @@ var createFeatureImagesFromScript = function(i) {
                             i.name,
                             i.id,
                             "lock",
-                            chrome.i18n.getMessage("This_is_a_system_script"));
+                            I18N.getMessage("This_is_a_system_script"));
         span.appendChild(m);
     }
 
@@ -1841,7 +1887,7 @@ var createFeatureImagesFromScript = function(i) {
                             i.name,
                             i.id,
                             "chrome_mode",
-                            chrome.i18n.getMessage("This_script_runs_in_Chrome_mode"));
+                            I18N.getMessage("This_script_runs_in_Chrome_mode"));
         span.appendChild(m);
     }
 
@@ -1859,7 +1905,7 @@ var createFeatureImagesFromScript = function(i) {
                                              i.name,
                                              i.id,
                                              "encrypt",
-                                             chrome.i18n.getMessage("This_script_has_access_to_https_pages"));
+                                             I18N.getMessage("This_script_has_access_to_https_pages"));
                 span.appendChild(m);
                 https_found = true;
                 break;
@@ -1875,7 +1921,7 @@ var createFeatureImagesFromScript = function(i) {
                             i.name,
                             i.id,
                             "web",
-                            chrome.i18n.getMessage("This_script_has_full_web_access"));
+                            I18N.getMessage("This_script_has_full_web_access"));
         span.appendChild(m);
     }
     if (i.code.search('GM_setValue') != -1) {
@@ -1883,7 +1929,7 @@ var createFeatureImagesFromScript = function(i) {
                             i.name,
                             i.id,
                             "db",
-                            chrome.i18n.getMessage("This_script_stores_data"));
+                            I18N.getMessage("This_script_stores_data"));
         span.appendChild(m);
     }
     if (i.code.search('unsafeWindow') != -1) {
@@ -1891,17 +1937,16 @@ var createFeatureImagesFromScript = function(i) {
                             i.name,
                             i.id,
                             "resource",
-                            chrome.i18n.getMessage("This_script_has_access_to_webpage_scripts"));
+                            I18N.getMessage("This_script_has_access_to_webpage_scripts"));
         span.appendChild(m);
     }
     for (var k in i.options) {
-        if (k != 'compat_for_requires' &&
-            k.search('compat') != -1 && i.options[k]) {
+        if (k.search('compat_') != -1 && i.options[k]) {
             var m = HtmlUtil.createImage(chrome.extension.getURL('images/critical.png'),
                                 i.name,
                                 i.id,
                                 "crit",
-                                chrome.i18n.getMessage("One_or_more_compatibility_options_are_set"));
+                                I18N.getMessage("One_or_more_compatibility_options_are_set"));
             span.appendChild(m);
             break;
         }
@@ -2168,11 +2213,11 @@ var createMultiSelectActions = function(i) {
     var value = 0;
 
     var select = [
-        { name: chrome.i18n.getMessage('__Please_choose__'), value: 0 },
-        { name: chrome.i18n.getMessage('Enable'), value: 1 },
-        { name: chrome.i18n.getMessage('Disable'), value: 2 },
-        { name: chrome.i18n.getMessage('Trigger_Update'), value: 5 },
-        { name: chrome.i18n.getMessage('Remove'), value: 6 } ];
+        { name: I18N.getMessage('__Please_choose__'), value: 0 },
+        { name: I18N.getMessage('Enable'), value: 1 },
+        { name: I18N.getMessage('Disable'), value: 2 },
+        { name: I18N.getMessage('Trigger_Update'), value: 5 },
+        { name: I18N.getMessage('Remove'), value: 6 } ];
 
     var e = { value : 0, id: "sms", name: "select" };
     var enable_button = function() {
@@ -2183,7 +2228,7 @@ var createMultiSelectActions = function(i) {
         }
         value = this.value;
     };
-    var dd = HtmlUtil.createDropDown(chrome.i18n.getMessage('Apply_this_action_to_the_selected_scripts'), e, select, enable_button);
+    var dd = HtmlUtil.createDropDown(I18N.getMessage('Apply_this_action_to_the_selected_scripts'), e, select, enable_button);
     dd.elem.setAttribute("class", "float");
 
     var run = function() {
@@ -2193,7 +2238,7 @@ var createMultiSelectActions = function(i) {
         }
 
         if (value == 6) {
-            if (!confirm(chrome.i18n.getMessage("Really_delete_the_selected_items_"))) {
+            if (!confirm(I18N.getMessage("Really_delete_the_selected_items_"))) {
                 return;
             }
         }
@@ -2225,13 +2270,13 @@ var createMultiSelectActions = function(i) {
         }
 
         if (reload) {
-            Please.wait();
+            Please.wait(I18N.getMessage("Please_wait___"));
             window.setTimeout(function() {
                                   modifyScriptOption(null, false, null, true);
                               }, reloadt);
         }
     };
-    var bu =  HtmlUtil.createButton('MultiSelectButton', 'button', chrome.i18n.getMessage('Start'), run);
+    var bu =  HtmlUtil.createButton('MultiSelectButton', 'button', I18N.getMessage('Start'), run);
     bu.setAttribute('disabled' , 'true');
     bu.setAttribute('style' , 'height: 19px; top: 2px; position: relative; padding-top: -1px;');
 
@@ -2243,6 +2288,209 @@ var createMultiSelectActions = function(i) {
 };
 initMultiSelect();
 
+/* ########### extension messaging  ############## */
+var myLINT = {
+    options: { maxerr: 999,
+               newcap: true,
+               es5: true,
+               sloppy: true,
+               browser: true,
+               white: true,
+               plusplus: true,
+               nomen: true,
+               'continue': true,
+               todo: true,
+               eqeq: true,
+               passfail: false,
+               unparam: true,
+               devel: true },
+
+    JSLINT_GLOBALS : ['CDATA',
+                      'XPathResult',
+                      'xpath',
+                      'uneval',
+                      'escape',
+                      'unescape',
+                      'console',
+                      'JSON',
+                      'TM_info',
+                      'GM_info',
+                      'TM_addStyle',
+                      'TM_deleteValue',
+                      'TM_listValues',
+                      'TM_getValue',
+                      'TM_log',
+                      'TM_registerMenuCommand',
+                      'TM_openInTab',
+                      'TM_setValue',
+                      'TM_addValueChangeListener',
+                      'TM_removeValueChangeListener',
+                      'TM_xmlhttpRequest',
+                      'TM_getTab',
+                      'TM_saveTab',
+                      'TM_getTabs',
+                      'TM_installScript',
+                      'TM_runNative',
+                      'TM_execUnsafe',
+                      'TM_notification',
+                      'TM_getResourceText',
+                      'TM_getResourceURL',
+                      'GM_addStyle',
+                      'GM_deleteValue',
+                      'GM_listValues',
+                      'GM_getValue',
+                      'GM_log',
+                      'GM_registerMenuCommand',
+                      'GM_openInTab',
+                      'GM_setValue',
+                      'GM_addValueChangeListener',
+                      'GM_removeValueChangeListener',
+                      'GM_xmlhttpRequest',
+                      'GM_getTab',
+                      'GM_saveTab',
+                      'GM_getTabs',
+                      'GM_installScript',
+                      'GM_runNative',
+                      'GM_setClipboard',
+                      'GM_execUnsafe',
+                      'GM_notification',
+                      'GM_getResourceText',
+                      'GM_getResourceURL' ],
+
+    cleanGutters : function(mirror, gutters) {
+        for (var i in gutters) {
+            if (!gutters.hasOwnProperty(i)) continue;
+            mirror.clearMarker(Number(i) - 1);
+            if (gutters[i].marks) {
+                for (var k=0; k<gutters[i].marks.length; k++) {
+                    gutters[i].marks[k].clear();
+                }
+            }
+        }
+    },
+
+    setGutters : function(mirror, gutters) {
+        for (var i in gutters) {
+            if (!gutters.hasOwnProperty(i)) continue;
+            var os = gutters[i];
+            var level = 0;
+            var img = null;
+            var text = [];
+            os.marks = [];
+            
+            for (var k=0; k<os.length;k++) {
+                var t = '';
+                var o = os[k];
+
+                if (o.stop) {
+                    img = 'no';
+                    level = 3;
+                } else if (o.warn) {
+                    if (level < 1) {
+                        img = 'critical';
+                        level = 1;
+                    }
+                    t = I18N.getMessage("Warning") + ": ";
+                } else if (o.info) {
+                    if (level == 0) {
+                        img = 'info';
+                    }
+                    t = I18N.getMessage("Info") + ": ";
+                } else {
+                    if (level < 2) {
+                        img = 'error';
+                        level = 2;
+                        t = I18N.getMessage("Error") + ": ";
+                    }
+                }
+
+                text.push(((os.length > 1) ? t : '' ) + o.text.replace(/\"/g, '\\"'));
+                if (!o.stop) {
+                    os.marks.push(mirror.markText({ line: o.line - 1, ch: o.character - 1 },
+                                                  { line: o.line - 1, ch: o.character - 1 + o.evle },
+                                                  'CodeMirror-highlight-' + img));
+                }
+            }
+            
+            var hint = '<span class="editor_gutter" title="' + text.join('\n\n') + '"><span width="10px">' +
+                       '<img class="editor_gutter_img" src="images/' + img + '.png"/>&nbsp;&nbsp;</span>%N%</span>';
+            mirror.setMarker(Number(i) - 1, hint);
+        }
+
+        return gutters;
+    },
+    
+    run : function(editor) {
+        if (editor.oldGutters) {
+            myLINT.cleanGutters(editor.mirror, editor.oldGutters);
+        }
+
+        var all = editor.mirror.getValue();
+        var JS = null;
+        try {
+            JS = JSLINT;
+        } catch (je) {}
+        
+        var globals = "/*global " + myLINT.JSLINT_GLOBALS.join(': true, ') + "*/\n";
+        var result = JS ? JS(globals + all, myLINT.options) : true;
+        
+        if (result) {
+            return;
+        } else {
+            var gutter = {};
+            for (var i in JSLINT.errors) {
+                var error = JSLINT.errors[i];
+                if (error && error.line > 1 /* globals statement */) {
+                    var l = error.line - 1;
+                    var cara = error.character;
+                    var tabs = 0;
+                    var detectTabs = (error.reason.search('Mixed spaces and tabs') != -1);
+                    var len = 0;
+                    try {
+                        var fixTabs = !!error.evidence && !detectTabs;
+                        if (fixTabs) {
+                            for (var p=0,cp=0; p<cara && cp<cara; p++,cp++) {
+                                if (error.evidence.charCodeAt(p) == 9) {
+                                    cp += gOptions.editor_indentUnit - 1;
+                                    tabs += 1;
+                                }
+                            }
+                        }
+
+                        var addtabschars = tabs * (gOptions.editor_indentUnit - 1);
+                        cara -= addtabschars;
+                        if (fixTabs || detectTabs) {
+                            var t = error.evidence.length > cara ? error.evidence.substr(cara - 1) : "";
+                            var m = detectTabs ? t.match(/([ \t])*/) : t.match(/([a-zA-Z0-9_])*/);
+                            len = m.length ? m[0].length : 0;
+                        }
+                    } catch (e) {
+                        console.log("jslint: error parsing source " + e.message);
+                    }
+                    var evle = len || 1;
+                    
+                    var o = {
+                        line : l,
+                        stop : error.reason.search('Stopping') == 0,
+                        info : detectTabs ||
+                               error.reason.search("Combine this with the previous 'var'") != -1 ||
+                               error.reason.search("Expected '{' and instead saw") != -1 ||
+                               error.reason.search("Move 'var' declarations to the top") != -1,
+                        warn : error.id != '(error)' || error.reason.search('used before it was defined') != -1,
+                        character : cara,
+                        evle : evle,
+                        text : error.reason.replace(/.$/, '')
+                    };
+                    if (o.stop) l++;
+                    if (!gutter[l]) gutter[l] = [];
+                    gutter[l].push(o);
+                }
+            }
+            editor.oldGutters = myLINT.setGutters(editor.mirror, gutter);
+        }
+    }
+};
+ 
 /* ########### extension messaging  ############## */
 var reCreateTo = null;
 var reCreateArgs = null;
@@ -2280,32 +2528,34 @@ var loadUrl = function(url, newtab) {
     }
 };
 
-var saveScript = function(name, code, old_url, new_url, clean, reload, cb) {
-    if (reload === undefined) reload = true;
-
+var saveScript = function(name, code, options, cb) {
+    if (options.reload === undefined) options.reload = true;
+    // options { old_url, new_url, clean, reload }
+    
     try {
-        var ou = old_url ? old_url : "";
-        var nu = (new_url && new_url != old_url) ? new_url : "";
+        var ou = options.old_url ? options.old_url : "";
+        var nu = (options.new_url && options.new_url != options.old_url) ? options.new_url : "";
 
         chrome.extension.sendMessage({method: "saveScript",
                                       name: name,
                                       code: code,
-                                      clean : clean,
+                                      clean : options.clean,
+                                      force : options.force,
                                       file_url: ou,
                                       force_url: nu,
-                                      reload: reload },
+                                      reload: options.reload },
                                      function(response) {
                                          if (response.items) {
                                              scheduleReCreate(response.items, name && true);
                                          }
-                                         if (!code && reload) {
+                                         if (!code && options.reload) {
                                              Please.hide();
                                          }
                                          if (cb) {
                                              cb(response);
                                          }
                                      });
-        Please.wait();
+        Please.wait(I18N.getMessage("Please_wait___"));
     } catch (e) {
         console.log("sS: " + e.message);
     }
@@ -2319,7 +2569,7 @@ var setOption = function(name, value, ignore) {
                                              scheduleReCreate(response.items);
                                          }
                                      });
-        Please.wait();
+        Please.wait(I18N.getMessage("Please_wait___"));
     } catch (e) {
         console.log("sO: " + e.message);
     }
@@ -2337,7 +2587,7 @@ var buttonPress = function(name, value, ignore, reload) {
                                              Please.hide();
                                          }
                                      });
-        Please.wait();
+        Please.wait(I18N.getMessage("Please_wait___"));
     } catch (e) {
         console.log("sO: " + e.message);
     }
@@ -2360,7 +2610,7 @@ var modifyScriptOptions = function(name, options, reload, reorder) {
                                              scheduleReCreate(response.items, name && true);
                                          }
                                      });
-        Please.wait();
+        Please.wait(I18N.getMessage("Please_wait___"));
     } catch (e) {
         console.log("mSo: " + e.message);
     }
@@ -2376,11 +2626,16 @@ var modifyScriptOption = function(name, id, value, reload, reorder) {
         if (V) console.log("modifyScriptOption sendReq");
         chrome.extension.sendMessage(s,
                                      function(response) {
-                                         if (response && response.items) {
-                                             scheduleReCreate(response.items, name && true);
+                                         if (response) {
+                                             if (response.i18n) {
+                                                 I18N.setLocale(response.i18n);
+                                             }
+                                             if (response.items) {
+                                                 scheduleReCreate(response.items, name && true);
+                                             }
                                          }
                                      });
-        Please.wait();
+        Please.wait(I18N.getMessage("Please_wait___"));
     } catch (e) {
         console.log("mSo: " + e.message);
     }
@@ -2399,12 +2654,12 @@ var modifyNativeScriptOption = function(nid, id, value, reload) {
                                              scheduleReCreate(response.items, name && true);
                                          }
                                      });
-        Please.wait();
+        Please.wait(I18N.getMessage("Please_wait___"));
     } catch (e) {
         console.log("mSo: " + e.message);
     }
 };
-
+ 
 var runScriptUpdates = function(id, cb) {
     try {
         var done = function(response) {
@@ -2431,7 +2686,7 @@ chrome.extension.onMessage.addListener(
             Helper.alert(request.msg);
             sendResponse({});
         } else {
-            if (V) console.log("o: " + chrome.i18n.getMessage("Unknown_method_0name0" , request.method));
+            if (V) console.log("o: " + I18N.getMessage("Unknown_method_0name0" , request.method));
             return false;
         }
 
@@ -2449,13 +2704,13 @@ var domListener = function() {
     };
 
     var fail = function() {
-        if (confirm(chrome.i18n.getMessage("An_internal_error_occured_Do_you_want_to_visit_the_forum_"))) {
+        if (confirm(I18N.getOriginalMessage("An_internal_error_occured_Do_you_want_to_visit_the_forum_"))) {
             window.location.href = 'http://tampermonkey.net/bug'
         }
     };
 
     pp.ping(suc, fail);
-    Please.wait();
+    Please.wait(I18N.getMessage("Please_wait___"));
 };
 
 window.addEventListener('DOMContentLoaded', domListener, false);

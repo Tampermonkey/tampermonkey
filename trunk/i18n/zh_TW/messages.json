@@ -1,0 +1,895 @@
+{
+  "fatal_error": {
+    "message": "致命錯誤"
+  },
+  "Please_consider_a_donation": {
+    "message": "歡迎贊助"
+  },
+  "Invalid_scheme_of_url": {
+    "message": "無效的url地址"
+  },
+  "run_script_0url0___0name0": {
+    "message": "運行腳本 $name$ @ $url$",
+    "placeholders": {
+      "url": {
+         "content": "$1"
+      },
+      "name": {
+         "content": "$2"
+      }
+    }
+  },
+  "env_option__debug_scripts": {
+    "message": "環境選項: 除錯腳本"
+  },
+  "Invalid_UserScript__Sry_": {
+    "message": "無效的 UserScript腳本!"
+  },
+  "Invalid_UserScript_name__Sry_": {
+    "message": "無效的 UserScript 腳本名稱!"
+  },
+  "Unable_to_get_UserScript__Sry_": {
+    "message": "無法載入 UserScript!"
+  },
+  "Do_you_want_to_install_this_userscript_in_Tampermonkey_or_Chrome": {
+    "message": "要安裝使用者腳本到: \n Tampermonkey (Ok) 或 \n Chrome (Cancel)"
+  },
+  "Name_": {
+    "message": "名稱:"
+  },
+  "Note_": {
+    "message": "說明:"
+  },
+  "Installed_Version_": {
+    "message": "已安裝版本:"
+  },
+  "You_are_about_to_reinstall_a_UserScript_": {
+    "message": "UserScript 腳本重裝:"
+  },
+  "You_are_about_to_downgrade_a_UserScript": {
+    "message": "注意! Userscript 腳本降級:"
+  },
+  "You_are_about_to_modify_a_UserScript_": {
+    "message": "UserScript 腳本修改:"
+  },
+  "You_are_about_to_update_a_UserScript_": {
+    "message": "UserScript 腳本更新:"
+  },
+  "You_are_about_to_install_a_UserScript_": {
+    "message": "UserScript 腳本安裝:"
+  },
+  "This_script_does_not_provide_any__include_information_": {
+    "message": "此腳本沒有提供任何 @include 資訊."
+  },
+  "All_script_settings_will_be_reset_": {
+    "message": "全部的腳本設置將會重設!"
+  },
+  "Tampermonkey_assumes_0urlAllHttp0_in_order_to_continue_": {
+    "message": "Tampermonkey 採用 '$urlAllHttp$' 以繼續執行!",
+    "placeholders": {
+      "urlAllHttp": {
+         "content": "$1"
+      }
+    }
+  },
+  "The_update_url_has_changed_from_0oldurl0_to__0newurl0": {
+    "message": "更新 url 從 '$oldurl$' 變更為 '$newurl$'.",
+    "placeholders": {
+      "oldurl": {
+         "content": "$1"
+      },
+      "newurl": {
+         "content": "$2"
+      }
+    }
+  },
+  "Attention_Can_not_display_all_includes_": {
+    "message": "注意: 收錄URL(s)列表變化.請手動檢查!"
+  },
+  "Attention_Can_not_display_all_excludes_": {
+    "message": "注意: 排除URL(s)列表變化.請手動檢查!"
+  },
+  "Include_s__": {
+    "message": "收錄URL(s):"
+  },
+  "Exclude_s__": {
+    "message": "排除URL(s):"
+  },
+  "Note__A_recheck_of_the_GreaseMonkey_FF_compatibility_options_may_be_required_in_order_to_run_this_script_": {
+    "message": "說明: 為了運行當前腳本需要開啟 GreaseMonkey/FF 相容性選項."
+  },
+  "Do_you_want_to_continue_": {
+    "message": "是否繼續?"
+  },
+  "Got_strange_source_code_": {
+    "message": "有怪怪的源碼:"
+  },
+  "Update_found_for_0name0_": {
+    "message": "'$name$' 發現可用更新.",
+    "placeholders": {
+      "name": {
+         "content": "$1"
+      }
+    }
+  },
+  "UpdateCheck_of_0name0_Url_0url0_failed_": {
+    "message": "'$name$' (Url: $url$) 的更新檢查失敗!",
+    "placeholders": {
+      "name": {
+         "content": "$1"
+      },
+      "url": {
+         "content": "$2"
+      }
+    }
+  },
+  "No_update_found__sry_": {
+    "message": "沒有發現更新喔,抱歉!"
+  },
+  "Unable_to_save_tab_due_to_empty_tabID_": {
+    "message": "tabID為空導致無法儲存!"
+  },
+  "Unable_to_load_storage_due_to_empty_tabID_": {
+    "message": "tabID為空導致無法讀取文件!"
+  },
+  "Unable_to_save_storage_due_to_empty_tabID_": {
+    "message": "tabID為空導致無法寫入文件!"
+  },
+  "Unable_to_install_script_due_to_empty_tabID_": {
+    "message": "tabID為空導致無法安裝腳本!"
+  },
+  "Unable_to_run_scripts_due_to_empty_tabID_": {
+    "message": "tabID為空導致無法運行腳本!"
+  },
+  "Unknown_method_0name0": {
+    "message": "未知方法: $name$",
+    "placeholders": {
+      "name": {
+         "content": "$1"
+      }
+    }
+  },
+  "No_script_is_running": {
+    "message": "沒有在運行的腳本"
+  },
+  "Add_new_script___": {
+    "message": "新建腳本..."
+  },
+  "Get_new_scripts___": {
+    "message": "獲取腳本..."
+  },
+  "Check_for_userscripts_updates": {
+    "message": "檢查用戶腳本更新"
+  },
+  "Settings": {
+    "message": "設置"
+  },
+  "Make_includes_more_safe": {
+    "message": "確保啟用的URLs的安全"
+  },
+  "Includes_more_safe_example": {
+    "message": "(如果開啟, 'http://*google.*/*' 類似的配置將會解析為 'http://*google.tld/*' 來阻止腳本在 'http://www.google.myevilpage.com/' 的運行)"
+  },
+  "Fix_includes": {
+    "message": "改善URL地址"
+  },
+  "Fix_includes_example": {
+    "message": "(此選項將 '*' 轉換為 'http://*/*')"
+  },
+  "Debug_scripts": {
+    "message": "調試腳本"
+  },
+  "Show_fixed_source": {
+    "message": "顯示修正的的源碼"
+  },
+
+  "Installed_userscripts": {
+    "message": "已安裝的腳本"
+  },
+  "No_script_is_installed": {
+    "message": "無安裝任何腳本"
+  },
+  "Get_some_scripts___": {
+    "message": "獲取腳本..."
+  },
+  "New_userscript": {
+    "message": "<新建用戶腳本>"
+  },
+  "Registered_menu_cmds": {
+    "message": "已登陸的選單命令"
+  },
+  "About": {
+    "message": "About"
+  },
+  "Changelog": {
+    "message": "更動紀錄"
+  },
+  "Tampermonkey_Options": {
+    "message": "Tampermonkey"
+  },
+  "Position_": {
+    "message": "載入排位:"
+  },
+  "Close": {
+    "message": "關閉"
+  },
+  "GM_compat_options_": {
+    "message": "GM/FF 相容選項:"
+  },
+  "Apply_compatibility_options_to_required_script_too": {
+    "message": "Apply compatibility options to @require scripts too"
+  },
+  "Convert_CDATA_sections_into_a_chrome_compatible_format": {
+    "message": "轉換 CDATA 段落為 Chrome 相容的格式"
+  },
+  "Fix_for_var_in_statements": {
+    "message": "修復 'for (var j in x)' 陳述句"
+  },
+  "Replace_for_each_statements": {
+    "message": "替換 'for each' 方法"
+  },
+  "Convert_Array_Assignements": {
+    "message": "替換所有 [blub, bla] = s.split(':') 陳述句"
+  },
+  "Add_toSource_function_to_Object_Prototype": {
+    "message": "為物件和陣列增加相容性函數"
+  },
+  "Poll_unsafeWindow_variables": {
+    "message": "輪詢 unsafeWindow 變數"
+  },
+  "Poll_all_unsafeWindow_variables": {
+    "message": "輪詢全部 unsafeWindow 變數 (注意: 這會讓cpu負載過重!)"
+  },
+  "every_x_ms": {
+    "message": "每 ## 毫秒"
+  },
+  "Run_at": {
+    "message": "載入位置: "
+  },
+  "Update_URL_": {
+    "message": "更新URL:"
+  },
+  "Save": {
+    "message": "儲存"
+  },
+  "Cancel": {
+    "message": "取消"
+  },
+  "Reset": {
+    "message": "重置"
+  },
+  "There_are_unsaved_changed_" : {
+    "message": "還有未儲存的更動! \n 確定要關閉編輯器嗎?"
+  },
+  "Do_you_really_want_to_store_fixed_code_": {
+    "message": "選項 '$option$' 已啟用! \n 真的要儲存修正過的源碼嗎?",
+    "placeholders": {
+      "option": {
+         "content": "$1"
+      }
+    }
+  },
+  "Really_reset_all_changes_": {
+    "message": "確定要重置所有更動嗎?"
+  },
+  "Please_wait___": {
+    "message": "請稍候..."
+  },
+  "Edit": {
+    "message": "編輯"
+  },
+  "Sites": {
+    "message": "站點"
+  },
+  "Sort": {
+    "message": "排序"
+  },
+  "Delete": {
+    "message": "刪除"
+  },
+  "Features": {
+    "message": "功能"
+  },
+  "This_script_stores_data": {
+    "message": "此腳本在 Tampermonkey 存儲了資料."
+  },
+  "This_script_has_access_to_https_pages": {
+    "message": "此腳本能存取https頁面."
+  },
+  "One_or_more_compatibility_options_are_set": {
+    "message": "此腳本開啟了一個或多個chrome相容選項. 您可以(應當)檢查詳細配置."
+  },
+  "This_script_has_full_web_access": {
+    "message": "此腳本可完全存取網際網路."
+  },
+  "This_is_a_system_script": {
+    "message": "這是個系統腳本."
+  },
+  "This_is_a_chrome_extension": {
+    "message": "這是個 Chrome 擴展"
+  },
+  "This_script_runs_in_Chrome_mode": {
+    "message": "此腳本運行於 Chrome 模式"
+  },
+  "This_only_changes_the_user_agent_string": {
+    "message": "此項目只會對收錄的網頁更動 User-Agent"
+  },
+  "This_is_a_userscript": {
+    "message": "此使用者腳本是用 Javascript 寫的"
+  },
+  "Really_delete_this_script__": {
+    "message": "確定刪除此腳本?"
+  },
+  "Really_delete_this_extension__": {
+    "message": "確定要刪除此擴展?"
+  },
+  "Edit_this_script": {
+    "message": "編輯此腳本"
+  },
+  "This_script_has_access_to_webpage_scripts": {
+    "message": "此項目可完全存取該網頁."
+  },
+  "Utilities": {
+    "message": "實用工具"
+  },
+  "Script_modified_in_background": {
+    "message": "此腳本的內容或者選項可在別的分頁中修改 \n (例如重新安裝時). 注意! 按下 \n '儲存'按鈕會覆蓋這些更動."
+  },
+  "This_script_uses_uW_gm_api_": {
+    "message": "此腳本使用了部分不被 Tampermonkey 或者其他任何腳本處理插件支持的 Greasemonkey 10 API (unsafeWindow.gmonkey)."
+  },
+  "Enabled": {
+    "message": "啟用"
+  },
+  "Disabled": {
+    "message": "停用"
+  },
+  "Unable_to_parse_this_": {
+    "message": "無法對此解析! :("
+  },
+  "An_error_occured_during_import_": {
+    "message": "匯入時發生錯誤. 檢查控制台以獲取更多訊息! (CTRL+SHIFT+J)"
+  },
+  "Import_from_Textarea": {
+    "message": "從 文字區域 匯入"
+  },
+  "Import_from_SandboxFS": {
+    "message": "從 SandboxFS 匯入"
+  },
+  "Export_to_Textarea": {
+    "message": "匯出到 文字區域"
+  },
+  "Export_to_file": {
+    "message": "匯出到 檔案"
+  },
+  "Export_to_SandboxFS": {
+    "message": "匯出到 SandboxFS"
+  },
+  "There_is_an_update_for_0name0_avaiable_": {
+    "message": "'$name$' 有可用更新. :)",
+    "placeholders": {
+      "name": {
+         "content": "$1"
+      }
+    }
+  },
+  "Just_another_service_provided_by_your_friendly_script_updater_": {
+    "message": "有更新:"
+  },
+  "Updated_to__0version0": {
+    "message": "已更新到: $version$ 版",
+    "placeholders": {
+      "version": {
+         "content": "$1"
+      }
+    }
+  },
+  "Click_here_to_see_the_recent_changes": {
+    "message": "按此看最近更動"
+  },
+  "General": {
+    "message": "一般"
+  },
+  "Script_Update": {
+    "message": "腳本更新"
+  },
+  "Check_interval": {
+    "message": "檢查週期"
+  },
+  "Never": {
+    "message": "從不"
+  },
+  "Every_Hour": {
+    "message": "每小時"
+  },
+  "Every_6_Hours": {
+    "message": "每 6 小時"
+  },
+  "Every_12_Hour": {
+    "message": "每半天"
+  },
+  "Every_Day": {
+    "message": "每天"
+  },
+  "Every_Week": {
+    "message": "每週"
+  },
+  "Every_2_Weeks": {
+    "message": "每 2 周"
+  },
+  "Every_Month": {
+    "message": "每月"
+   },
+  "Update_interval": {
+    "message": "更新週期"
+   },
+  "Editor": {
+    "message": "編輯器"
+  },
+  "Indentation_Width": {
+    "message": "縮排寬度"
+  },
+  "1": {
+    "message": "1"
+  },
+  "2": {
+    "message": "2"
+  },
+  "3": {
+    "message": "3"
+  },
+  "4": {
+    "message": "4"
+  },
+  "5": {
+    "message": "5"
+  },
+  "6": {
+    "message": "6"
+  },
+  "7": {
+    "message": "7"
+  },
+  "8": {
+    "message": "8"
+  },
+  "9": {
+    "message": "9"
+  },
+  "10": {
+    "message": "10"
+  },
+  "11": {
+    "message": "11"
+  },
+  "Indent_with": {
+    "message": "縮排用"
+  },
+  "Tabs": {
+    "message": "Tab鍵"
+  },
+  "Spaces": {
+    "message": "空格"
+  },
+  "TabMode": {
+    "message": "Tab模式"
+  },
+  "Classic": {
+    "message": "傳統模式"
+  },
+  "Shift": {
+    "message": "全大寫模式"
+  },
+  "Indent": {
+    "message": "縮排模式"
+  },
+  "Smart": {
+    "message": "聰明的"
+  },
+  "EnterMode": {
+    "message": "輸入模式"
+  },
+  "Indent_new_lines": {
+    "message": "縮排新行"
+  },
+  "Indent_as_previous": {
+    "message": "按照前行縮排"
+  },
+  "No_Indentation": {
+    "message": "不縮排"
+  },
+  "Reindent_on_typing": {
+    "message": "輸入時重新縮排"
+  },
+  "Show_Line_Numbers": {
+    "message": "顯示行號"
+  },
+  "Auto_reload_on_script_enabled": {
+    "message": "自動重載頁面"
+  },
+  "Auto_reload_on_script_enabled_desc": {
+    "message": "在腳本啟用/停用後重載相關頁面"
+  },
+  "Dont_ask_me_for_simple_script_updates": {
+    "message": "Dont ask me for simple script updates"
+  },
+  "Hide_notification_after": {
+    "message": "再多少時間後隱藏提示"
+  },
+  "15_Seconds": {
+    "message": "15 秒"
+  },
+  "30_Seconds": {
+    "message": "30 秒"
+  },
+  "1_Minute": {
+    "message": "1 分鐘"
+  },
+  "5_Minutes": {
+    "message": "5 分鐘"
+  },
+  "1_Hour": {
+    "message": "1 小時"
+  },
+  "Enable_Editor": {
+    "message": "啟用加強版編輯器"
+  },
+  "Appearance": {
+    "message": "外觀"
+  },
+  "3D_Icon_Set": {
+    "message": "3D Icon"
+  },
+  "Security": {
+    "message": "安全"
+  },
+  "Forbidden_Pages": {
+    "message": "禁用腳本的頁面"
+  },
+  "_require_blacklist": {
+    "message": "@require Blacklist"
+  },
+  "This_page_is_blacklisted_at_the_security_settings": {
+    "message": "此頁面由於安全設定被黑名單了"
+  },
+  "Update_Notification": {
+    "message": "顯示 TamperMonkey 更新提示"
+  },
+  "Unable_to_load_script_from_url_0url0": {
+    "message": "無法載入腳本從 url: \n $url$",
+    "placeholders": {
+      "url": {
+         "content": "$1"
+      }
+    }
+  },
+  "Click_here_to_install_it_": {
+    "message": "點此安裝."
+  },
+  "Check_disabled_scripts": {
+    "message": "更新停用的腳本"
+  },
+  "TamperFire": {
+    "message": "TamperFire"
+  },
+  "Enable_TamperFire": {
+    "message": "啟用 TamperFire"
+  },
+  "Restart_to_apply": {
+    "message": "重啟 TamperMonkey 以應用新設定."
+  },
+  "TamperFire_update_started": {
+    "message": "TamperFire 更新開始"
+  },
+  "TamperFire_update_failed___": {
+    "message": "TamperFire 更新失敗 :("
+  },
+  "TamperFire_import_started": {
+    "message": "TamperFire 腳本匯入開始"
+  },
+  "TamperFire_is_up_to_date": {
+    "message": "TamperFire 是最新版了:)"
+  },
+  "_0_scripts_found": {
+    "message": "? 個可用腳本"
+  },
+  "Available_Userscripts": {
+    "message": "可用的用戶腳本"
+  },
+  "Rank": {
+    "message": "評分"
+  },
+  "Installs": {
+    "message": "已安裝"
+  },
+  "Rating": {
+    "message": "評價"
+  },
+  "Fans": {
+    "message": "粉絲"
+  },
+  "Homepage": {
+    "message": "首頁"
+  },
+  "Last_Updated": {
+    "message": "最後更新"
+  },
+  "Last_Changed": {
+    "message": "最新更動"
+  },
+  "Name": {
+    "message": "名稱"
+  },
+  "Version": {
+    "message": "版本"
+  },
+  "Type": {
+    "message": "類型"
+  },
+  "Update_needed": {
+    "message": "需要更新"
+  },
+  "Update_in_progress": {
+    "message": "正在更新"
+  },
+  "Downloading": {
+    "message": "正在下載"
+  },
+  "Processing_scripts": {
+    "message": "正在處理腳本"
+  },
+  "Writing_scripts": {
+    "message": "正在寫入腳本"
+  },
+  "Check_for_Updates": {
+    "message": "檢查更新"
+  },
+  "Force_Update": {
+    "message": "強制更新"
+  },
+  "TamperFire_is_up_to_date_": {
+    "message": "TamperFire 是最新版了!"
+  },
+  "Current_Index_": {
+    "message": "當前索引細節 :"
+  },
+  "Date_": {
+    "message": "日期:"
+  },
+  "Entries_": {
+    "message": "條目Entries:"
+  },
+  "overwritten_by_user": {
+    "message": "被用戶設置覆蓋"
+  },
+  "Overwrite_includes": {
+    "message": "覆蓋包含網址"
+  },
+  "Overwrite_matches": {
+    "message": "覆寫 @match 標籤"
+  },
+  "Overwrite_excludes": {
+    "message": "覆蓋列外網址"
+  },
+  "Report_a_bug": {
+    "message": "提交 Bug"
+  },
+  "Install": {
+    "message": "安裝"
+  },
+  "A_reload_is_required": {
+    "message": "需要刷新: 將會丟失未儲存資料!"
+  },
+  "Enable_Sort_Cache": {
+    "message": "開啟排序緩存 (高內存佔用)"
+  },
+  "Editor_reset": {
+    "message": "重置編輯"
+  },
+  "Full_reset": {
+    "message": "初始化"
+  },
+  "Do_you_really_want_to_factory_reset_this_script_": {
+    "message": "您確實想要初始化當前腳本?"
+  },
+  "Options": {
+    "message": "選項"
+  },
+  "Userscripts": {
+    "message": "使用者腳本"
+  },
+  "New_script_template_": {
+    "message": "新使用者腳本模板"
+  },
+  "Icon_badge_info": {
+    "message": "Icon Badge Info"
+  },
+  "Off": {
+    "message": "關"
+  },
+  "Running_scripts": {
+    "message": "Running scripts instances"
+  },
+  "Unique_running_scripts": {
+    "message": "Unique running scripts"
+  },
+  "Disabled_scripts": {
+    "message": "停用腳本"
+  },
+  "Config_Mode": {
+    "message": "設置模式"
+  },
+  "Novice": {
+    "message": "菜鳥"
+  },
+  "Beginner": {
+    "message": "初學者"
+  },
+  "Advanced": {
+    "message": "進階者"
+  },
+  "Changes_the_number_of_visible_config_options": {
+    "message": "改變可見選設置選項的數量"
+  },
+  "Enter_the_new_rule": {
+    "message": "輸入新規則"
+  },
+  "Add_as_0clude0": {
+    "message": "新增為 $clude$",
+    "placeholders": {
+      "clude": {
+         "content": "$1"
+      }
+    }
+  },
+  "Add": {
+    "message": "新增"
+  },
+  "Remove": {
+    "message": "移除"
+  },
+  "Includes_Excludes": {
+    "message": "收錄/排除"
+  },
+  "Original_includes": {
+    "message": "原始收錄"
+  },
+  "Original_matches": {
+    "message": "原始匹配"
+  },
+  "Original_excludes": {
+    "message": "原始排除"
+  },
+  "User_includes": {
+    "message": "使用者收錄"
+  },
+  "User_matches": {
+    "message": "使用者匹配"
+  },
+  "User_excludes": {
+    "message": "使用者排除"
+  },
+  "An_internal_error_occured_Do_you_want_to_visit_the_forum_": {
+    "message": "發生內部錯誤. 如若問題持續, 請按 OK 並且向論壇回報此事.\n\n想去Tampermonkey論壇嗎?"
+  },
+  "TESLA": {
+    "message": "TESLA"
+  },
+  "Enable_TESLA": {
+    "message": "啟用 TESLA"
+  },
+  "Sync_Type": {
+    "message": "類型"
+  },
+  "Sync_Id": {
+    "message": "Id"
+  },
+  "Imported": {
+    "message": "已匯入"
+  },
+  "Import_Mode": {
+    "message": "匯入模式"
+  },
+  "Create_only": {
+    "message": "只新建"
+  },
+  "Create_and_remove": {
+    "message": "新建與移除"
+  },
+  "Sync": {
+    "message": "同步"
+  },
+  "Export_Mode": {
+    "message": "匯出模式"
+  },
+  "Disable_sync": {
+    "message": "停用同步"
+  },
+  "Enable_sync": {
+    "message": "啟用同步"
+  },
+  "This_options_sets_up_how_to_sync_local_changes_to_the_server_": {
+    "message": "此選項將設定同步本地更動到伺服器的方式. 可選 a) 停用匯出功能,或 b) 設定成'只新建', 讓TamperMonkey複製所有本地腳本到伺服器,或 c) 設定成可讀寫,使得本地腳本移除時也會刪除遠端腳本."
+  },
+  "This_options_sets_up_how_to_handle_changes_from_the_sync_server_": {
+    "message": "此選項設定同步伺服器有更動的方式. 可選 a) 設定成 '只新建',讓TamperMonkey安裝所有遠端腳本,或 b) 設定成'新建和移除',讓遠端腳本移除時本地腳本也會被刪除."
+  },
+  "Create_Exportable_Data": {
+    "message": "新建可匯出的資料"
+  },
+  "Copy_exportable_data_to_clipboard_Ok_": {
+    "message": "複製可匯出的 TESLA 資料到剪貼簿. Ok?"
+  },
+  "Allow_headers_to_be_modified_by_scripts": {
+    "message": "允許腳本修改 HTTP 標頭"
+  },
+  "Yes": {
+    "message": "是"
+  },
+  "No": {
+    "message": "否"
+  },
+  "Auto": {
+    "message": "自動"
+  },
+  "__Please_choose__": {
+    "message": "-- 請單選項目 --"
+  },
+  "Enable": {
+    "message": "啟用"
+  },
+  "Disable": {
+    "message": "停用"
+  },
+  "Trigger_Update": {
+    "message": "觸發更新"
+  },
+  "Apply_this_action_to_the_selected_scripts": {
+    "message": "應用此動作於所選腳本"
+  },
+  "Start": {
+    "message": "開始"
+  },
+  "Really_delete_the_selected_items_": {
+    "message": "確定要移除所選的項目嗎?"
+  },
+  "A_script_blocker_was_detected_": {
+    "message": "偵測到1個腳本禁用!"
+  },
+  "Storage_permission_is_needed_": {
+    "message": "需要儲存權限!"
+  },
+  "Click_here_to_allow_TM_to_override_the_script_blocker": {
+    "message": "為了運行腳本,按此讓Tampermonkey覆寫腳本禁用設定!"
+  },
+  "Click_here_to_allow_TM_to_use_Google_sync": {
+    "message": "按此讓Tampermonkey使用Google Sync!"
+  },
+  "Please_reload_this_page_in_order_to_run_your_userscripts_": {
+    "message": "請重新載入此頁以運行腳本."
+  },
+  "Reset_Section": {
+    "message": "重設"
+  },
+  "Restart_Tampermonkey": {
+    "message": "重開Tampermonkey"
+  },
+  "This_will_restart_Tampermonkey_Ok_": {
+    "message": "確定要重開Tampermonkey嗎?"
+  },
+  "Factory_Reset": {
+    "message": "重設原來的設定"
+  },
+  "This_will_remove_all_scripts_and_reset_all_settings_Ok_": {
+    "message": "確定要移除所有腳本且重設所有設定嗎?"
+  },
+  "Enable_autoSave": {
+    "message": "失去焦點時儲存內容"
+  },
+  "Enable_easySave": {
+    "message": "儲存時不顯示確認對話框"
+  },
+  "EOF": {
+    "message": "EOF"
+  }
+}

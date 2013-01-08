@@ -31,6 +31,7 @@ Registry.require('compat');
 Registry.require('parser');
 Registry.require('helper');
 Registry.require('syncinfo');
+Registry.require('i18n');
 
 (function() {
 
@@ -138,6 +139,7 @@ chrome.extension.getID = function() {
     return (ida.length < 2) ? '' : ida[1];
 };
 
+chrome.extension.id = chrome.extension.getID();
 /* ###### version related data conversion ####### */
 
 var convertData = function(convertCB) {
@@ -173,7 +175,7 @@ var convertData = function(convertCB) {
                 var n = names[k];
                 var r = loadScriptByName(n);
                 if (!r.script || !r.cond) {
-                    console.log(chrome.i18n.getMessage("fatal_error") + " (" + n + ")" +"!!!");
+                    console.log(I18N.getMessage("fatal_error") + " (" + n + ")" +"!!!");
                     return;
                 }
                 for (var kk in d.options) {
@@ -316,7 +318,7 @@ var convertData = function(convertCB) {
                     var n = names[k];
                     var r = loadScriptByName(n);
                     if (!r.script || !r.cond) {
-                        console.log(chrome.i18n.getMessage("fatal_error") + " (" + n + ")" +"!!!");
+                        console.log(I18N.getMessage("fatal_error") + " (" + n + ")" +"!!!");
                         continue;
                     }
                     r.script.options.do_sync = r.script.options.sync;
@@ -344,6 +346,24 @@ var convertData = function(convertCB) {
           fn : function(cb) {
                 console.log("Update config from " + version + " to 2.6.83");
                 restoreAllScriptsEx(false, cb);
+            }
+        },
+        { cond: isNewVersion && versionCmp("2.9.2943", version) == eNEWER,
+          fn : function(cb) {
+                console.log("Update config from " + version + " to 2.9.2943");
+
+                var names = getAllScriptNames();
+                for (var k in names) {
+                    var n = names[k];
+                    var r = loadScriptByName(n);
+                    if (!r.script || !r.cond) {
+                        console.log(I18N.getMessage("fatal_error") + " (" + n + ")" +"!!!");
+                        continue;
+                    }
+                    r.script.options.compatopts_for_requires = r.script.options.compat_for_requires;
+                    storeScript(r.script.name, r.script, false);
+                }
+                window.setTimeout(cb, _setTimeout);
             }
         },
         { cond: isNewVersion,
@@ -619,6 +639,23 @@ var Tab = {
     }
 };
 
+/* ###### Sync ####### */
+
+var ScriptDetector = {
+    isScriptUrl : function(url_string) {
+        if (!url_string) return false;
+
+        var url = url_string.split(/[\?#$]/)[0];
+        var p = url.search(/\.user\.(js\#|js\?|js$)/) != -1 ||
+                url.search(/\.tamper\.(js\#|js\?|js$)/) != -1;
+        if (!p) return p;
+
+        var n = (url.search(/^htt[ps]{1,2}:\/\/code\.google\.com/) != -1) || /* google code raw files are deliverd from googlecode.com */
+                (url.search(/^htt[ps]{1,2}:\/\/github\.com/) != -1 && url.search(/^htt[ps]{1,2}:\/\/github\.com\/[a-zA-Z0-9%-]\/[a-zA-Z0-9%-]\/raw\//) == -1); /* install userscirpt only from /raw/ urls */
+
+        return !n;
+    }
+}
 /* ####### local file permission #### */
 
 var localFile = {
@@ -881,7 +918,7 @@ var TM_fire = {
             TM_fire.status.error = msg;
             if (cb) cb();
             notify.show('TamperFire',
-                        chrome.i18n.getMessage('TamperFire_update_failed___'), chrome.extension.getURL("images/icon128.png"));
+                        I18N.getMessage('TamperFire_update_failed___'), chrome.extension.getURL("images/icon128.png"));
 
         };
 
@@ -901,7 +938,7 @@ var TM_fire = {
 
                     TM_fire.resetStatus();
                     TM_fire.status.update = true;
-                    TM_fire.status.action = chrome.i18n.getMessage('Update_in_progress');
+                    TM_fire.status.action = I18N.getMessage('Update_in_progress');
                     var json = {};
 
                     var t = req.responseText;
@@ -965,7 +1002,7 @@ var TM_fire = {
 
         watchdog = function() {
             if (tries > 0) {
-                TM_fire.status.action = chrome.i18n.getMessage('Downloading');
+                TM_fire.status.action = I18N.getMessage('Downloading');
                 TM_fire.status.download = true;
 
                 setTimer();
@@ -977,7 +1014,7 @@ var TM_fire = {
         };
 
         notify.show('TamperFire',
-                    chrome.i18n.getMessage('TamperFire_update_started'), chrome.extension.getURL("images/icon128.png"));
+                    I18N.getMessage('TamperFire_update_started'), chrome.extension.getURL("images/icon128.png"));
 
         watchdog();
     },
@@ -1163,14 +1200,14 @@ var TM_fire = {
         var currentEID = 0;
 
         notify.show('TamperFire',
-                    chrome.i18n.getMessage('TamperFire_import_started'), chrome.extension.getURL("images/icon128.png"));
+                    I18N.getMessage('TamperFire_import_started'), chrome.extension.getURL("images/icon128.png"));
 
         for (var k in json.scripts) {
             if (!json.scripts.hasOwnProperty(k)) continue;
             index.push(k);
         }
 
-        TM_fire.status.action = chrome.i18n.getMessage('Processing_scripts');
+        TM_fire.status.action = I18N.getMessage('Processing_scripts');
         TM_fire.status.progress = { n: 0, of: index.length };
 
         var i = 0;
@@ -1201,7 +1238,7 @@ var TM_fire = {
             if (obj.length) {
                 TM_fire.resetStatus();
                 TM_fire.status.update = true;
-                TM_fire.status.action = chrome.i18n.getMessage('Writing_scripts');
+                TM_fire.status.action = I18N.getMessage('Writing_scripts');
                 TM_fire.status.progress = { n: progress, of: writeInc.length + writeExc.length + writeSInc.length + writeSExc.length };
             } else  {
                 if (cb) cb();
@@ -1242,7 +1279,7 @@ var TM_fire = {
             var aDone = function() {
                 if (cb) cb(index.length);
                 notify.show('TamperFire',
-                            chrome.i18n.getMessage('TamperFire_is_up_to_date'), chrome.extension.getURL("images/icon128.png"));
+                            I18N.getMessage('TamperFire_is_up_to_date'), chrome.extension.getURL("images/icon128.png"));
             };
             var siDone = function() {
                 j=0;
@@ -1884,19 +1921,19 @@ var defaultScripts = function() {
 /* ###### Sync ####### */
 
 var SyncClient = {
+    initialized : false,
     enabled : false,
     syncing : 0,
     period : null,
     syncDoneListener: [],
     scheduled : { to: null, force: null, t: 0 },
-    createTeslcData : function(cb) {
+    createTeslaData : function(cb) {
         var ret = [];
         var local = SyncClient.getLocalScriptList();
 
         for (var k=0; k<local.length; k++) {
-            var u = local[k].furl || local[k].durl;
-            if (u) {
-                var s = local[k].name.replace(/\|/g, '!') + '|' + '{"hint":"not supported yet"}' + '|' + u.replace(/\|/g, '%7C');
+            if (local[k].url) {
+                var s = local[k].name.replace(/\|/g, '!') + '|' + '{}' + '|' + local[k].url.replace(/\|/g, '%7C');
                 ret.push(s)
             }
         }
@@ -1905,15 +1942,21 @@ var SyncClient = {
     enable :  function(callback) {
         if (SyncClient.enabled) {
             if (D) console.log("sync: reenable?");
-        } else if (Config.values.sync_type == 0 ||
-                   Config.values.sync_id == "") {
+        } else if (Config.values.sync_type == 0) {
             SyncClient.enabled = false;
         } else {
             SyncClient.enabled = SyncInfo.init(Config.values.sync_type, Config.values.sync_id);
         }
+        if (!SyncClient.initialized) {
+            SyncInfo.addChangeListener(SyncClient.remoteChangeCb);
+            SyncClient.initialized = true;
+        }
         if (callback) callback(SyncClient.enabled);
     },
     finalize : function() {
+    },
+    reset : function(cb) {
+        SyncInfo.reset(cb);
     },
     addSyncDoneListener : function (cb) {
         SyncClient.syncDoneListener.push(cb);
@@ -1960,7 +2003,7 @@ var SyncClient = {
                     if (has) {
                         run();
                     } else {
-                        console.log("sync: storage permission is needed in order to uses Google Sync!");
+                        console.log("sync: storage permission is needed in order to use Google Sync!");
                         abort();
                     }
                 };
@@ -1987,6 +2030,14 @@ var SyncClient = {
             SyncClient.period = null;
         }
     },
+    getLocalObjFromScript : function(script) {
+        var id = (script.id || scriptParser.getScriptId(script.name));
+        var durl = script.downloadURL ? script.downloadURL.split('#')[0] : null;
+        var furl = script.fileURL ? script.fileURL.split('#')[0] : null;
+        var url = furl || durl;
+
+        return { id: id, name: script.name, durl: durl, furl: furl, url: url };
+    },
     getLocalScriptList : function() {
         var ret = [];
         var names = getAllScriptNames();
@@ -1996,12 +2047,7 @@ var SyncClient = {
             if (!r.script || !r.cond) {
                 continue;
             }
-
-            var id = (r.script.id || scriptParser.getScriptId(r.script.name));
-            var durl = r.script.downloadURL ? r.script.downloadURL.split('#')[0] : null;
-            var furl = r.script.fileURL ? r.script.fileURL.split('#')[0] : null;
-
-            ret.push({ id: id, name: r.script.name, durl: durl, furl: furl });
+            ret.push(SyncClient.getLocalObjFromScript(r.script));
         }
 
         return ret;
@@ -2025,15 +2071,25 @@ var SyncClient = {
         };
         if (key == 'sync_enabled') {
             if (newVal) {
-                SyncClient.schedulePeriodicalCheck();
+                if (Config.values.sync_type == SyncInfo.types.ePASTEBIN) {
+                    SyncClient.schedulePeriodicalCheck();
+                }
                 scheduleEnable();
             } else {
                 SyncClient.enabled = false;
                 SyncClient.disablePeriodicalCheck();
             }
-        } else if (key == 'sync_type' ||
-                   key == 'sync_id') {
+        } else if (key == 'sync_type') {
+            if (newVal == SyncInfo.types.ePASTEBIN) {
+                SyncClient.schedulePeriodicalCheck();
+            } else if (newVal == SyncInfo.types.eCHROMESYNC) {
+                SyncClient.disablePeriodicalCheck();
+            }
             scheduleEnable();
+        } else if (key == 'sync_id') {
+            if (Config.values.sync_type == SyncInfo.types.ePASTEBIN) {
+                scheduleEnable();
+            }
         }
     },
     sync: function(force) {
@@ -2063,6 +2119,7 @@ var SyncClient = {
         var run = [];
         var change = false;
         var success = true;
+        var processedlocals = {};
 
         var next = function() {
             if (run.length > 0) {
@@ -2092,93 +2149,92 @@ var SyncClient = {
         };
         run.push(get);
 
-        var localHasUrl = function(u) {
+        var localByUrl = function(u) {
             if (u) {
                 u = u.split('#')[0];
                 for (var k=0; k<local.length; k++) {
+                    // compare with file _and_ update URL!!
                     if (local[k].furl == u ||
                         local[k].durl == u) {
 
-                        return true;
+                        return local[k];
                     }
                 }
             }
 
-            return false;
+            return null;
         };
 
-        var remoteHasUrl = function(u) {
+        var remoteByUrl = function(u) {
             if (u) {
                 u = u.split('#')[0];
                 for (var k=0; k<remote.length; k++) {
                     if (remote[k].url == u) {
-                        return true;
+                        return remote[k];
                     }
                 }
             }
 
-            return false;
+            return null;
         };
 
         var impo = function() {
+            // first run, maybe other instance filled some data, but it is not transfered yet -> nothing to do
+            // later, assume Chrome does conflict resolution!? -> import all scripts with !o.removed, remove all scripts with o.remove
             var running = 1;
             var check = function() {
                 if (--running == 0) next();
             };
 
-            if (Config.values.sync_import == '0') {
-                if (D) console.log("sync: import disabled -> next step");
-            } else if (Config.values.sync_import == '+') {
-                for (var u=0; u<remote.length; u++) {
-                    var o = remote[u];
-                    var drin = false;
-
-                    if (localHasUrl(o.url)) {
-                        drin = true;
-                    }
-
-                    if (!drin) {
-                        running++;
-                        change = true;
-                        SyncClient.importScript(o, check);
-                    }
+            for (var u=0; u<remote.length; u++) {
+                var o = remote[u];
+                var locally = false;
+                var l = localByUrl(o.url);
+                if (l) {
+                    locally = true;
+                    processedlocals[o.url] = true;
                 }
-            } else {
-                console.log("sync: Err: +- Import Mode not supported yet!");
+
+                if (locally && o.options.removed) {
+                    change = true;
+                    if (D) console.log("sync: remove local script " + (o.name || o.url));
+                    storeScript(l.name, null, false);
+                }
+                if (!locally && !o.options.removed) {
+                    running++;
+                    change = true;
+                    SyncClient.importScript(o, check);
+                }
             }
             check();
         };
         run.push(impo);
 
         var expo = function() {
+            // first run, maybe other instance filled some data, but it is not transfered yet -> export all scripts
+            // later, Chrome does confict resolution?! -> export new scripts, remove
             var running = 1;
             var check = function() {
                 if (--running == 0) next();
             };
 
-            if (Config.values.sync_export == '0' || Config.values.sync_type == SyncInfo.types.ePASTEBIN) {
-                if (D) console.log("sync: export disabled -> next step");
-            } else if (Config.values.sync_export == '+' ||
-                       Config.values.sync_export == '+-') {
+            for (var u=0; u<local.length; u++) {
+                var remotely = false;
+                var o = local[u];
+                var r = o.url;
+                if (!r || processedlocals[r]) continue;
+                var e = remoteByUrl(r);
+                if (e) {
+                    remotely = true;
+                }
 
-                for (var u=0; k<local.length; u++) {
-                    var drin = false;
-                    var o = local[u];
-                    var r = o.furl || o.durl;
-                    if (!r) continue;
-                    r = r.split('#')[0];
-
-                    if (remoteHasUrl(r)) {
-                        drin = true;
-                    }
-
-                    if (!drin) {
-                        running++;
-                        change = true;
-                        SyncClient.exportScript(o, check);
-                    }
+                if (!remotely) {
+                    running++;
+                    change = true;
+                    SyncClient.exportScript(o, check);
                 }
             }
+
             check();
         };
         run.push(expo);
@@ -2200,10 +2256,50 @@ var SyncClient = {
     importScript: function(o, cb) {
         if (D) console.log("sync: import " + (o.name || o.url));
 
-        var sync = { imported: true };
+        var sync = { imported: Config.values.sync_type };
         var props = { ask: false, sync: sync, save: true };
         installFromUrl(o.url, props, cb);
     },
+
+    exportScript: function(o, cb) {
+        if (D) console.log("sync: export " + (o.name || o.url));
+        SyncInfo.add(o, cb);
+    },
+
+    removeScript: function(o, cb) {
+        if (D) console.log("sync: remove " + (o.name || o.url));
+        SyncInfo.remove(o, cb);
+    },
+
+    remoteChangeCb : function(name, script) {
+        if (!SyncClient.enabled || Config.values.sync_type != SyncInfo.types.eCHROMESYNC) return;
+        if (V) console.log("sync: remoteChangeCb()");
+        SyncClient.scheduleSync(500, true);
+    },
+    scriptAddedCb : function(name, script) {
+        if (!SyncClient.enabled) return;
+        if (V) console.log("sync: scriptAddedCb()");
+        var o = SyncClient.getLocalObjFromScript(script);
+        if (o.url) {
+            SyncClient.exportScript(o);
+        }
+    },
+    scriptChangedCb : function(name, script) {
+        if (!SyncClient.enabled) return;
+        /* there are no properties intended to be synced at the moment, so ignore the change callback for the moment
+        if (V) console.log("sync: scriptChangedCb()");
+        SyncClient.scheduleSync(500, true); */
+    },
+    scriptRemovedCb : function(name, script) {
+        if (!SyncClient.enabled) return;
+        if (V) console.log("sync: scriptRemovedCb()");
+
+        var o = SyncClient.getLocalObjFromScript(script);
+        if (o.url) {
+            SyncClient.removeScript(o);
+        }
+        // no need to schedule a sync, we deleted the script remotely right now and locally this was done by the caller
+    }
 };
 sycl = SyncClient;
 
@@ -2220,7 +2316,7 @@ var setIcon = function(tabId, obj) {
         blocker = ctxRegistry.n[tabId].blocker;
         running = ctxRegistry.getRunning(tabId);
     }
-    
+
     if (blocker) {
         obj.images.icon = 'images/icon_grey_blocker.png';
     } else if (running) {
@@ -2240,6 +2336,7 @@ var setIcon = function(tabId, obj) {
 };
 
 var addCfgCallbacks = function(obj) {
+    Config.addChangeListener('scriptblocker_overwrite', contentSettings.init);
     Config.addChangeListener('sync_enabled', SyncClient.checkSyncAccount);
     Config.addChangeListener('sync_type', SyncClient.checkSyncAccount);
     Config.addChangeListener('sync_id', SyncClient.checkSyncAccount);
@@ -2251,6 +2348,9 @@ var addCfgCallbacks = function(obj) {
                              });
     Config.addChangeListener('logLevel', function() {
                                  adjustLogLevel(Config.values.logLevel);
+                             });
+    Config.addChangeListener('i18n', function() {
+                                 I18N.setLocale(Config.values.i18n);
                              });
 };
 
@@ -2282,6 +2382,8 @@ var ConfigObject = function(initCallback) {
                      firstRun: true,
                      webrequest_use : 'yes',
                      webrequest_modHeaders : 'yes',
+                     webrequest_fixCSP : 'yes',
+                     scriptblocker_overwrite : 'yes',
                      notification_showTMUpdate: true,
                      notification_silentScriptUpdate: true,
                      scriptTemplate : defltScript,
@@ -2295,6 +2397,7 @@ var ConfigObject = function(initCallback) {
                      fire_updateURL: 'http://fire.tampermonkey.net/update.php',
                      fire_updatePeriod: 14 * 24 * 60 * 60 * 1000,
                      editor_enabled: true,
+                     editor_keyMap: 'windows',
                      editor_indentUnit: 4,
                      editor_indentWithTabs: false,
                      editor_tabMode : 'smart',
@@ -2303,10 +2406,10 @@ var ConfigObject = function(initCallback) {
                      editor_lineNumbers: true,
                      editor_autoSave: false,
                      editor_easySave: false,
+                     i18n: null,
                      sync_enabled: false,
                      sync_type: 0,
                      sync_id: "",
-                     sync_import: "+",
                      require_blacklist : [ '/^https?:\\/\\/sizzlemctwizzle.com\\/.*/' ],
                      forbiddenPages : [ '*.paypal.tld/*', 'https://*deutsche-bank-24.tld/*', 'https://*bankamerica.tld/*',
                                         '*://plusone.google.com/*/fastbutton*',
@@ -2325,7 +2428,7 @@ var ConfigObject = function(initCallback) {
         var ds = defaultScripts();
         for (var k in ds) {
             var s = ds[k];
-            window.setTimeout(function() { addNewUserScript({ tabid: null, url: null, src: s, ask: false, defaultscript:true }); }, 1 );
+            window.setTimeout(function() { addNewUserScript({ tabid: null, url: null, src: s, ask: false, defaultscript:true }); }, 1);
         }
         oobj.defaults = defaults;
         oobj.values = {};
@@ -2400,10 +2503,10 @@ var ConfigObject = function(initCallback) {
                        'ext=' + chrome.extension.getID().substr(0, 4);
             var url = 'http://tampermonkey.net/changelog.php?' + args;
 
-            notify.showUpdate(chrome.i18n.getMessage('Updated_to__0version0', (upNotification || chrome.extension.getVersion())),
+            notify.showUpdate(I18N.getMessage('Updated_to__0version0', (upNotification || chrome.extension.getVersion())),
                               null,
                               chrome.extension.getURL("images/icon128.png"),
-                              { text: chrome.i18n.getMessage('Click_here_to_see_the_recent_changes'), src: url });
+                              { text: I18N.getMessage('Click_here_to_see_the_recent_changes'), src: url });
         }
 
         if (initCallback) initCallback();
@@ -2447,11 +2550,13 @@ var runtimeInit = function() {
             var rh = req.responseHeaders ? req.responseHeaders.split('\n') : null;
 
             for (var k in rh) {
-                var h = rh[k].split(':');
+                var parts = rh[k].split(':');
+                var h = parts.shift() || "";
+                var field = parts.join(':') || "";
+
                 if (V) console.log("Header: " + JSON.stringify(h));
-                if (h.length >= 2 &&
-                    h[0].trim().toLowerCase() == 'content-type' &&
-                    h[1].search('image') != -1) {
+                if (h.trim().toLowerCase() == 'content-type' &&
+                    field.search('image') != -1) {
                     image = h[1].trim();
                     break;
                 }
@@ -2532,7 +2637,7 @@ var runtimeInit = function() {
 
         var check = function(v) {
             var b = false;
-            
+
             if (!v.length) return;
 
             if (v.substr(0,1) == '/') {
@@ -2544,12 +2649,12 @@ var runtimeInit = function() {
 
             black |= b;
         };
-        
+
         Helper.forEach(Config.values.require_blacklist, check);
 
         return black;
     };
-    
+
     this.getRequires = function(script, cb) {
 
         var fillRequire = function(req, res) {
@@ -2622,7 +2727,7 @@ var runtimeInit = function() {
             var scripts = [];
             scripts.push(main);
 
-            console.log(chrome.i18n.getMessage("run_script_0url0___0name0", [ info.url , main.name]));
+            console.log(I18N.getMessage("run_script_0url0___0name0", [ info.url , main.name]));
             oobj.injectScript(scripts, cb);
         };
 
@@ -2643,7 +2748,7 @@ var runtimeInit = function() {
         src = compaMo.mkCompat(src, script);
 
         if (Config.values.debug) {
-            console.log(chrome.i18n.getMessage("env_option__debug_scripts"));
+            console.log(I18N.getMessage("env_option__debug_scripts"));
             src = "debugger;\n" + src;
         }
 
@@ -2659,9 +2764,7 @@ var runtimeInit = function() {
 
             script.requires.forEach(function(req) {
                                         var contents = req.textContent;
-
-                                        contents = compaMo.mkCompat(contents, script.options.compat_for_requires ? script : null);
-
+                                        contents = compaMo.mkCompat(contents, script.options.compatopts_for_requires ? script : null);
                                         requires.push(contents);
                                     });
 
@@ -2823,6 +2926,7 @@ var addNewUserScript = function(o) {
     // { tabid: tabid, force_url: durl, url: url, src: src, ask: ask, defaultscript:defaultscript, noreinstall : noreinstall, save : save, sync: sync, cb : cb }
     var reset = false;
     var allowSilent = false;
+    var hashChanged = false;
 
     if (o.name == undefined) o.name = null;
     if (o.clean == undefined) o.clean = false;
@@ -2842,7 +2946,7 @@ var addNewUserScript = function(o) {
 
     if (!script.name || script.name == '' || (script.version == undefined)) {
         chrome.tabs.sendMessage(o.tabid,
-                                { method: "showMsg", msg: chrome.i18n.getMessage('Invalid_UserScript__Sry_')},
+                                { method: "showMsg", msg: I18N.getMessage('Invalid_UserScript__Sry_')},
                                 function(response) {});
         return false;
     }
@@ -2854,13 +2958,17 @@ var addNewUserScript = function(o) {
 
     if (script.options.compat_uW_gmonkey) {
         chrome.tabs.sendMessage(o.tabid,
-                                { method: "showMsg", msg: chrome.i18n.getMessage('This_script_uses_uW_gm_api_')},
+                                { method: "showMsg", msg: I18N.getMessage('This_script_uses_uW_gm_api_')},
                                 function(response) {});
 
         return false;
     }
 
-    script.hash = oldscript ? oldscript.hash : o.hash;
+    if (oldscript) {
+        hashChanged = (o.hash && oldscript.hash != o.hash);
+    }
+
+    script.hash = o.hash ? o.hash : (oldscript ? oldscript.hash : null);
     script.lastUpdated = (new Date()).getTime();
     script.system = o.defaultscript;
     script.fileURL = o.url;
@@ -2877,49 +2985,50 @@ var addNewUserScript = function(o) {
 
     if (script.name.search('\n') != -1) {
         chrome.tabs.sendMessage(o.tabid,
-                                { method: "showMsg", msg: chrome.i18n.getMessage('Invalid_UserScript_name__Sry_')},
+                                { method: "showMsg", msg: I18N.getMessage('Invalid_UserScript_name__Sry_')},
                                 function(response) {});
         return false;
-    } else if (!o.clean && oldscript && script.version == oldscript.version) {
+    } else if (!o.clean && oldscript && script.version == oldscript.version && !hashChanged) {
         if (o.defaultscript || o.noreinstall) {
             // stop here... we just want to update (system) scripts...
             return null;
         }
 
         if (o.save) {
-            msg += chrome.i18n.getMessage('You_are_about_to_modify_a_UserScript_') + '     \n';
+            msg += I18N.getMessage('You_are_about_to_modify_a_UserScript_') + '     \n';
         } else {
-            msg += chrome.i18n.getMessage('You_are_about_to_reinstall_a_UserScript_') + '     \n';
+            msg += I18N.getMessage('You_are_about_to_reinstall_a_UserScript_') + '     \n';
             reset = true;
-            msg += '\n' + chrome.i18n.getMessage('All_script_settings_will_be_reset_') + '!!\n';
+            msg += '\n' + I18N.getMessage('All_script_settings_will_be_reset_') + '!!\n';
         }
 
-        msg += '\n' + chrome.i18n.getMessage('Name_') + '\n';
+        msg += '\n' + I18N.getMessage('Name_') + '\n';
         msg += '    ' + script.name + ((script.version != '') ? ' v' + script.version : '') +  '\n';
-        msg += '\n' + chrome.i18n.getMessage('Installed_Version_') + '\n';
+        msg += '\n' + I18N.getMessage('Installed_Version_') + '\n';
         msg += '    ' + 'v' + script.version +  '\n';
     } else if (!o.clean && oldscript && versionCmp(script.version, oldscript.version) == eOLDER) {
-        msg += chrome.i18n.getMessage('You_are_about_to_downgrade_a_UserScript') + '     \n';
-        msg += '\n' + chrome.i18n.getMessage('Name_') + '\n';
+        msg += I18N.getMessage('You_are_about_to_downgrade_a_UserScript') + '     \n';
+        msg += '\n' + I18N.getMessage('Name_') + '\n';
         msg += '    ' + script.name + ((script.version != '') ? ' v' + script.version : '') +  '\n';
-        msg += '\n' + chrome.i18n.getMessage('Installed_Version_') + '\n';
+        msg += '\n' + I18N.getMessage('Installed_Version_') + '\n';
         msg += '    ' + 'v' + oldscript.version +  '\n';
     } else if (!o.clean && oldscript) {
-        msg += chrome.i18n.getMessage('You_are_about_to_update_a_UserScript_') + '     \n';
-        msg += '\n' + chrome.i18n.getMessage('Name_') + '\n';
+        msg += I18N.getMessage('You_are_about_to_update_a_UserScript_') + '     \n';
+        msg += '\n' + I18N.getMessage('Name_') + '\n';
         msg += '    ' + script.name + ((script.version != '') ? ' v' + script.version : '') +  '\n';
-        msg += '\n' + chrome.i18n.getMessage('Installed_Version_') + '\n';
+        msg += '\n' + I18N.getMessage('Installed_Version_') + '\n';
         msg += '    ' + 'v' + oldscript.version +  '\n';
         allowSilent = true;
     }  else {
-        msg += chrome.i18n.getMessage('You_are_about_to_install_a_UserScript_') + '     \n';
-        msg += '\n' + chrome.i18n.getMessage('Name_') + '\n';
+        msg += I18N.getMessage('You_are_about_to_install_a_UserScript_') + '     \n';
+        msg += '\n' + I18N.getMessage('Name_') + '\n';
         msg += '    ' + script.name + ((script.version != '') ? ' v' + script.version : '') +  '\n';
     }
 
     // user defined *cludes will be persistent except for a user triggered script factory reset
     if (!o.clean && oldscript){
         script.options.override = oldscript.options.override;
+        script.options.comment = oldscript.options.comment;
     }
     // back up *cludes to be able to restore them if override *clude is disabled
     script.options.override.orig_includes = script.includes;
@@ -2950,7 +3059,7 @@ var addNewUserScript = function(o) {
         var nuu = determineMetaURL(script);
 
         if (ouu != nuu) {
-            msg += '\n' + chrome.i18n.getMessage('The_update_url_has_changed_from_0oldurl0_to__0newurl0', [ouu, nuu]);
+            msg += '\n' + I18N.getMessage('The_update_url_has_changed_from_0oldurl0_to__0newurl0', [ouu, nuu]);
             allowSilent = false;
         }
     }
@@ -2960,9 +3069,9 @@ var addNewUserScript = function(o) {
     }
 
     if (!script.includes.length && !script.matches.length) {
-        msg += '\n' + chrome.i18n.getMessage('Note_') + '\n';
-        msg += '    ' + chrome.i18n.getMessage('This_script_does_not_provide_any__include_information_') + '\n';
-        msg += '    ' + chrome.i18n.getMessage('Tampermonkey_assumes_0urlAllHttp0_in_order_to_continue_', Helper.urlAllHttp) + '    \n';
+        msg += '\n' + I18N.getMessage('Note_') + '\n';
+        msg += '    ' + I18N.getMessage('This_script_does_not_provide_any__include_information_') + '\n';
+        msg += '    ' + I18N.getMessage('Tampermonkey_assumes_0urlAllHttp0_in_order_to_continue_', Helper.urlAllHttp) + '    \n';
         script.includes.push(Helper.urlAllHttp);
     }
 
@@ -2984,9 +3093,9 @@ var addNewUserScript = function(o) {
     var m = 4;
 
     var incls = '';
-    incls += '\n' + chrome.i18n.getMessage('Include_s__');
+    incls += '\n' + I18N.getMessage('Include_s__');
     if (script.options.override.includes || script.options.override.matches) {
-        incls += ' (' + chrome.i18n.getMessage('overwritten_by_user') + ')';
+        incls += ' (' + I18N.getMessage('overwritten_by_user') + ')';
     }
     incls += '\n';
     var k=0, q=0;
@@ -2996,7 +3105,7 @@ var addNewUserScript = function(o) {
         incls += (g < 15) ? '\n' : (c < m) ? ';' : '\n';
         if (c++ >= m) c = 0;
         if (q > 13) {
-            incls += "\n" + chrome.i18n.getMessage('Attention_Can_not_display_all_includes_') + "\n";
+            incls += "\n" + I18N.getMessage('Attention_Can_not_display_all_includes_') + "\n";
             break;
         }
     }
@@ -3005,7 +3114,7 @@ var addNewUserScript = function(o) {
         incls += (g < 15) ? '\n' : (c < m) ? ';' : '\n';
         if (c++ >= m) c = 0;
         if (q > 13) {
-            incls += "\n" + chrome.i18n.getMessage('Attention_Can_not_display_all_includes_') + "\n";
+            incls += "\n" + I18N.getMessage('Attention_Can_not_display_all_includes_') + "\n";
             break;
         }
     }
@@ -3013,9 +3122,9 @@ var addNewUserScript = function(o) {
     var excls = '';
     c = 0;
     if (script.excludes.length) {
-        excls += '\n' + chrome.i18n.getMessage('Exclude_s__');
+        excls += '\n' + I18N.getMessage('Exclude_s__');
         if (script.options.override.excludes) {
-            excls += ' (' + chrome.i18n.getMessage('overwritten_by_user') + ')';
+            excls += ' (' + I18N.getMessage('overwritten_by_user') + ')';
         }
         excls += '\n';
 
@@ -3024,7 +3133,7 @@ var addNewUserScript = function(o) {
             excls += (g < 15) ? '\n' : (c < m) ? ';' : '\n';
             if (c++ >= m) c = 0;
             if (k > 13) {
-                excls += "\n" + chrome.i18n.getMessage('Attention_Can_not_display_all_excludes_') + "\n";
+                excls += "\n" + I18N.getMessage('Attention_Can_not_display_all_excludes_') + "\n";
                 break;
             }
         }
@@ -3042,13 +3151,13 @@ var addNewUserScript = function(o) {
     }
 
     if (compDe) {
-        msg += "\n" + chrome.i18n.getMessage('Note__A_recheck_of_the_GreaseMonkey_FF_compatibility_options_may_be_required_in_order_to_run_this_script_') +"\n\n";
+        msg += "\n" + I18N.getMessage('Note__A_recheck_of_the_GreaseMonkey_FF_compatibility_options_may_be_required_in_order_to_run_this_script_') +"\n\n";
     }
 
     if (o.clean) {
-        msg += '\n' + chrome.i18n.getMessage('Do_you_really_want_to_factory_reset_this_script_') + '    ';
+        msg += '\n' + I18N.getMessage('Do_you_really_want_to_factory_reset_this_script_') + '    ';
     } else {
-        msg += "\n" + chrome.i18n.getMessage('Do_you_want_to_continue_');
+        msg += "\n" + I18N.getMessage('Do_you_want_to_continue_');
     }
 
     var doit = function() {
@@ -3104,7 +3213,9 @@ var installFromUrl = function(url, props, cb) {
                         o[k] = props[k];
                     }
                 }
-                addNewUserScript(o);
+                if (!addNewUserScript(o)) {
+                    if (cb) cb(false, false);
+                }
             } else {
                 if (V) console.log("scriptClick: " + url + " req.status = " + req.status);
                 if (cb) cb(false, false);
@@ -3154,7 +3265,7 @@ var getValidTabId = function(ignore, cb) {
                 };
                 window.setTimeout(run, 100);
             };
-            chrome.tabs.create({ url:  chrome.extension.getURL("ask.html")}, created);
+            chrome.tabs.create({ url:  chrome.extension.getURL("ask.html") + "?i18n=" + Config.values.i18n }, created);
         } else {
             cb(id, null);
         }
@@ -3232,8 +3343,8 @@ var ScriptUpdater = {
 
         var runCheck = function(initial) {
             if (showResult) {
-                var t = chrome.i18n.getMessage('Script_Update');
-                var msg = chrome.i18n.getMessage('Check_for_userscripts_updates') + '...';
+                var t = I18N.getMessage('Script_Update');
+                var msg = I18N.getMessage('Check_for_userscripts_updates') + '...';
                 notify.show(t, msg, chrome.extension.getURL("images/icon128.png"), 5000);
             }
 
@@ -3249,15 +3360,15 @@ var ScriptUpdater = {
                                                src: obj.code,
                                                ask: true,
                                                cb : close,
-                                               hash: obj.newhash != undefined ? obj.newhash : null };
+                                               hash: obj.newhash !== undefined ? obj.newhash : null };
                                     addNewUserScript(ss);
                                 };
                                 getValidTabId(null, gotId);
                             }
                         };
 
-                        var msg = chrome.i18n.getMessage('There_is_an_update_for_0name0_avaiable_', obj.name) + '\n' + chrome.i18n.getMessage('Click_here_to_install_it_');
-                        var t = chrome.i18n.getMessage('Just_another_service_provided_by_your_friendly_script_updater_');
+                        var msg = I18N.getMessage('There_is_an_update_for_0name0_avaiable_', obj.name) + '\n' + I18N.getMessage('Click_here_to_install_it_');
+                        var t = I18N.getMessage('Just_another_service_provided_by_your_friendly_script_updater_');
                         if (Config.values.notification_silentScriptUpdate) {
                             install(true);
                         } else {
@@ -3338,7 +3449,7 @@ var ScriptUpdater = {
                 if (showResult) {
                     if (D || V || UV) console.log("No update found");
                     notify.show('Narf!',
-                                chrome.i18n.getMessage('No_update_found__sry_'),
+                                I18N.getMessage('No_update_found__sry_'),
                                 chrome.extension.getURL("images/icon128.png"));
                 }
                 if (callback) {
@@ -3373,19 +3484,19 @@ var ScriptUpdater = {
                         };
 
                         var ret = ScriptUpdater.srcCmp(req.responseText);
-                        if (ret == eNEWER) {
+                        if (ret == eNEWER || r.hash_different) {
                             found++;
                             if (callback) callback(true, { name: obj.r.script.name,
                                                            url: durl,
                                                            code: req.responseText,
-                                                           newhash: obj.r.newhash });
+                                                           newhash: obj.r.meta[cUSOHASH] });
                             return;
                         } else if (ret == eEQUAL) {
                             if (V || UV) console.log("bg: found same version @ " + durl);
                             updateHash();
                         }
                     } else {
-                        console.log(chrome.i18n.getMessage("UpdateCheck_of_0name0_Url_0url0_failed_", [ obj.r.script.name, durl ]));
+                        console.log(I18N.getMessage("UpdateCheck_of_0name0_Url_0url0_failed_", [ obj.r.script.name, durl ]));
                     }
                     checkNoUpdateNotification();
                 };
@@ -3411,8 +3522,9 @@ var ScriptUpdater = {
                     if (V || UV) console.log("bg: hash of script " + r.script.name + " has changed or does not exist! running version check!");
                     r.meta = o.meta;
                     r.metasrc = o.metasrc;
-                    realCheck(r)
-                        } else {
+                    r.hash_different = hash_different;
+                    realCheck(r);
+                } else {
                     if (V || UV) console.log("bg: hash of script " + r.script.name + " has NOT changed (" + o.meta[cUSOHASH] + ").");
                 }
                 running--;
@@ -3428,7 +3540,7 @@ var ScriptUpdater = {
             var n = names[k];
             var r = loadScriptByName(n);
             if (!r.script || !r.cond) {
-                console.log(chrome.i18n.getMessage("fatal_error") + "(" + n + ")!!!");
+                console.log(I18N.getMessage("fatal_error") + "(" + n + ")!!!");
                 continue;
             }
 
@@ -3637,12 +3749,23 @@ var storeScript = function(name, script, triggerSync) {
         s.textContent = null;
         TM_storage.setValue(name, s);
 
+        if (triggerSync) {
+            if (added) {
+                SyncClient.scriptAddedCb(name, script);
+            } else {
+                SyncClient.scriptChangedCb(name, script);
+            }
+        }
     } else {
         var r = loadScriptByName(name);
 
         TM_storage.deleteValue(name + condAppendix);
         TM_storage.deleteValue(name + scriptAppendix);
         TM_storage.deleteValue(name);
+
+        if (triggerSync && r.script && r.cond) {
+            SyncClient.scriptRemovedCb(name, r.script);
+        }
     }
 };
 
@@ -3740,7 +3863,7 @@ var connectHandler = function(port) {
                     removeStorageListeners(request.name, request.id, false);
                 };
             } else {
-                console.log(chrome.i18n.getMessage("Unable_to_load_storage_due_to_empty_tabID_"));
+                console.log(I18N.getMessage("Unable_to_load_storage_due_to_empty_tabID_"));
                 sendResponse({ error: true });
             }
         } else if (request.method == "removeStorageListener") {
@@ -3772,7 +3895,7 @@ var connectHandler = function(port) {
                     notifyStorageListeners(request.name, request.key);
                 }
             } else {
-                console.log(chrome.i18n.getMessage("Unable_to_save_storage_due_to_empty_tabID_"));
+                console.log(I18N.getMessage("Unable_to_save_storage_due_to_empty_tabID_"));
             }
             sendResponse({});
         }
@@ -3782,495 +3905,639 @@ var connectHandler = function(port) {
     port.onMessage.addListener(connectMsgHandler);
 };
 
-var requestHandler = function(request, sender, sendResponse) {
-    if (!ginit) {
-        window.setTimeout(function() { requestHandler(request, sender, sendResponse); }, 10);
-        return true;
-    }
-    if (V || EV || MV) console.log("back: request.method " + request.method + " contextId " + request.id + " tabId: " + (sender.tab ? sender.tab.id : "unknown!!!"));
-
-    if (request.method == "ping") {
-        sendResponse({ pong: true, instanceID: TM_instanceID });
-    } else if (request.method == "openInTab") {
-        var done = function(tab) {
-            closeableTabs[tab.id] = true;
-            sendResponse({ tabId: tab.id });
+var requestHandling = {
+    "ping" : {
+        allow : { "insecure" : true },
+        exec : function(request, sender, sendResponse) {
+            sendResponse({ pong: true, instanceID: TM_instanceID });
         }
-        var s = [ 'active' ];
-        var o = { url: request.url };
-        if (request.options) {
-            for (var n=0; n<s.length; n++) {
-                if (request.options[s[n]] !== undefined) {
-                    o[s[n]] = request.options[s[n]];
+    },
+    "openInTab" : {
+        allow : { "script" : true, "extpage": true },
+        exec : function(request, sender, sendResponse) {
+            var done = function(tab) {
+                closeableTabs[tab.id] = true;
+                sendResponse({ tabId: tab.id });
+            }
+            var s = [ 'active' ];
+            var o = { url: request.url };
+            if (request.options) {
+                for (var n=0; n<s.length; n++) {
+                    if (request.options[s[n]] !== undefined) {
+                        o[s[n]] = request.options[s[n]];
+                    }
+                }
+                if (request.options.insert) {
+                    o.index = sender.tab.index + 1;
                 }
             }
-            if (request.options.insert) {
-                o.index = sender.tab.index + 1;
+            chrome.tabs.create(o, done);
+        }
+    },
+    "closeTab" : {
+        allow : { "script" : true, "extpage": true },
+        exec : function(request, sender, sendResponse) {
+            // check if this tab was created by openInTab request!
+            if (request.tabId && closeableTabs[request.tabId]) {
+                chrome.tabs.remove(request.tabId);
+            }
+            sendResponse({});
+        }
+    },
+    "getTab" : {
+        allow : { "script" : true },
+        exec : function(request, sender, sendResponse) {
+            if (typeof sender.tab != 'undefined') {
+                if (typeof TM_tabs[sender.tab.id] == 'undefined') TM_tabs[sender.tab.id] = { storage: {} };
+                var tab = TM_tabs[sender.tab.id];
+                sendResponse({data: tab});
+            } else {
+                console.log(I18N.getMessage("Unable_to_deliver_tab_due_to_empty_tabID_"));
+                sendResponse({data: null});
             }
         }
-        chrome.tabs.create(o, done);
-    } else if (request.method == "closeTab") {
-        // check if this tab was created by openInTab request!
-        if (request.tabId && closeableTabs[request.tabId]) {
-            chrome.tabs.remove(request.tabId);
+    },
+    "getTabs" : {
+        allow : { "script" : true },
+        exec : function(request, sender, sendResponse) {
+            sendResponse({data: TM_tabs});
         }
-        sendResponse({});
-    } else if (request.method == "getTab") {
-        if (typeof sender.tab != 'undefined') {
-            if (typeof TM_tabs[sender.tab.id] == 'undefined') TM_tabs[sender.tab.id] = { storage: {} };
-            var tab = TM_tabs[sender.tab.id];
-            sendResponse({data: tab});
-        } else {
-            console.log(chrome.i18n.getMessage("Unable_to_deliver_tab_due_to_empty_tabID_"));
-            sendResponse({data: null});
-        }
-    } else if (request.method == "getTabs") {
-        sendResponse({data: TM_tabs});
-    } else if (request.method == "saveTab") {
-        if (typeof sender.tab != 'undefined') {
-            var tab = {};
-            for (var k in request.tab) {
-                tab[k] = request.tab[k];
-            };
-            TM_tabs[sender.tab.id] = tab;
-        } else {
-            console.log(chrome.i18n.getMessage("Unable_to_save_tab_due_to_empty_tabID_"));
-        }
-        sendResponse({});
-    } else if (request.method == "copyToClipboard") {
-        if (typeof sender.tab != 'undefined') {
-            clipboard.copy(request.data);
-        } else {
-            console.log("bg: unable to process request!");
-        }
-        sendResponse({});
-    } else if (request.method == "setOption") {
-        var optionstab = (typeof sender.tab != 'undefined' && sender.tab) ? (sender.tab.id >= 0 ? true : false) : null;
-
-        Config.values[request.name] = request.value;
-        Config.save();
-
-        var done = function(items) {
-            if (optionstab) {
-                sendResponse({items: items});
+    },
+    "saveTab" : {
+        allow : { "script" : true },
+        exec : function(request, sender, sendResponse) {
+            if (typeof sender.tab != 'undefined') {
+                var tab = {};
+                for (var k in request.tab) {
+                    tab[k] = request.tab[k];
+                };
+                TM_tabs[sender.tab.id] = tab;
             } else {
-                notifyOptionsTab();
+                console.log(I18N.getMessage("Unable_to_save_tab_due_to_empty_tabID_"));
+            }
+            sendResponse({});
+        }
+    },
+    "copyToClipboard" : {
+        allow : { "script" : true, "extpage": true },
+        exec : function(request, sender, sendResponse) {
+            if (typeof sender.tab != 'undefined') {
+                clipboard.copy(request.data);
+            } else {
+                console.log("bg: unable to process request!");
+            }
+            sendResponse({});
+        }
+    },
+    "setOption" : {
+        allow : { "extpage" : true },
+        exec : function(request, sender, sendResponse) {
+            var optionstab = (sender.extpage == "options");
+
+            Config.values[request.name] = request.value;
+            Config.save();
+
+            var done = function(items) {
+                if (optionstab) {
+                    sendResponse({items: items});
+                } else {
+                    notifyOptionsTab();
+                    sendResponse({});
+                }
+            };
+
+            createOptionItems(done);
+        }
+    },
+    "buttonPress" : {
+        allow : { "extpage" : true },
+        exec : function(request, sender, sendResponse) {
+            var optionstab = (sender.extpage == "options");
+
+            var done = function() {
+                sendResponse({});
+            };
+
+            if (request.name == 'reset_simple') {
+                Reset.reset(done);
+            } else if (request.name == 'reset_factory') {
+                Reset.factoryReset(done)
+            } else if (request.name == 'create_tesla_data') {
+                var cb = function(ret) {
+                    clipboard.copy({ content: Converter.UTF8.encode(ret.join('<br>')), type: 'html'});
+                    done();
+                };
+                SyncClient.createTeslaData(cb);
+            } else if (request.name == 'reset_chrome_sync') {
+                SyncClient.reset(done)
+            } else {
+                console.log("bg: Warning: unnknown button " + name);
                 sendResponse({});
             }
-        };
 
-        createOptionItems(done);
-    } else if (request.method == "buttonPress") {
-        var optionstab = (typeof sender.tab != 'undefined' && sender.tab) ? (sender.tab.id >= 0 ? true : false) : null;
-
-        var done = function() {
-            sendResponse({});
-        };
-
-        if (request.name == 'reset_simple') {
-            Reset.reset(done);
-        } else if (request.name == 'reset_factory') {
-            Reset.factoryReset(done)
-        } else if (request.name == 'create_teslc_data') {
-            var cb = function(ret) {
-                clipboard.copy({ content: Converter.UTF8.encode(ret.join('<br>')), type: 'html'});
-                done();
-            };
-            SyncClient.createTeslcData(cb);
-        } else {
-            console.log("bg: Warning: unnknown button " + name);
-            sendResponse({});
         }
+    },
+    "modifyScriptOptions" : {
+        allow : { "extpage" : true },
+        exec : function(request, sender, sendResponse) {
+            var optionstab = (sender.extpage == "options");
+            var reload = (request.reload == undefined || request.reload == true);
 
-    } else if (request.method == "modifyScriptOptions" || request.method == "modifyNativeScript") {
-        var optionstab = (typeof sender.tab != 'undefined' && sender.tab) ? (sender.tab.id >= 0 ? true : false) : null;
-        var reload = (request.reload == undefined || request.reload == true);
+            var nextStep = function() {
+                if (request.reorder) {
+                    reorderScripts();
+                }
 
-        var nextStep = function() {
-            if (request.reorder) {
-                reorderScripts();
-            }
+                if (V) console.log("modifyScriptOptions " + optionstab);
+                if (reload) {
+                    if (optionstab) { // options page
+                        var done = function(allitems) {
+                            sendResponse({ items: allitems, i18n: Config.values.i18n });
+                        };
+                        createOptionItems(done);
+                    } else { // action page
+                        // update options page, in case a script was en/disabled
+                        if (request.name) window.setTimeout(notifyOptionsTab, 100);
 
-            if (V) console.log("modifyScriptOptions " + optionstab);
-            if (reload) {
-                if (optionstab) { // options page
-                    var done = function(allitems) {
-                        sendResponse({ items: allitems });
-                    };
-                    createOptionItems(done);
-                } else { // action page
-                    // update options page, in case a script was en/disabled
-                    if (request.name) window.setTimeout(notifyOptionsTab, 100);
+                        var resp = function(tab) {
+                            // TODO: use allURLs[tid].scripts instead of getting them again?
+                            var items = createActionMenuItems(tab);
+                            sendResponse({ items: items, i18n: Config.values.i18n });
+                            if (request.name && Config.values.autoReload) {
+                                chrome.tabs.sendMessage(tab.id,
+                                                        { method: "reload" },
+                                                        function(response) {});
+                            }
+                        };
+                        chrome.tabs.getSelected(null, resp);
+                    }
+                } else {
+                    sendResponse({});
+                }
+            };
 
-                    var resp = function(tab) {
-                        // TODO: use allURLs[tid].scripts instead of getting them again?
-                        var items = createActionMenuItems(tab);
-                        sendResponse({items: items});
-                        if (request.name && Config.values.autoReload) {
-                            chrome.tabs.sendMessage(tab.id,
-                                                    { method: "reload" },
-                                                    function(response) {});
+            if (request.name && request.method == "modifyScriptOptions") {
+                var r = loadScriptByName(request.name);
+                if (r.script && r.cond) {
+                    var do_merge = false;
+                    var dns = new scriptParser.Script();
+
+                    for (var k in dns.options) {
+                        if (!dns.options.hasOwnProperty(k)) continue;
+                        if (typeof request[k] !== 'undefined') r.script.options[k] = request[k];
+                    }
+                    for (var k in dns.options.override) {
+                        if (!dns.options.override.hasOwnProperty(k) ||
+                            k.search("merge_") == -1) continue;
+
+                        if (typeof request[k] !== 'undefined') {
+                            r.script.options.override[k] = request[k];
+                            do_merge = true;
                         }
-                    };
-                    chrome.tabs.getSelected(null, resp);
-                }
-            } else {
-                sendResponse({});
-            }
-        };
+                    }
 
-        if (request.name && request.method == "modifyScriptOptions") {
-            var r = loadScriptByName(request.name);
-            if (r.script && r.cond) {
-                var do_merge = false;
-                var dns = new scriptParser.Script();
-
-                for (var k in dns.options) {
-                    if (!dns.options.hasOwnProperty(k)) continue;
-                    if (typeof request[k] !== 'undefined') r.script.options[k] = request[k];
-                }
-                for (var k in dns.options.override) {
-                    if (!dns.options.override.hasOwnProperty(k) ||
-                        k.search("merge_") == -1) continue;
-
-                    if (typeof request[k] !== 'undefined') {
-                        r.script.options.override[k] = request[k];
+                    if (typeof request.enabled !== 'undefined') r.script.enabled = request.enabled;
+                    if (typeof request.includes !== 'undefined') {
+                        //merge original and user *cludes
+                        r.script.options.override.use_includes = request.includes;
+                        r.script.options.override.use_excludes = request.excludes;
+                        r.script.options.override.use_matches = request.matches;
                         do_merge = true;
                     }
-                }
 
-                if (typeof request.enabled !== 'undefined') r.script.enabled = request.enabled;
-                if (typeof request.includes !== 'undefined') {
-                    //merge original and user *cludes
-                    r.script.options.override.use_includes = request.includes;
-                    r.script.options.override.use_excludes = request.excludes;
-                    r.script.options.override.use_matches = request.matches;
-                    do_merge = true;
-                }
+                    if (do_merge) {
+                        r.script = mergeCludes(r.script);
+                    }
 
-                if (do_merge) {
-                    r.script = mergeCludes(r.script);
+                    storeScript(r.script.name, r.script);
+                    if (typeof request.position !== 'undefined' && reload) {
+                        reorderScripts(request.name, request.position);
+                    }
                 }
-
-                storeScript(r.script.name, r.script);
-                if (typeof request.position !== 'undefined' && reload) {
-                    reorderScripts(request.name, request.position);
-                }
-            }
-        } else if (request.nid && request.method == "modifyNativeScript") {
-            var done = function (sc) {
-                if (sc) {
-                    if (request.actionid == 'installed') {
-                        if (request.value == 'false') {
-                            extensions.uninstall(sc, nextStep);
+            } else if (request.nid && request.method == "modifyNativeScript") {
+                var done = function (sc) {
+                    if (sc) {
+                        if (request.actionid == 'installed') {
+                            if (request.value == 'false') {
+                                extensions.uninstall(sc, nextStep);
+                                return true;
+                            }
+                        } else if (request.actionid == 'enabled') {
+                            extensions.setEnabled(sc, request.value, nextStep);
                             return true;
                         }
-                    } else if (request.actionid == 'enabled') {
-                        extensions.setEnabled(sc, request.value, nextStep);
-                        return true;
+                        nextStep();
                     }
-                    nextStep();
                 }
+                extensions.getUserscriptById(request.nid, done);
+                return true;
             }
-            extensions.getUserscriptById(request.nid, done);
-            return true;
+
+            nextStep();
+
         }
+    },
+    "modifyNativeScript" : {
+        allow : { "extpage" : true },
+        exec : function(request, sender, sendResponse) {
+            return requestHandling['modifyScriptOptions'].exec(request, sender, sendResponse);
+        }
+    },
+    "saveScript" : {
+        allow : { "extpage": true },
+        exec : function(request, sender, sendResponse) {
+            // TODO: check renaming and remove old one
+            var reload = (request.reload == undefined || request.reload == true);
 
-        nextStep();
-
-    } else if (request.method == "saveScript") {
-        // TODO: check renaming and remove old one
-        var reload = (request.reload == undefined || request.reload == true);
-
-        var cb = function(installed) {
-            if (reload) {
-                var done = function(allitems) {
-                    sendResponse({items: allitems, installed: installed});
-                };
-                createOptionItems(done);
-            } else {
-                sendResponse({});
-            }
-        };
-
-        if (request.clean) {
-            var callback = function(installed) {
-                var done = function(allitems) {
-                    sendResponse({ cleaned: installed, items: allitems });
-                    if (installed) notifyStorageListeners(request.name, null);
-                };
-                createOptionItems(done)
+            var cb = function(installed) {
+                if (reload) {
+                    var done = function(allitems) {
+                        sendResponse({items: allitems, installed: installed});
+                    };
+                    createOptionItems(done);
+                } else {
+                    sendResponse({});
+                }
             };
 
-            if (D) console.log("bg: clean userscript " + request.name);
-            var r = loadScriptByName(request.name);
-            if (!r.script || !r.cond) {
-                console.log(chrome.i18n.getMessage("fatal_error") + " (" + n + ")" +"!!!");
-                callback(false);
-            } else {
-                if (!addNewUserScript({ name: request.name, tabid: sender.tab.id, force_url: null, url: request.file_url, src: r.script.textContent, clean: true, ask: true, save: true, cb : callback })) {
+            if (request.clean) {
+                var callback = function(installed) {
+                    var done = function(allitems) {
+                        sendResponse({ cleaned: installed, items: allitems });
+                        if (installed) notifyStorageListeners(request.name, null);
+                    };
+                    createOptionItems(done)
+                };
+
+                if (D) console.log("bg: clean userscript " + request.name);
+                var r = loadScriptByName(request.name);
+                if (!r.script || !r.cond) {
+                    console.log(I18N.getMessage("fatal_error") + " (" + request.name + ")" +"!!!");
+                    callback(false);
+                } else {
+                    if (!addNewUserScript({ name: request.name, tabid: sender.tab.id, force_url: null, url: request.file_url, src: r.script.textContent, clean: true, ask: true, save: true, cb : callback })) {
+                        if (callback) callback(false);
+                    }
+                }
+            } else if (request.code) {
+                var callback = function(installed) { sendResponse({ installed: installed}); };
+                if  (request.reload == undefined || request.reload == true) {
+                    callback = function (installed) { reorderScripts();
+                                                      cb(installed); };
+                }
+                request.force &= (sender.extpage == "options"); // always ask in case it is not send from options tab
+                var options = { tabid: sender.tab.id,
+                                force_url: request.force_url,
+                                url: request.file_url,
+                                src: request.code,
+                                ask: !Config.values.editor_easySave && !request.force,
+                                save: true,
+                                cb : callback };
+
+                if (!addNewUserScript(options)) {
                     if (callback) callback(false);
                 }
-            }
-        } else if (request.code) {
-            var callback = function(installed) { sendResponse({ installed: installed}); };
-            if  (request.reload == undefined || request.reload == true) {
-                callback = function (installed) { reorderScripts();
-                                                  cb(installed); };
-            }
-            if (!addNewUserScript({ tabid: sender.tab.id, force_url: request.force_url, url: request.file_url, src: request.code, ask: !Config.values.editor_easySave, save: true, cb : callback })) {
-                if (callback) callback(false);
-            }
-        } else {
-            removeUserScript(request.name);
-            reorderScripts();
-            cb();
-        }
-    } else if (request.method == "scriptClick") {
-        if (typeof sender.tab != 'undefined') {
-            var cb = function(found, installed) {
-                sendResponse({ data: null, found: found, installed: installed });
-                if (found) {
-                    // update options page after script installation
-                    if (installed) {
-                        notifyOptionsTab();
-                    }
-                } else {
-                    chrome.tabs.sendMessage(sender.tab.id,
-                                            { method: "showMsg", msg: chrome.i18n.getMessage('Unable_to_get_UserScript__Sry_'), id: request.id},
-                                            function(response) {});
-                }
-            };
-            installFromUrl(request.url, { tabid: sender.tab.id }, cb);
-        } else {
-            console.log(chrome.i18n.getMessage("Unable_to_install_script_due_to_empty_tabID_"));
-        }
-    } else if (request.method == "registerMenuCmd") {
-        if (typeof sender.tab != 'undefined') {
-            if (V || MV) console.log("MC add " + request.id);
-            TM_menuCmd.add({ tabId: sender.tab.id, url: sender.tab.url, name: request.name, id: request.menuId, response: sendResponse });
-        } else {
-            console.log("Unable to register menu cmd due to empty tabID!");
-            sendResponse({ run: false });
-        }
-    } else if (request.method == "unRegisterMenuCmd") {
-        // cmd is unregistered just by getting
-        if (V || MV) console.log("MC unreg " + request.id);
-        TM_menuCmd.clearById(request.id);
-        sendResponse({});
-    } else if (request.method == "execMenuCmd") {
-        // cmd is unregistered just by getting
-        var c = TM_menuCmd.getById(request.id);
-        if (c) {
-            if (V || MV) console.log("MC exec " + c.id);
-            c.response({ run: true, menuId: c.id });
-        } else {
-            console.log("bg: Error: unable to find MC id " + c.id);
-        }
-        sendResponse({});
-    } else if (request.method == "runScriptUpdates") {
-        if (request.scriptid) {
-            var done = function(up) {
-                sendResponse({ scriptid: request.scriptid, updatable: up});
-            }
-            ScriptUpdater.check(true, false, request.scriptid, done);
-        } else {
-            ScriptUpdater.check(true, true);
-            sendResponse({});
-        }
-    } else if (request.method == "getWebRequestInfo") {
-        if (typeof sender.tab != 'undefined') {
-            var r = { webRequest: _webRequest };
-            sendResponse(r);
-        } else {
-            console.log(chrome.i18n.getMessage("Unable_to_run_scripts_due_to_empty_tabID_"));
-            sendResponse({});
-        }
-    } else if (request.method == "unLoad") {
-        if (!request.topframe && // unload of topframe will be handled by next load event
-            (Config.values.appearance_badges == 'running' ||
-             Config.values.appearance_badges == 'disabled')) {
-
-            var frameId = 0;
-            var contextId = request.id;
-            if (V || UV) console.log("unload check " + contextId + " url: " + request.url);
-
-            if (contextId &&
-                ctxRegistry.has(sender.tab.id) &&
-                ctxRegistry.n[sender.tab.id].stats.executed[contextId]) {
-
-                ctxRegistry.n[sender.tab.id].stats.running -= ctxRegistry.n[sender.tab.id].stats.executed[contextId].running;
-                ctxRegistry.n[sender.tab.id].stats.disabled -= ctxRegistry.n[sender.tab.id].stats.executed[contextId].disabled;
-
-                // shouldn't happen...
-                if (ctxRegistry.n[sender.tab.id].stats.running < 0) ctxRegistry.n[sender.tab.id].stats.running = 0;
-                if (ctxRegistry.n[sender.tab.id].stats.disabled < 0) ctxRegistry.n[sender.tab.id].stats.disabled = 0;
-
-                var url = request.url + request.params;
-                ctxRegistry.removeUrl(sender.tab.id, frameId, url);
-
-                setBadge(sender.tab.id);
-            }
-        }
-        sendResponse({});
-    } else if (request.method == "prepare") {
-        if (typeof sender.tab != 'undefined' && sender.tab.index >= 0) { // index of -1 is used by google search for omnibox
-            var scheme = (!sender.tab || !sender.tab.url || sender.tab.url.length < 4) ? null :  sender.tab.url.substr(0,4);
-
-            if (scheme == "file" ||
-                !ctxRegistry.has(sender.tab.id) /* i.e. tamperfire page */) {
-
-                Tab.reset(sender.tab.id, false);
-
-                if (request.topframe &&
-                    _webRequest.headers &&
-                    _webRequest.verified) {
-
-                    if (!scheme || (scheme != "http" && scheme != "file")) {
-                        // all http related traffic should be Tab.prepare'd by webRequest.headerFix !
-                        console.log("bg: WARN: this should _NEVER_ happen!!!!!");
-                    } else {
-                        var nfo = { tabId: sender.tab.id,
-                                    frameId: request.topframe ? 0 : 1 /* TODO: get frameId of sender!*/ ,
-                                    scriptId: request.id,
-                                    url: sender.tab.url };
-
-                        ctxRegistry.setCache(nfo.tabId, nfo.frameId, nfo.url, Tab.prepare(nfo));
-                    }
-                }
-            }
-
-            var length_cb = function(enabledScriptsCount, disabledScriptsCount ) {
-                var r = { enabledScriptsCount: enabledScriptsCount,
-                          raw: {},
-                          webRequest: _webRequest,
-                          logLevel: Config.values.logLevel };
-
-                if (enabledScriptsCount) {
-                    if (request.raw) {
-                        for (var o=0; o<request.raw.length; o++) {
-                            r.raw[request.raw[o]] = Registry.getRaw(request.raw[o]);
-                        }
-                    }
-                    sendResponse(r);
-                } else {
-                    sendResponse( { logLevel: Config.values.logLevel } );
-                }
-                ctxRegistry.n[sender.tab.id].stats.running += enabledScriptsCount;
-                ctxRegistry.n[sender.tab.id].stats.disabled += disabledScriptsCount;
-                ctxRegistry.n[sender.tab.id].stats.executed[request.id] = { disabled: disabledScriptsCount, running: enabledScriptsCount };
-
-                setIcon(sender.tab.id);
-                if (Config.values.appearance_badges != 'tamperfire') {
-                    // dont determine tamperfire entries too often!
-                    setBadge(sender.tab.id);
-                }
-            };
-            var allrun_cb = function() {
-                setBadge(sender.tab.id);
-            };
-            if (Config.values.forbiddenPages.length == 0 || validUrl(request.url, { exc: Config.values.forbiddenPages })) {
-                // TODO: get frameId of sender!
-                sender.tab.frameId = request.topframe ? 0 : 1;
-                tabUpdateListener(sender.tab.id, {status: "complete"}, sender.tab, request, length_cb, allrun_cb);
-                // a url may be added! reset fire count
-                ctxRegistry.setFireCnt(sender.tab.id, null);
             } else {
-                console.log("Forbidden page: '" + request.url + "' -> Do nothing!");
+                removeUserScript(request.name);
+                reorderScripts();
+                cb();
+            }
+        }
+    },
+    "scriptClick" : {
+        allow : { "insecure" : true },
+        exec : function(request, sender, sendResponse) {
+            if (typeof sender.tab != 'undefined') {
+                var cb = function(found, installed) {
+                    sendResponse({ data: null, found: found, installed: installed });
+                    if (found) {
+                        // update options page after script installation
+                        if (installed) {
+                            notifyOptionsTab();
+                        }
+                    } else {
+                        chrome.tabs.sendMessage(sender.tab.id,
+                                                { method: "showMsg", msg: I18N.getMessage('Unable_to_get_UserScript__Sry_'), id: request.id},
+                                                function(response) {});
+                    }
+                };
+                installFromUrl(request.url, { tabid: sender.tab.id }, cb);
+            } else {
+                console.log(I18N.getMessage("Unable_to_install_script_due_to_empty_tabID_"));
+            }
+        }
+    },
+    "registerMenuCmd" : {
+        allow : { "script" : true },
+        exec : function(request, sender, sendResponse) {
+            if (typeof sender.tab != 'undefined') {
+                if (V || MV) console.log("MC add " + request.id);
+                TM_menuCmd.add({ tabId: sender.tab.id, url: sender.tab.url, name: request.name, id: request.menuId, response: sendResponse });
+            } else {
+                console.log("Unable to register menu cmd due to empty tabID!");
+                sendResponse({ run: false });
+            }
+        }
+    },
+    "unRegisterMenuCmd" : {
+        allow : { "script" : true },
+        exec : function(request, sender, sendResponse) {
+            // cmd is unregistered just by getting
+            if (V || MV) console.log("MC unreg " + request.id);
+            TM_menuCmd.clearById(request.id);
+            sendResponse({});
+        }
+    },
+    "execMenuCmd" : {
+        allow : { "extpage" : true },
+        exec : function(request, sender, sendResponse) {
+            // cmd is unregistered just by getting
+            var c = TM_menuCmd.getById(request.id);
+            if (c) {
+                if (V || MV) console.log("MC exec " + c.id);
+                c.response({ run: true, menuId: c.id });
+            } else {
+                console.log("bg: Error: unable to find MC id " + c.id);
+            }
+            sendResponse({});
+        }
+    },
+    "runScriptUpdates" : {
+        allow : { "extpage" : true },
+        exec : function(request, sender, sendResponse) {
+            if (request.scriptid) {
+                var done = function(up) {
+                    sendResponse({ scriptid: request.scriptid, updatable: up});
+                }
+                ScriptUpdater.check(true, false, request.scriptid, done);
+            } else {
+                ScriptUpdater.check(true, true);
                 sendResponse({});
             }
-        } else {
+        }
+    },
+    "getWebRequestInfo" : {
+        allow : { "script" : true },
+        exec : function(request, sender, sendResponse) {
+            if (typeof sender.tab != 'undefined') {
+                var r = { webRequest: _webRequest };
+                sendResponse(r);
+            } else {
+                console.log(I18N.getMessage("Unable_to_run_scripts_due_to_empty_tabID_"));
+                sendResponse({});
+            }
+        }
+    },
+    "unLoad" : {
+        allow : { "script" : true },
+        exec : function(request, sender, sendResponse) {
+            if (!request.topframe && // unload of topframe will be handled by next load event
+                (Config.values.appearance_badges == 'running' ||
+                 Config.values.appearance_badges == 'disabled')) {
+
+                var frameId = 0;
+                var contextId = request.id;
+                if (V || UV) console.log("unload check " + contextId + " url: " + request.url);
+
+                if (contextId &&
+                    ctxRegistry.has(sender.tab.id) &&
+                    ctxRegistry.n[sender.tab.id].stats.executed[contextId]) {
+
+                    ctxRegistry.n[sender.tab.id].stats.running -= ctxRegistry.n[sender.tab.id].stats.executed[contextId].running;
+                    ctxRegistry.n[sender.tab.id].stats.disabled -= ctxRegistry.n[sender.tab.id].stats.executed[contextId].disabled;
+
+                    // shouldn't happen...
+                    if (ctxRegistry.n[sender.tab.id].stats.running < 0) ctxRegistry.n[sender.tab.id].stats.running = 0;
+                    if (ctxRegistry.n[sender.tab.id].stats.disabled < 0) ctxRegistry.n[sender.tab.id].stats.disabled = 0;
+
+                    var url = request.url + request.params;
+                    ctxRegistry.removeUrl(sender.tab.id, frameId, url);
+
+                    setBadge(sender.tab.id);
+                }
+            }
             sendResponse({});
         }
+    },
+    "prepare" : {
+        allow : { "script" : true },
+        exec : function(request, sender, sendResponse) {
+            if (typeof sender.tab != 'undefined' && sender.tab.index >= 0) { // index of -1 is used by google search for omnibox
+                var scheme = (!sender.tab || !sender.tab.url || sender.tab.url.length < 4) ? null :  sender.tab.url.substr(0,4);
 
-    } else if (request.method == "scriptBlockerDetected") {
-        var done = function(has, asked) {
-            sendResponse({ alert: has && asked });
-        };
+                if (scheme == "file" ||
+                    !ctxRegistry.has(sender.tab.id) /* i.e. tamperfire page */) {
 
-        contentSettings.requestPermissionEx(done);
-        if (ctxRegistry.has(sender.tab.id)) {
-            ctxRegistry.n[sender.tab.id].blocker = true;;
-            setIcon(sender.tab.id);
+                    Tab.reset(sender.tab.id, false);
+
+                    if (request.topframe &&
+                        _webRequest.headers &&
+                        _webRequest.verified) {
+
+                        if (!scheme || (scheme != "http" && scheme != "file")) {
+                            // all http related traffic should be Tab.prepare'd by webRequest.headerFix !
+                            console.log("bg: WARN: this should _NEVER_ happen!!!!!");
+                        } else {
+                            var nfo = { tabId: sender.tab.id,
+                                        frameId: request.topframe ? 0 : 1 /* TODO: get frameId of sender!*/ ,
+                                        scriptId: request.id,
+                                        url: sender.tab.url };
+
+                            ctxRegistry.setCache(nfo.tabId, nfo.frameId, nfo.url, Tab.prepare(nfo));
+                        }
+                    }
+                }
+
+                var length_cb = function(enabledScriptsCount, disabledScriptsCount ) {
+                    var r = { enabledScriptsCount: enabledScriptsCount,
+                              raw: {},
+                              webRequest: _webRequest,
+                              logLevel: Config.values.logLevel };
+
+                    if (enabledScriptsCount) {
+                        if (request.raw) {
+                            for (var o=0; o<request.raw.length; o++) {
+                                r.raw[request.raw[o]] = Registry.getRaw(request.raw[o]);
+                            }
+                        }
+                        sendResponse(r);
+                    } else {
+                        sendResponse( { logLevel: Config.values.logLevel } );
+                    }
+                    ctxRegistry.n[sender.tab.id].stats.running += enabledScriptsCount;
+                    ctxRegistry.n[sender.tab.id].stats.disabled += disabledScriptsCount;
+                    ctxRegistry.n[sender.tab.id].stats.executed[request.id] = { disabled: disabledScriptsCount, running: enabledScriptsCount };
+
+                    setIcon(sender.tab.id);
+                    if (Config.values.appearance_badges != 'tamperfire') {
+                        // dont determine tamperfire entries too often!
+                        setBadge(sender.tab.id);
+                    }
+                };
+                var allrun_cb = function() {
+                    setBadge(sender.tab.id);
+                };
+                if (Config.values.forbiddenPages.length == 0 || validUrl(request.url, { exc: Config.values.forbiddenPages })) {
+                    // TODO: get frameId of sender!
+                    sender.tab.frameId = request.topframe ? 0 : 1;
+                    tabUpdateListener(sender.tab.id, {status: "complete"}, sender.tab, request, length_cb, allrun_cb);
+                    // a url may be added! reset fire count
+                    ctxRegistry.setFireCnt(sender.tab.id, null);
+                } else {
+                    console.log("Forbidden page: '" + request.url + "' -> Do nothing!");
+                    sendResponse({});
+                }
+            } else {
+                sendResponse({});
+            }
         }
-    } else if (request.method == "startFireUpdate") {
-        var done = function(suc) {
-            sendResponse({ suc: suc });
-        };
-        TM_fire.checkUpdate(true, request.force, done);
-    } else if (request.method == "getFireItems") {
-        var done = function(cnt, items, progress) {
-            if (items == undefined) items = null;
+    },
+    "scriptBlockerDetected" : {
+        allow : { "script" : true },
+        exec : function(request, sender, sendResponse) {
+            var done = function(has, asked) {
+                var a = (has && asked) ? I18N.getMessage("Please_reload_this_page_in_order_to_run_your_userscripts_") : null;
+                sendResponse({ alert: a });
+            };
 
-            var done2 = function(data) {
-                try {
-                    sendResponse({ image: data, cnt: cnt, scripts: items, progress: progress });
-                    items = [];
-                    res = [];
-                } catch (e) {
-                    console.log("bg: warn: action menu closed? " + JSON.stringify(e));
+            contentSettings.requestPermissionEx(done);
+            if (ctxRegistry.has(sender.tab.id)) {
+                ctxRegistry.n[sender.tab.id].blocker = true;;
+                setIcon(sender.tab.id);
+            }
+        }
+    },
+    "startFireUpdate" : {
+        allow : { "extpage" : true },
+        exec : function(request, sender, sendResponse) {
+            var done = function(suc) {
+                sendResponse({ suc: suc });
+            };
+            TM_fire.checkUpdate(true, request.force, done);
+        }
+    },
+    "getFireItems" : {
+        allow : { "extpage" : true },
+        exec : function(request, sender, sendResponse) {
+            var done = function(cnt, items, progress) {
+                if (items == undefined) items = null;
+
+                var done2 = function(data) {
+                    try {
+                        sendResponse({ image: data, cnt: cnt, scripts: items, progress: progress });
+                        items = [];
+                    } catch (e) {
+                        console.log("bg: warn: action menu closed? " + JSON.stringify(e));
+                    }
+                };
+                if (request.countonly) {
+                    done2(null);
+                } else {
+                    PNG.createIconEx(cnt, done2);
                 }
             };
-            if (request.countonly) {
-                done2(null);
-            } else {
-                PNG.createIconEx(cnt, done2);
+            if (!TM_fire.isReady()) {
+                done(0, [], { action: TM_fire.status.action , state: TM_fire.status.progress } );
+                return true;
             }
-        };
-        if (!TM_fire.isReady()) {
-            done(0, [], { action: TM_fire.status.action , state: TM_fire.status.progress } );
+
+            var idsdone = function(items) {
+                var ret = createFirePageItems(request, items);
+                done(items.length, ret);
+            };
+
+            if (request.tabid) {
+                if (request.countonly) {
+                    TM_fire.tab.getCount(request.tabid, done);
+                } else {
+                    TM_fire.tab.getItems(request.tabid, idsdone);
+                }
+            } else if (request.url) {
+                if (request.url == '*') {
+                    var cb = function(s) {
+                        var ids = [];
+                        for (var i=0; i<1000; i++) {
+                            ids.push(Math.floor(Math.random() * s + 1 ).toString());
+                        }
+
+                        TM_fire.ids.getItems(ids, idsdone);
+                    };
+
+                    TM_fire.getMax('scripts', 'sid', cb);
+                } else if (request.countonly) {
+                    TM_fire.url.getCount(request.url, done);
+                } else {
+                    TM_fire.url.getItems(request.url, idsdone);
+                }
+            } else {
+                done([], []);
+            }
+        }
+    },
+    "notification" : {
+        allow : { "script" : true, "extpage": true },
+        exec : function(request, sender, sendResponse) {
+            var image = (request.image && request.image != "") ? request.image : chrome.extension.getURL("images/icon128.png");
+            var cb = function (clicked) {
+                sendResponse({clicked : clicked});
+            }
+            notify.show(request.title, request.msg, image, request.delay, cb);
+        }
+    },
+    "localFileCB" : {
+        allow : { "script" : true },
+        exec : function(request, sender, sendResponse) {
+            if (!localFile.useIframeMessage) {
+                localFile.listener(null, request.data);
+            }
+            sendResponse({});
+        }
+    },
+    handler:  function(request, sender, sendResponse) {
+        if (!ginit) {
+            window.setTimeout(function() { requestHandler(request, sender, sendResponse); }, 10);
             return true;
         }
+        if (V || EV || MV) console.log("back: request.method " + request.method + " contextId " + request.id + " tabId: " + (sender.tab ? sender.tab.id : "unknown!!!"));
 
-        var idsdone = function(items) {
-            var ret = createFirePageItems(request, items);
-            done(items.length, ret);
-        };
+        var entry = requestHandling[request.method];
+        if (entry) {
+            if (entry.allow && entry.exec) {
+                var thisId = chrome.extension.getID();
+                var reqId = (sender.id === thisId);
+                var page = null;
+                var extpage = reqId && sender.tab && (sender.tab.url.search("chrome-extension") == 0);
+                if (reqId && extpage) {
+                    var arr = sender.tab.url.match(new RegExp("chrome-extension:\/\/" + thisId + "\/([a-zA-Z]*)\.html"));
+                    if (arr.length == 2) page = arr[1];
+                    sender.extpage = page;
+                }
+                var options = (page == 'options');
+                var script = reqId && !extpage;
 
-        if (request.tabid) {
-            if (request.countonly) {
-                TM_fire.tab.getCount(request.tabid, done);
+                if ((entry.allow.insecure) ||
+                    (entry.allow.extpage && extpage) ||
+                    (entry.allow.options && options) ||
+                    (entry.allow.script && script)) {
+
+                    var ret = entry.exec(request, sender, sendResponse);
+                    if (ret !== undefined) return ret;
+                } else {
+                    if (D) console.log("back: method " + request.method + " doesn't have the permission to be called from this context");
+                    return false;
+                }
             } else {
-                TM_fire.tab.getItems(request.tabid, idsdone);
-            }
-        } else if (request.url) {
-            if (request.url == '*') {
-                var cb = function(s) {
-                    var ids = [];
-                    for (var i=0; i<1000; i++) {
-                        ids.push(Math.floor(Math.random() * s + 1 ).toString());
-                    }
-
-                    TM_fire.ids.getItems(ids, idsdone);
-                };
-
-                TM_fire.getMax('scripts', 'sid', cb);
-            } else if (request.countonly) {
-                TM_fire.url.getCount(request.url, done);
-            } else {
-                TM_fire.url.getItems(request.url, idsdone);
+                console.log("b: invalid implementation of " + request.method);
+                return false;
             }
         } else {
-            done([], []);
+            console.log("b: " + I18N.getMessage("Unknown_method_0name0" , request.method));
+            return false;
         }
-    } else if (request.method == "notification") {
-        var image = (request.image && request.image != "") ? request.image : chrome.extension.getURL("images/icon128.png");
-        var cb = function (clicked) {
-            sendResponse({clicked : clicked});
-        }
-        notify.show(request.title, request.msg, image, request.delay, cb);
-    } else if (request.method == "localFileCB") {
-        if (!localFile.useIframeMessage) {
-            localFile.listener(null, request.data);
-        }
-        sendResponse({});
-    } else {
-        console.log("b: " + chrome.i18n.getMessage("Unknown_method_0name0" , request.method));
-        return false;
-    }
-    if (V) console.log("back: request.method " + request.method + " end!");
+        if (V) console.log("back: request.method " + request.method + " end!");
 
-    return true;
+        return true;
+    }
 };
 
 /* #### Action Menu && Options Page ### */
@@ -4370,7 +4637,7 @@ var createFirePageItems = function(request, items) {
         u = request.url;
     }
 
-    ret.push({ name: chrome.i18n.getMessage('Enable_Sort_Cache'),
+    ret.push({ name: I18N.getMessage('Enable_Sort_Cache'),
                id: 'fire_sort_cache_enabled',
                checkbox: true,
                option: true,
@@ -4378,12 +4645,12 @@ var createFirePageItems = function(request, items) {
                desc: '' });
 
     var c = items.length ? ' (' + items.length + ')' : '';
-    ret.push({ name: chrome.i18n.getMessage('Available_Userscripts') + c,  heading: true, scriptTab: true});
+    ret.push({ name: I18N.getMessage('Available_Userscripts') + c,  heading: true, scriptTab: true});
 
     ret = ret.concat(convertScriptsToMenuItems(items, true));
 
-    ret.push({ name: chrome.i18n.getMessage('Settings'),  heading: true });
-    ret.push({ name: chrome.i18n.getMessage('General'), section: true});
+    ret.push({ name: I18N.getMessage('Settings'),  heading: true });
+    ret.push({ name: I18N.getMessage('General'), section: true});
 
     var v = '', d = '';
     var l = getUpdateCheckCfg();
@@ -4395,13 +4662,13 @@ var createFirePageItems = function(request, items) {
         d = new Date(m).toString();
     }
 
-    v += chrome.i18n.getMessage('Current_Index_') + '<br><br>';
-    v += chrome.i18n.getMessage('Date_') + ' ' + d  + '<br>';
-    v += chrome.i18n.getMessage('Entries_') + ' ' + ((l.fire.entries) ? l.fire.entries : '?')  + '<br><br><br>';
+    v += I18N.getMessage('Current_Index_') + '<br><br>';
+    v += I18N.getMessage('Date_') + ' ' + d  + '<br>';
+    v += I18N.getMessage('Entries_') + ' ' + ((l.fire.entries) ? l.fire.entries : '?')  + '<br><br><br>';
 
     ret.push({ name: 'TamperFire DB', fire: true, fireInfo: true, value: v, versionDB: m});
-    ret.push({ name: chrome.i18n.getMessage('Check_for_Updates'),
-              fname: chrome.i18n.getMessage('Force_Update'),
+    ret.push({ name: I18N.getMessage('Check_for_Updates'),
+              fname: I18N.getMessage('Force_Update'),
                fire: true, fireUpdate: true});
 
     ret.push({ name: 'Search by URL',
@@ -4421,7 +4688,7 @@ var createActionMenuItems = function(tab) {
     var s = [];
 
     if (Config.values.fire_enabled) {
-        s.push({ name: chrome.i18n.getMessage('_0_scripts_found'),
+        s.push({ name: I18N.getMessage('_0_scripts_found'),
                  image: chrome.extension.getURL('images/download.gif'),
                  doneImage: chrome.extension.getURL('images/fire.png'),
                  tabid: tab.id, tamperfire: true,
@@ -4433,24 +4700,24 @@ var createActionMenuItems = function(tab) {
     s = s.concat(convertMgmtToMenuItems(tab));
     if (!s.length) {
         if (Config.values.forbiddenPages.length == 0 || validUrl(url, { exc: Config.values.forbiddenPages })) {
-            s.push({ name: chrome.i18n.getMessage('No_script_is_running'), image: chrome.extension.getURL('images/info.png')});
+            s.push({ name: I18N.getMessage('No_script_is_running'), image: chrome.extension.getURL('images/info.png')});
         } else {
-            s.push({ name: chrome.i18n.getMessage('This_page_is_blacklisted_at_the_security_settings'), image: chrome.extension.getURL('images/critical.png')});
+            s.push({ name: I18N.getMessage('This_page_is_blacklisted_at_the_security_settings'), image: chrome.extension.getURL('images/critical.png')});
         }
     }
-    s.push({ name: chrome.i18n.getMessage('Get_new_scripts___'), image: chrome.extension.getURL('images/script_download.png'), url: 'http://userscripts.org', newtab: true});
-    s.push({ name: chrome.i18n.getMessage('Add_new_script___'), image: chrome.extension.getURL('images/script_add.png'), url: chrome.extension.getURL('options.html') + '?open=0', newtab: true });
+    s.push({ name: I18N.getMessage('Get_new_scripts___'), image: chrome.extension.getURL('images/script_download.png'), url: 'http://userscripts.org', newtab: true});
+    s.push({ name: I18N.getMessage('Add_new_script___'), image: chrome.extension.getURL('images/script_add.png'), url: chrome.extension.getURL('options.html') + '?open=0', newtab: true });
 
     ret = ret.concat(s);
     ret.push(createDivider());
 
     var c = convertMenuCmdsToMenuItems(tab.id);
     if (c.length) c.push(createDivider());
-    c.push({ name: chrome.i18n.getMessage('Check_for_userscripts_updates'), image: chrome.extension.getURL('images/update.png'), runUpdate: true});
-    c.push({ name: chrome.i18n.getMessage('Report_a_bug'), image: chrome.extension.getURL('images/bug.png'), url: 'http://tampermonkey.net/bug', newtab: true });
-    c.push({ name: chrome.i18n.getMessage('Please_consider_a_donation'), image: chrome.extension.getURL('images/amor.png'), url: 'http://tampermonkey.net/donate.html', newtab: true });
+    c.push({ name: I18N.getMessage('Check_for_userscripts_updates'), image: chrome.extension.getURL('images/update.png'), runUpdate: true});
+    c.push({ name: I18N.getMessage('Report_a_bug'), image: chrome.extension.getURL('images/bug.png'), url: 'http://tampermonkey.net/bug', newtab: true });
+    c.push({ name: I18N.getMessage('Please_consider_a_donation'), image: chrome.extension.getURL('images/amor.png'), url: 'http://tampermonkey.net/donate.html', newtab: true });
     if (c.length) c.push(createDivider());
-    c.push({ name: chrome.i18n.getMessage('Options'), image: chrome.extension.getURL('images/agt_utilities.png'), url: chrome.extension.getURL('options.html'), newtab: true });
+    c.push({ name: I18N.getMessage('Options'), image: chrome.extension.getURL('images/agt_utilities.png'), url: chrome.extension.getURL('options.html'), newtab: true });
     c.push(createAboutItem());
 
     ret = ret.concat(c);
@@ -4463,12 +4730,12 @@ var createOptionItems = function(cb) {
     var c = [];
     var len = 1;
 
-    ret.push({ name: chrome.i18n.getMessage('Installed_userscripts'),  heading: true, scriptTab: true});
+    ret.push({ name: I18N.getMessage('Installed_userscripts'),  heading: true, scriptTab: true});
 
     var s = convertMgmtToMenuItems(null, true);
     if (!s.length) {
-        s.push({ name: chrome.i18n.getMessage('No_script_is_installed'), image: chrome.extension.getURL('images/info.png')});
-        s.push({ name: chrome.i18n.getMessage('Get_some_scripts___'), image: chrome.extension.getURL('images/edit_add.png'), url: 'http://userscripts.org', newtab: true});
+        s.push({ name: I18N.getMessage('No_script_is_installed'), image: chrome.extension.getURL('images/info.png')});
+        s.push({ name: I18N.getMessage('Get_some_scripts___'), image: chrome.extension.getURL('images/edit_add.png'), url: 'http://userscripts.org', newtab: true});
     } else {
         len = s.length;
     }
@@ -4497,7 +4764,7 @@ var createOptionItems = function(cb) {
                 version: true,
                 value: chrome.extension.getVersion() });
 
-    ret.push ({ name: chrome.i18n.getMessage('New_userscript'),
+    ret.push ({ name: I18N.getMessage('New_userscript'),
                 id: null,
                 image: chrome.extension.getURL('images/script_add.png'),
                 icon: chrome.extension.getURL('images/txt.png'),
@@ -4511,7 +4778,7 @@ var createOptionItems = function(cb) {
     ret = ret.concat(s);
     ret.push(createDivider());
 
-    ret.push({ name: chrome.i18n.getMessage('Settings'), heading: true});
+    ret.push({ name: I18N.getMessage('Settings'), heading: true});
 
     var optsg = [];
     var optse = [];
@@ -4523,28 +4790,46 @@ var createOptionItems = function(cb) {
     var optsy = [];
     var optsr = [];
 
-    optsg.push({ name: chrome.i18n.getMessage('General'), section: true});
+    optsg.push({ name: I18N.getMessage('General'), section: true});
 
-    optsg.push({ name:  chrome.i18n.getMessage('Config_Mode'),
+    optsg.push({ name:  I18N.getMessage('Config_Mode'),
                id: 'configMode',
                level: 0,
                option: true,
-               select: [ { name: chrome.i18n.getMessage('Novice'), value: 0 },
-                         { name: chrome.i18n.getMessage('Beginner'), value: 50 },
-                         { name: chrome.i18n.getMessage('Advanced'), value: 100 } ],
+               select: [ { name: I18N.getMessage('Novice'), value: 0 },
+                         { name: I18N.getMessage('Beginner'), value: 50 },
+                         { name: I18N.getMessage('Advanced'), value: 100 } ],
                value: Config.values.configMode,
-               desc: chrome.i18n.getMessage('Changes_the_number_of_visible_config_options') });
+               desc: I18N.getMessage('Changes_the_number_of_visible_config_options') });
 
-    optsg.push({ name: chrome.i18n.getMessage('Make_includes_more_safe'), id: 'safeUrls', level: 60, option: true, checkbox: true, enabled: Config.values.safeUrls,
-               desc: chrome.i18n.getMessage('Includes_more_safe_example')});
-    optsg.push({ name: chrome.i18n.getMessage('Fix_includes'), id: 'tryToFixUrl', level: 60, option: true, checkbox: true, enabled: Config.values.tryToFixUrl,
-               desc: chrome.i18n.getMessage('Fix_includes_example') });
-    optsg.push({ name: chrome.i18n.getMessage('Auto_reload_on_script_enabled'), level: 20, id: 'autoReload', option: true, checkbox: true, enabled: Config.values.autoReload,
-               desc: chrome.i18n.getMessage('Auto_reload_on_script_enabled_desc') });
+    optsg.push({ name:  I18N.getMessage('Language'),
+               id: 'i18n',
+               level: 0,
+               option: true,
+               reload: true,
+               warning: I18N.getMessage('A_reload_is_required'),
+               /* do not translate the default options to allow this to be reset! */
+               select: [ { name: 'Browser Default', value: null },
+                         { name: I18N.getOriginalMessage('English'), value: 'en' },
+                         { name: I18N.getOriginalMessage('German'), value: 'de' },
+                         { name: I18N.getOriginalMessage('French'), value: 'fr' },
+                         { name: I18N.getOriginalMessage('Spanish'), value: 'es' },
+                         { name: I18N.getOriginalMessage('Polish'), value: 'pl' },
+                         { name: I18N.getOriginalMessage('Chinese__Simplified_'), value: 'zh_CN' },
+                         { name: I18N.getOriginalMessage('Chinese__Traditional_'), value: 'zh_TW' },
+                         { name: I18N.getOriginalMessage('Japanese'), value: 'ja' } ],
+               value: Config.values.i18n });
 
-    optsg.push({ name: chrome.i18n.getMessage('Debug_scripts'), level: 100, id: 'debug', option: true, checkbox: true, enabled: Config.values.debug,
+    optsg.push({ name: I18N.getMessage('Make_includes_more_safe'), id: 'safeUrls', level: 60, option: true, checkbox: true, enabled: Config.values.safeUrls,
+               desc: I18N.getMessage('Includes_more_safe_example')});
+    optsg.push({ name: I18N.getMessage('Fix_includes'), id: 'tryToFixUrl', level: 60, option: true, checkbox: true, enabled: Config.values.tryToFixUrl,
+               desc: I18N.getMessage('Fix_includes_example') });
+    optsg.push({ name: I18N.getMessage('Auto_reload_on_script_enabled'), level: 20, id: 'autoReload', option: true, checkbox: true, enabled: Config.values.autoReload,
+               desc: I18N.getMessage('Auto_reload_on_script_enabled_desc') });
+
+    optsg.push({ name: I18N.getMessage('Debug_scripts'), level: 100, id: 'debug', option: true, checkbox: true, enabled: Config.values.debug,
                desc: '' });
-    optsg.push({ name: chrome.i18n.getMessage('Show_fixed_source'), level: 100, id: 'showFixedSrc', option: true, checkbox: true, enabled: Config.values.showFixedSrc,
+    optsg.push({ name: I18N.getMessage('Show_fixed_source'), level: 100, id: 'showFixedSrc', option: true, checkbox: true, enabled: Config.values.showFixedSrc,
                desc: '' });
     optsg.push({ name: 'LogLevel',
                id: 'logLevel',
@@ -4558,47 +4843,27 @@ var createOptionItems = function(cb) {
                value: Config.values.logLevel,
                desc: '' });
 
-    optsy.push({ name: chrome.i18n.getMessage('TESLC') + ' BETA', section: true, level: 50, needsave: true });
+    optsy.push({ name: I18N.getMessage('TESLA') + ' BETA', section: true, level: 50, needsave: true });
 
-    optsy.push({ name: chrome.i18n.getMessage('Enable_TESLC'),
+    optsy.push({ name: I18N.getMessage('Enable_TESLA'),
                        id: 'sync_enabled',
                        level: 50,
                        option: true,
                        checkbox: true,
                        enabled: Config.values.sync_enabled,
-                       desc: chrome.i18n.getMessage('Tampermonkey_External_Script_List_Control') });
+                       desc: I18N.getMessage('Tampermonkey_External_Script_List_Access') });
 
 
-    optsy.push({ name: chrome.i18n.getMessage('Sync_Type'),
+    optsy.push({ name: I18N.getMessage('Sync_Type'),
                  id: 'sync_type',
                  enabler: true,
                  level: 50,
                  option: true,
-                 select: [ { name: "pastebin.com", value: SyncInfo.types.ePASTEBIN, enable : { 'sync_export' : 0, 'import_pl_mi': 0 }} /*,
-                           { name: "Chrome Sync", value: SyncInfo.types.eCHROMESYNC, enable : { 'sync_id': 0, 'create_teslc_data' : 0 }} */ ],
+                 select: [ { name: "pastebin.com", value: SyncInfo.types.ePASTEBIN },
+                           { name: "Chrome Sync (Beta)", value: SyncInfo.types.eCHROMESYNC, enable : { 'sync_id': 0, 'create_tesla_data' : 0 }} ],
                  value: Config.values.sync_type });
 
-    optsy.push({ name: chrome.i18n.getMessage('Import_Mode'),
-               id: 'sync_import',
-               enabledBy: 'sync_type',
-               level: 60,
-               option: true,
-               select: [ { name: chrome.i18n.getMessage('Create_only'), value: '+' },
-                         { name: chrome.i18n.getMessage('Create_and_remove'), value: '+-', enabledBy: 'sync_type', id: 'import_pl_mi' } ],
-               value: Config.values.sync_import,
-               desc: chrome.i18n.getMessage('This_options_sets_up_how_to_handle_changes_from_the_sync_server_') });
-
-    optsy.push({ name: chrome.i18n.getMessage('Export_Mode'),
-               id: 'sync_export',
-               enabledBy: 'sync_type',
-               level: 60,
-               option: true,
-               select: [ { name: chrome.i18n.getMessage('Create_only'), value: '+' },
-                         { name: chrome.i18n.getMessage('Create_and_remove'), value: '+-' } ],
-               value: Config.values.sync_export,
-               desc: chrome.i18n.getMessage('This_options_sets_up_how_to_handle_changes_from_the_sync_server_') });
-
-    optsy.push({ name: chrome.i18n.getMessage('Sync_Id'),
+    optsy.push({ name: I18N.getMessage('Sync_Id'),
                  id: 'sync_id',
                  enabledBy: 'sync_type',
                  level: 50,
@@ -4607,17 +4872,17 @@ var createOptionItems = function(cb) {
                  option: true });
 
 
-    optsy.push({ name: chrome.i18n.getMessage('Create_Exportable_Data'),
-               id: 'create_teslc_data',
+    optsy.push({ name: I18N.getMessage('Create_Exportable_Data'),
+               id: 'create_tesla_data',
                enabledBy: 'sync_type',
                button: true,
                ignore: true,
                level: 60,
-               warning: chrome.i18n.getMessage('Copy_exportable_data_to_clipboard_Ok_') });
+               warning: I18N.getMessage('Copy_exportable_data_to_clipboard_Ok_') });
 
-    optsa.push({ name: chrome.i18n.getMessage('Appearance'), section: true, level: 20 });
+    optsa.push({ name: I18N.getMessage('Appearance'), section: true, level: 20 });
 
-    optsa.push({ name: chrome.i18n.getMessage('Update_Notification'),
+    optsa.push({ name: I18N.getMessage('Update_Notification'),
                id: 'notification_showTMUpdate',
                level: 20,
                option: true,
@@ -4625,28 +4890,28 @@ var createOptionItems = function(cb) {
                enabled: Config.values.notification_showTMUpdate,
                desc: '' });
 
-    optsa.push({ name: chrome.i18n.getMessage('Icon_badge_info'),
+    optsa.push({ name: I18N.getMessage('Icon_badge_info'),
                id: 'appearance_badges',
                level: 50,
                option: true,
-               select: [ { name: chrome.i18n.getMessage('Off'), value: 'off' },
-                         { name: chrome.i18n.getMessage('Running_scripts'), value: 'running' },
-                         { name: chrome.i18n.getMessage('Unique_running_scripts'), value: 'running_unique' },
-                         { name: chrome.i18n.getMessage('Disabled_scripts'), value: 'disabled' },
+               select: [ { name: I18N.getMessage('Off'), value: 'off' },
+                         { name: I18N.getMessage('Running_scripts'), value: 'running' },
+                         { name: I18N.getMessage('Unique_running_scripts'), value: 'running_unique' },
+                         { name: I18N.getMessage('Disabled_scripts'), value: 'disabled' },
                          { name: 'TamperFire', value: 'tamperfire' } ],
                value: Config.values.appearance_badges,
                desc: '' });
 
-    opttf.push({ name: chrome.i18n.getMessage('TamperFire'), section: true});
+    opttf.push({ name: I18N.getMessage('TamperFire'), section: true});
 
-    opttf.push({ name: chrome.i18n.getMessage('Enable_TamperFire'),
+    opttf.push({ name: I18N.getMessage('Enable_TamperFire'),
                id: 'fire_enabled',
                level: 0,
                option: true,
                checkbox: true,
                enabled: Config.values.fire_enabled,
                desc: '' });
-    opttf.push({ name: chrome.i18n.getMessage('Enable_Sort_Cache'),
+    opttf.push({ name: I18N.getMessage('Enable_Sort_Cache'),
                id: 'fire_sort_cache_enabled',
                level: 100,
                checkbox: true,
@@ -4654,78 +4919,89 @@ var createOptionItems = function(cb) {
                enabled: Config.values.fire_sort_cache_enabled,
                desc: '' });
 
-    opttf.push({ name: chrome.i18n.getMessage('Update_interval'),
+    opttf.push({ name: I18N.getMessage('Update_interval'),
                id: 'fire_updatePeriod',
                level: 50,
                option: true,
-               select: [ { name: chrome.i18n.getMessage('Never'), value: 0 },
-                         { name: chrome.i18n.getMessage('Every_Day'), value: 24 * 60 * 60 * 1000 },
-                         { name: chrome.i18n.getMessage('Every_Week'), value: 7 * 24 * 60 * 60 * 1000 },
-                         { name: chrome.i18n.getMessage('Every_2_Weeks'), value: 14 * 24 * 60 * 60 * 1000 },
-                         { name: chrome.i18n.getMessage('Every_Month'), value: 30 * 24 * 60 * 60 * 1000 } ],
+               select: [ { name: I18N.getMessage('Never'), value: 0 },
+                         { name: I18N.getMessage('Every_Day'), value: 24 * 60 * 60 * 1000 },
+                         { name: I18N.getMessage('Every_Week'), value: 7 * 24 * 60 * 60 * 1000 },
+                         { name: I18N.getMessage('Every_2_Weeks'), value: 14 * 24 * 60 * 60 * 1000 },
+                         { name: I18N.getMessage('Every_Month'), value: 30 * 24 * 60 * 60 * 1000 } ],
                value: Config.values.fire_updatePeriod,
                desc: '' });
 
-    optse.push({ name: chrome.i18n.getMessage('Editor'), section: true, level: 20});
+    optse.push({ name: I18N.getMessage('Editor'), section: true, level: 20});
 
-    optse.push({ name: chrome.i18n.getMessage('Enable_Editor'),
+    optse.push({ name: I18N.getMessage('Enable_Editor'),
                id: 'editor_enabled',
                level: 100,
                option: true,
                checkbox: true,
                enabled: Config.values.editor_enabled,
                reload: true,
-               warning: chrome.i18n.getMessage('A_reload_is_required'),
+               warning: I18N.getMessage('A_reload_is_required'),
                desc: '' });
 
-    optse.push({ name: chrome.i18n.getMessage('Indentation_Width'),
+    optse.push({ name: I18N.getMessage('Key_Mapping'),
+               id: 'editor_keyMap',
+               level: 50,
+               option: true,
+               reload: true,
+               warning: I18N.getMessage('A_reload_is_required'),
+               select: [ { name: I18N.getMessage('Windows'), value: 'windows' },
+                         { name: I18N.getMessage('Emacs'), value: 'emacs' },
+                         { name: I18N.getMessage('Vim'), value: 'vim' } ],
+               value: Config.values.editor_keyMap });
+
+    optse.push({ name: I18N.getMessage('Indentation_Width'),
                id: 'editor_indentUnit',
                level: 50,
                option: true,
-               select: [ { name: chrome.i18n.getMessage('1'), value: 1 },
-                         { name: chrome.i18n.getMessage('2'), value: 2 },
-                         { name: chrome.i18n.getMessage('3'), value: 3 },
-                         { name: chrome.i18n.getMessage('4'), value: 4 },
-                         { name: chrome.i18n.getMessage('5'), value: 5 },
-                         { name: chrome.i18n.getMessage('6'), value: 6 },
-                         { name: chrome.i18n.getMessage('7'), value: 7 },
-                         { name: chrome.i18n.getMessage('8'), value: 8 },
-                         { name: chrome.i18n.getMessage('9'), value: 9 },
-                         { name: chrome.i18n.getMessage('10'), value: 10 },
-                         { name: chrome.i18n.getMessage('11'), value: 11 } ],
+               select: [ { name: I18N.getMessage('1'), value: 1 },
+                         { name: I18N.getMessage('2'), value: 2 },
+                         { name: I18N.getMessage('3'), value: 3 },
+                         { name: I18N.getMessage('4'), value: 4 },
+                         { name: I18N.getMessage('5'), value: 5 },
+                         { name: I18N.getMessage('6'), value: 6 },
+                         { name: I18N.getMessage('7'), value: 7 },
+                         { name: I18N.getMessage('8'), value: 8 },
+                         { name: I18N.getMessage('9'), value: 9 },
+                         { name: I18N.getMessage('10'), value: 10 },
+                         { name: I18N.getMessage('11'), value: 11 } ],
                value: Config.values.editor_indentUnit,
                desc: '' });
 
-    optse.push({ name: chrome.i18n.getMessage('Indent_with'),
+    optse.push({ name: I18N.getMessage('Indent_with'),
                id: 'editor_indentWithTabs',
                level: 50,
                option: true,
-               select: [ { name: chrome.i18n.getMessage('Tabs'), value: 'tabs' },
-                         { name: chrome.i18n.getMessage('Spaces'), value: 'spaces' } ],
+               select: [ { name: I18N.getMessage('Tabs'), value: 'tabs' },
+                         { name: I18N.getMessage('Spaces'), value: 'spaces' } ],
                value: Config.values.editor_indentWithTabs,
                desc: '' });
 
-    optse.push({ name: chrome.i18n.getMessage('TabMode'),
+    optse.push({ name: I18N.getMessage('TabMode'),
                id: 'editor_tabMode',
                level: 50,
                option: true,
-               select: [ { name: chrome.i18n.getMessage('Classic'), value: 'classic' },
-                         { name: chrome.i18n.getMessage('Smart'), value: 'smart' } ],
+               select: [ { name: I18N.getMessage('Classic'), value: 'classic' },
+                         { name: I18N.getMessage('Smart'), value: 'smart' } ],
                value: Config.values.editor_tabMode,
                      desc: '' });
 
 
-    /* optse.push({ name: chrome.i18n.getMessage('EnterMode'),
+    /* optse.push({ name: I18N.getMessage('EnterMode'),
                id: 'editor_enterMode',
                level: 50,
                option: true,
-               select: [ { name: chrome.i18n.getMessage('Indent_new_lines'), value: 'indent' },
-                         { name: chrome.i18n.getMessage('Indent_as_previous'), value: 'keep' },
-                         { name: chrome.i18n.getMessage('No_Indentation'), value: 'flat' } ],
+               select: [ { name: I18N.getMessage('Indent_new_lines'), value: 'indent' },
+                         { name: I18N.getMessage('Indent_as_previous'), value: 'keep' },
+                         { name: I18N.getMessage('No_Indentation'), value: 'flat' } ],
                value: Config.values.editor_enterMode,
                desc: '' }); */
 
-    optse.push({ name: chrome.i18n.getMessage('Reindent_on_typing'),
+    optse.push({ name: I18N.getMessage('Reindent_on_typing'),
                id: 'editor_electricChars',
                level: 50,
                option: true,
@@ -4734,7 +5010,7 @@ var createOptionItems = function(cb) {
                desc: '' });
 
 
-    optse.push({ name: chrome.i18n.getMessage('Show_Line_Numbers'),
+    optse.push({ name: I18N.getMessage('Show_Line_Numbers'),
                id: 'editor_lineNumbers',
                level: 20,
                option: true,
@@ -4742,7 +5018,7 @@ var createOptionItems = function(cb) {
                enabled: Config.values.editor_lineNumbers,
                desc: '' });
 
-   /* optse.push({ name: chrome.i18n.getMessage('Enable_autoSave'),
+   /* optse.push({ name: I18N.getMessage('Enable_autoSave'),
                id: 'editor_autoSave',
                level: 20,
                option: true,
@@ -4750,7 +5026,7 @@ var createOptionItems = function(cb) {
                enabled: Config.values.editor_autoSave,
                desc: '' }); */
 
-    optse.push({ name: chrome.i18n.getMessage('Enable_easySave'),
+    optse.push({ name: I18N.getMessage('Enable_easySave'),
                id: 'editor_easySave',
                level: 20,
                option: true,
@@ -4758,9 +5034,9 @@ var createOptionItems = function(cb) {
                enabled: Config.values.editor_easySave,
                desc: '' });
 
-    optsu.push({ name: chrome.i18n.getMessage('Script_Update'), section: true, level: 0});
+    optsu.push({ name: I18N.getMessage('Script_Update'), section: true, level: 0});
 
-    optsu.push({ name: chrome.i18n.getMessage('Check_disabled_scripts'),
+    optsu.push({ name: I18N.getMessage('Check_disabled_scripts'),
                id: 'scriptUpdateCheckDisabled',
                level: 0,
                option: true,
@@ -4768,20 +5044,20 @@ var createOptionItems = function(cb) {
                enabled: Config.values.scriptUpdateCheckDisabled,
                desc: '' });
 
-    optsu.push({ name: chrome.i18n.getMessage('Check_interval'),
+    optsu.push({ name: I18N.getMessage('Check_interval'),
                id: 'scriptUpdateCheckPeriod',
                level: 0,
                option: true,
-               select: [ { name: chrome.i18n.getMessage('Never'), value: 0 },
-                         { name: chrome.i18n.getMessage('Every_Hour'), value: 1 * 60 * 60 * 1000 },
-                         { name: chrome.i18n.getMessage('Every_6_Hours'), value: 6 * 60 * 60 * 1000 },
-                         { name: chrome.i18n.getMessage('Every_12_Hour'), value: 12 * 60 * 60 * 1000 },
-                         { name: chrome.i18n.getMessage('Every_Day'), value: 24 * 60 * 60 * 1000 },
-                         { name: chrome.i18n.getMessage('Every_Week'), value: 7 * 24 * 60 * 60 * 1000 } ],
+               select: [ { name: I18N.getMessage('Never'), value: 0 },
+                         { name: I18N.getMessage('Every_Hour'), value: 1 * 60 * 60 * 1000 },
+                         { name: I18N.getMessage('Every_6_Hours'), value: 6 * 60 * 60 * 1000 },
+                         { name: I18N.getMessage('Every_12_Hour'), value: 12 * 60 * 60 * 1000 },
+                         { name: I18N.getMessage('Every_Day'), value: 24 * 60 * 60 * 1000 },
+                         { name: I18N.getMessage('Every_Week'), value: 7 * 24 * 60 * 60 * 1000 } ],
                value: Config.values.scriptUpdateCheckPeriod,
                desc: '' });
 
-    optsu.push({ name: chrome.i18n.getMessage('Dont_ask_me_for_simple_script_updates'),
+    optsu.push({ name: I18N.getMessage('Dont_ask_me_for_simple_script_updates'),
                id: 'notification_silentScriptUpdate',
                level: 80,
                option: true,
@@ -4789,32 +5065,50 @@ var createOptionItems = function(cb) {
                enabled: Config.values.notification_silentScriptUpdate,
                desc: '' });
 
-    optsu.push({ name: chrome.i18n.getMessage('Hide_notification_after'),
+    optsu.push({ name: I18N.getMessage('Hide_notification_after'),
                id: 'scriptUpdateHideNotificationAfter',
                level: 50,
                option: true,
-               select: [ { name: chrome.i18n.getMessage('Never'), value: 0 },
-                         { name: chrome.i18n.getMessage('15_Seconds'), value: 15 * 1000 },
-                         { name: chrome.i18n.getMessage('30_Seconds'), value: 30 * 1000 },
-                         { name: chrome.i18n.getMessage('1_Minute'), value: 60 * 1000 },
-                         { name: chrome.i18n.getMessage('5_Minutes'), value: 5 * 60 * 1000 },
-                         { name: chrome.i18n.getMessage('1_Hour'), value: 60 * 60 * 1000 } ],
+               select: [ { name: I18N.getMessage('Never'), value: 0 },
+                         { name: I18N.getMessage('15_Seconds'), value: 15 * 1000 },
+                         { name: I18N.getMessage('30_Seconds'), value: 30 * 1000 },
+                         { name: I18N.getMessage('1_Minute'), value: 60 * 1000 },
+                         { name: I18N.getMessage('5_Minutes'), value: 5 * 60 * 1000 },
+                         { name: I18N.getMessage('1_Hour'), value: 60 * 60 * 1000 } ],
                value: Config.values.scriptUpdateHideNotificationAfter,
                desc: '' });
 
-    optss.push({ name: chrome.i18n.getMessage('Security'), section: true, level: 50 });
+    optss.push({ name: I18N.getMessage('Security'), section: true, level: 50 });
 
-    optss.push({ name: chrome.i18n.getMessage('Allow_headers_to_be_modified_by_scripts'),
-               id: 'webrequest_modHeaders',
-               level: 0,
+    optss.push({ name: I18N.getMessage('Allow_overwrite_javascript_settings'),
+               id: 'scriptblocker_overwrite',
+               level: 50,
                option: true,
-               select: [ { name: chrome.i18n.getMessage('Yes'), value: 'yes' },
-                         { name: chrome.i18n.getMessage('Auto'), value: 'auto' },
-                         { name: chrome.i18n.getMessage('No'), value: 'no' } ],
+               select: [ { name: I18N.getMessage('Yes'), value: 'yes' },
+                         { name: I18N.getMessage('No'), value: 'no' } ],
+               value: Config.values.scriptblocker_overwrite,
+               desc: I18N.getMessage('Tampermonkey_can_not_work_when_javascript_is_disabled') });
+
+    optss.push({ name: I18N.getMessage('Add_TM_to_CSP'),
+               id: 'webrequest_fixCSP',
+               level: 50,
+               option: true,
+               select: [ { name: I18N.getMessage('Yes'), value: 'yes' },
+                         { name: I18N.getMessage('No'), value: 'no' } ],
+               value: Config.values.webrequest_fixCSP,
+               desc: I18N.getMessage('Tampermonkey_might_not_be_able_to_provide_access_to_the_unsafe_context_when_this_is_disabled') });
+
+    optss.push({ name: I18N.getMessage('Allow_headers_to_be_modified_by_scripts'),
+               id: 'webrequest_modHeaders',
+               level: 50,
+               option: true,
+               select: [ { name: I18N.getMessage('Yes'), value: 'yes' },
+                         { name: I18N.getMessage('Auto'), value: 'auto' },
+                         { name: I18N.getMessage('No'), value: 'no' } ],
                value: Config.values.webrequest_modHeaders,
                desc: '' });
 
-    optss.push({ name: chrome.i18n.getMessage('Forbidden_Pages'),
+    optss.push({ name: I18N.getMessage('Forbidden_Pages'),
                id: 'forbiddenPages',
                level: 50,
                option: true,
@@ -4823,7 +5117,7 @@ var createOptionItems = function(cb) {
                value: Config.values.forbiddenPages,
                desc: '' });
 
-    optss.push({ name: chrome.i18n.getMessage('_require_blacklist'),
+    optss.push({ name: I18N.getMessage('_require_blacklist'),
                id: 'require_blacklist',
                level: 80,
                option: true,
@@ -4832,33 +5126,42 @@ var createOptionItems = function(cb) {
                value: Config.values.require_blacklist,
                desc: '' });
 
-    optns.push({ name: chrome.i18n.getMessage('Userscripts'), section: true, level: 80 });
+    optns.push({ name: I18N.getMessage('Userscripts'), section: true, level: 80 });
 
-    optns.push({ name: chrome.i18n.getMessage('New_script_template_'),
+    optns.push({ name: I18N.getMessage('New_script_template_'),
                  id: 'scriptTemplate',
                  level: 80,
                  option: true,
                  input: true,
                  value: Config.values.scriptTemplate });
 
-    optsr.push({ name: chrome.i18n.getMessage('Reset_Section'), section: true, level: 50 });
+    optsr.push({ name: I18N.getMessage('Reset_Section'), section: true, level: 50 });
 
-    optsr.push({ name: chrome.i18n.getMessage('Restart_Tampermonkey'),
+    optsr.push({ name: I18N.getMessage('Restart_Tampermonkey'),
                id: 'reset_simple',
                level: 50,
                button: true,
                reload: true,
                value: 0,
-               warning: chrome.i18n.getMessage('This_will_restart_Tampermonkey_Ok_') });
+               warning: I18N.getMessage('This_will_restart_Tampermonkey_Ok_') });
 
-    optsr.push({ name: chrome.i18n.getMessage('Factory_Reset'),
+    optsr.push({ name: I18N.getMessage('Factory_Reset'),
                id: 'reset_factory',
                level: 80,
                button: true,
                reload: true,
                value: 0,
-               warning: chrome.i18n.getMessage('This_will_remove_all_scripts_and_reset_all_settings_Ok_') });
+               warning: I18N.getMessage('This_will_remove_all_scripts_and_reset_all_settings_Ok_') });
 
+    if (storagePermission.hasPermission) {
+        optsr.push({ name: I18N.getMessage('Chrome_Sync_Reset'),
+                     id: 'reset_chrome_sync',
+                     level: 80,
+                     button: true,
+                     reload: false,
+                     value: 0,
+                     warning: I18N.getMessage('This_will_remove_all_stored_data_from_google_sync_Ok_') });
+    }
 
     ret = ret.concat(optsg).concat(optsa).concat(optsu).concat(optsy).concat(opttf).concat(optse).concat(optss).concat(optns).concat(optsr);
 
@@ -4867,7 +5170,7 @@ var createOptionItems = function(cb) {
     ret.push(createDivider());
 
     if (false) {
-        ret.push({ name: chrome.i18n.getMessage('Registered_menu_cmds'), heading: true});
+        ret.push({ name: I18N.getMessage('Registered_menu_cmds'), heading: true});
 
         c = convertMenuCmdsToMenuItems();
         if (c.length) c.push(createDivider());
@@ -4890,10 +5193,10 @@ var createAboutItem = function() {
                'ext=' + chrome.extension.getID().substr(0, 4);
 
     return { image: chrome.extension.getURL('images/info.png'),
-             urls : [ { name: ' ' + chrome.i18n.getMessage('About'),
+             urls : [ { name: ' ' + I18N.getMessage('About'),
                         url: 'http://tampermonkey.net/about.html?' + args,
                         newtab: true },
-                      { name: ' ' + chrome.i18n.getMessage('Changelog'),
+                      { name: ' ' + I18N.getMessage('Changelog'),
                         url: 'http://tampermonkey.net/changelog.php?' + args,
                         newtab: true } ]
             };
@@ -5109,8 +5412,8 @@ var storagePermission = {
 
     askForPermission : function(cb) {
         permission.ask(permission.permStorage,
-                       chrome.i18n.getMessage("Storage_permission_is_needed_"),
-                       chrome.i18n.getMessage("Click_here_to_allow_TM_to_use_Google_sync"),
+                       I18N.getMessage("Storage_permission_is_needed_"),
+                       I18N.getMessage("Click_here_to_allow_TM_to_use_Google_sync"),
                        cb);
     },
 
@@ -5126,14 +5429,14 @@ var storagePermission = {
 
         var h = function(p) {
             if (storagePermission.asked) {
-                if (cb) cb(p);
-                return;
-            }
-
-            if (!p) {
-                storagePermission.askForPermission(gotPerm);
+                // asked earlier, but not now
+                if (cb) cb(p, false);
+            } else if (p) {
+                // we have permission :)
+                cb(p, false);
             } else {
-                cb(false);
+                // we don't have permission and also don't have asked yet
+                storagePermission.askForPermission(gotPerm);
             }
 
             // only once in a lifetime (TM) :)
@@ -5151,22 +5454,29 @@ var storagePermission = {
 var contentSettings = {
     asked: false,
     runCheck: false,
+    hasPermission: false,
     init: function() {
         var g = function(s) {
-            contentSettings.runCheck = s;
-            if (D) console.log("bg: contentSettings: runCheck = " + s)
+            contentSettings.hasPermission = s;
+            contentSettings.runCheck = contentSettings.hasPermission && (Config.values.scriptblocker_overwrite == 'yes');
+            if (D) console.log("bg: contentSettings: runCheck = " + contentSettings.runCheck + " hasPerm = " + contentSettings.hasPermission);
         };
         permission.has(permission.permContentSettings, g);
     },
 
     askForPermission : function(cb) {
         permission.ask(permission.permContentSettings,
-                       chrome.i18n.getMessage("A_script_blocker_was_detected_"),
-                       chrome.i18n.getMessage("Click_here_to_allow_TM_to_override_the_script_blocker"),
+                       I18N.getMessage("A_script_blocker_was_detected_"),
+                       I18N.getMessage("Click_here_to_allow_TM_to_override_the_script_blocker"),
                        cb);
     },
 
     requestPermissionEx : function(cb) {
+        if (Config.values.scriptblocker_overwrite != 'yes') {
+            if (cb) cb();
+            return;
+        }
+
         var gotPerm = function(g) {
             if (cb) cb(g, true);
             if (g && !contentSettings.runCheck) {
@@ -5178,14 +5488,14 @@ var contentSettings = {
 
         var h = function(p) {
             if (contentSettings.asked) {
-                if (cb) cb(p);
-                return;
-            }
-
-            if (!p) {
-                contentSettings.askForPermission(gotPerm);
+                // asked earlier, but not now
+                if (cb) cb(p, false);
+            } else if (p) {
+                // we have permission :)
+                cb(p, false);
             } else {
-                cb(false);
+                // we don't have permission and also don't have asked yet
+                contentSettings.askForPermission(gotPerm);
             }
 
             // only once in a lifetime (TM) :)
@@ -5233,7 +5543,7 @@ var Reset = {
                 TM_fire.clean(check);
             }
 
-            if (contentSettings.runCheck) {
+            if (contentSettings.hasPermission) {
                 running++;
                 contentSettings.remove(check);
             }
@@ -5555,7 +5865,7 @@ var webRequest = {
             if (x.indexOf(":") > 0) x = x.substr(0, x.indexOf(":"));
             d = x;
         }
-        
+
         return {domain: d, protocol: p};
     },
 
@@ -5563,15 +5873,19 @@ var webRequest = {
         var rh = details.responseHeaders;
         var id = details.requestId;
         var redirected = false;
+        var mod = false;
+        var xmlreq = (details.type == 'xmlhttprequest');
 
-        if (webRequest.redirects[id]) {
+        if (!xmlreq && !Config.values.webrequest_fixCSP) return {};
+
+        if (xmlreq && webRequest.redirects[id]) {
             redirected = true;
             // if (D) console.log("webReq: #" + id + " detected old redirect " + webRequest.redirects[id].url);
         }
 
         for (var i = 0; i < rh.length; i++) {
             var item = rh[i];
-            if (item.name == 'Location') {
+            if (xmlreq && item.name == 'Location') {
                 var wrap = function() {
                     var rid = id;
                     if (redirected) {
@@ -5587,6 +5901,15 @@ var webRequest = {
                 };
                 wrap();
                 break;
+            } else if (Config.values.webrequest_fixCSP &&
+                       (item.name == 'X-WebKit-CSP' || item.name == 'X-Content-Security-Policy')) {
+
+                var n = item.value.replace(/script-src /, 'script-src ' + 'chrome-extension://' + chrome.extension.id + '/ \'unsafe-inline\' \'unsafe-eval\' ')
+                if (D) console.log('csp: replace "' + item.value + '" with "' + n + '"');
+
+                item.value = n;
+                rh[i] = item;
+                mod = true;
             }
         }
 
@@ -5594,6 +5917,10 @@ var webRequest = {
             // if (D) console.log("webReq: #" + id + " add url to responseHeaders (" + webRequest.redirects[id].url + ")");
             rh.push({name: 'TM-finalURL', value: webRequest.redirects[id].url });
             // if (D) console.log(rh);
+            mod = true;
+        }
+
+        if (mod) {
             return { responseHeaders: rh };
         }
 
@@ -5634,7 +5961,7 @@ var webRequest = {
                 };
                 console.log("contentSettings: (" + (new Date()).getTime() + ") allow URL " + pat);
                 later();
-                    
+
                 window.setTimeout(later, 20);
             }
         }
@@ -5709,7 +6036,7 @@ var webRequest = {
     },
 
     checkRequestForUserscript : function(details) {
-        var up = details.url.search(/\.user\.(js\#|js\?|js$)/);
+        var up = ScriptDetector.isScriptUrl(details.url);
         var qp = details.url.search(/\?/);
         var hp = details.url.search(/\#/);
         var fi = details.url.search(/^file:\/\//);
@@ -5718,12 +6045,12 @@ var webRequest = {
             details.type == "main_frame" &&    /* ignore URLs from frames, xmlhttprequest, ... */
             details.method != 'POST' &&        /* i.e. github script modification commit */
             fi == -1 &&
-            up != -1 &&
+            up == true &&
             (qp == -1 || up < qp) &&           /* ignore user.js string in URL params */
             (hp == -1 || up < hp) &&           /* ignore user.js string in URL params */
             details.url.search(/\#bypass=true/) == -1) {
 
-            var url = chrome.extension.getURL("ask.html") + "?script=" + Converter.Base64.encode(details.url);
+            var url = chrome.extension.getURL("ask.html") + "?script=" + Converter.Base64.encode(details.url) + "&i18n=" + Config.values.i18n;
             if (RV) console.log("bg: user script detected @ " + details.url + " -> open tab with " + url);
 
             chrome.tabs.create({ url: url}, function() {});
@@ -5757,9 +6084,10 @@ var webRequest = {
             try {
                 var reqFilter = { urls: [ "http://*/*", "https://*/*" ], types : [ "xmlhttprequest" ] };
                 var rreqFilter = { urls: [ "http://*/*", "https://*/*", "file://*/*" ] };
+                var hreqFilter = { urls: [ "http://*/*", "https://*/*" ] };
                 chrome.webRequest.onBeforeRequest.addListener(webRequest.checkRequestForUserscript, rreqFilter, ["blocking"]);
                 chrome.webRequest.onBeforeSendHeaders.addListener(webRequest.headerFix, rreqFilter, ["requestHeaders", "blocking"]);
-                chrome.webRequest.onHeadersReceived.addListener(webRequest.detectRedirect, reqFilter, ["responseHeaders", "blocking"]);
+                chrome.webRequest.onHeadersReceived.addListener(webRequest.detectRedirect, hreqFilter, ["responseHeaders", "blocking"]);
 
                 if (headers) {
                     if (!verified) chrome.webRequest.onSendHeaders.addListener(webRequest.headerCheck, reqFilter, ["requestHeaders"]);
@@ -5814,8 +6142,7 @@ var loadListener = function(tabID, changeInfo, tab) {
                                     addNewUserScript({ tabid: tab.id, url: tab.url, src: response.src });
                                 });
     };
-    if (tab.url.search(/\.tamper\.js$/) != -1 ||
-        tab.url.search(/\.user\.js$/) != -1) {
+    if (ScriptDetector.isScriptUrl(tab.url)) {
         if (V) console.log("found script @ " + tab.url);
         if (changeInfo.status == 'complete') {
             if (loadListenerTimeout != null) {
@@ -5899,13 +6226,13 @@ var removeListener = function(tabId, removeInfo) {
 
 var initObjects = function() {
     adjustLogLevel(Config.values.logLevel);
+    I18N.setLocale(Config.values.i18n);
 
     contentSettings.init();
     storagePermission.init();
 
     if (Config.values.sync_enabled &&
-        Config.values.sync_type &&
-        Config.values.sync_id) {
+        Config.values.sync_type) {
 
         SyncClient.enable();
         SyncClient.scheduleSync(1000, true);
@@ -5934,9 +6261,11 @@ var compaMo;
 var scriptParser;
 var Helper;
 var Syncer;
+var I18N;
 
 init = function() {
     Converter = Registry.get('convert');
+    I18N = Registry.get('i18n');
     xmlhttpRequest = Registry.get('xmlhttprequest').run;
 
     compaMo = Registry.get('compat');
@@ -5978,7 +6307,7 @@ init = function() {
         chrome.tabs.onRemoved.addListener(removeListener);
         chrome.tabs.onSelectionChanged.addListener(selectionChangedListener);
 
-        chrome.extension.onMessage.addListener(requestHandler);
+        chrome.extension.onMessage.addListener(requestHandling.handler);
         chrome.extension.onConnect.addListener(connectHandler);
         chrome.extension.onConnectExternal.addListener(function(port) {
                                                            port.disconnect();

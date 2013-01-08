@@ -160,6 +160,9 @@
    "Click_here_to_install_it_": {
       "message": "インストールするにはここをクリックしてください。"
    },
+   "Click_here_to_see_the_recent_changes": {
+      "message": "最近の変更点を見るにはここをクリックしてください"
+   },
    "Close": {
       "message": "閉じる"
    },
@@ -179,7 +182,7 @@
       "message": "CDATA セクションを chrome 互換形式に変換する"
    },
    "Copy_exportable_data_to_clipboard_Ok_": {
-      "message": "エクスポート可能な TESLC データをクリップボードにコピーしますか?"
+      "message": "エクスポート可能な TESLA データをクリップボードにコピーしますか?"
    },
    "Create_Exportable_Data": {
       "message": "エクスポート可能なデータを作成"
@@ -270,8 +273,8 @@
    "Enable_Sort_Cache": {
       "message": "並べ替えのキャッシュを有効にする (メモリを多く使用します)"
    },
-   "Enable_TESLC": {
-      "message": "TESLC を有効にする"
+   "Enable_TESLA": {
+      "message": "TESLA を有効にする"
    },
    "Enable_TamperFire": {
       "message": "TamperFire を有効にする"
@@ -662,8 +665,8 @@
    "Sync_Type": {
       "message": "種類"
    },
-   "TESLC": {
-      "message": "TESLC"
+   "TESLA": {
+      "message": "TESLA"
    },
    "TabMode": {
       "message": "タブのモード"
@@ -688,9 +691,6 @@
    },
    "TamperFire_update_started": {
       "message": "TamperFire の更新を開始しました"
-   },
-   "Tampermonkey_External_Script_List_Control": {
-      "message": "TESLC = Tampermonkey 外部スクリプト一覧制御"
    },
    "Tampermonkey_Options": {
       "message": "Tampermonkey"
@@ -852,6 +852,14 @@
    },
    "Update_needed": {
       "message": "更新が必要"
+   },
+   "Updated_to__0version0": {
+      "message": "$version$ に更新しました",
+      "placeholders": {
+         "version": {
+            "content": "$1"
+         }
+      }
    },
    "Use_local": {
       "message": "ローカル版のスクリプトを使用"

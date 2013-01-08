@@ -23,22 +23,9 @@
         }
         var xmlhttp = new XMLHttpRequest();
         var createState = function() {
-            var rh = '';
-            var fu = details.url;
-            if (xmlhttp.readyState > 2) {
-                rh = xmlhttp.getAllResponseHeaders();
-                if (xmlhttp.readyState == 4) {
-                    if (rh) {
-                        rh = rh.replace(/TM-finalURL\: .*[\r\n]{1,2}/, '');
-                    }
-                    var fi = xmlhttp.getResponseHeader('TM-finalURL');
-                    if (fi) fu = fi;
-                }
-            }
             var o = {
                 readyState: xmlhttp.readyState,
-                responseHeaders: rh,
-                finalUrl : fu,
+                responseHeaders: (xmlhttp.readyState == 4 ? xmlhttp.getAllResponseHeaders() : ''),
                 status: (xmlhttp.readyState == 4 ? xmlhttp.status : 0),
                 statusText: (xmlhttp.readyState == 4 ? xmlhttp.statusText : '')
             };
@@ -98,9 +85,10 @@
                     if (c.lengthComputable || c.totalSize > 0 ) {
                         responseState.progress = { total: c.total,  totalSize: c.totalSize };
                     } else {
-                        var t = Number(Helper.getStringBetweenTags(responseState.responseHeaders, 'Content-Length:', '\n').trim());
+                        var t = Number(getStringBetweenTags(responseState.responseHeaders, 'Content-Length:', '\n').trim());
                         var l = xmlhttp.responseText ? xmlhttp.responseText.length : 0;
                         if (t > 0) {
+                            v
                             responseState.progress = { total: l,  totalSize: t };
                         }
                     }
@@ -113,7 +101,7 @@
         xmlhttp.onreadystatechange = onreadystatechange;
         try {
             if (!internal && !validScheme(details.url)) {
-                throw new Error("Invalid scheme of url: " + details.url);
+                throw new Error(chrome.i18n.getMessage("Invalid_scheme_of_url") + ": " + details.url);
             }
             xmlhttp.open(details.method, details.url);
             if (details.headers) {

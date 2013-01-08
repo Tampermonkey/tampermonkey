@@ -11,11 +11,13 @@ var V = false;
 Registry.require('pingpong');
 Registry.require('crcrc');
 Registry.require('htmlutil');
+Registry.require('i18n');
 
 var cr = Registry.get('crcrc').cr;
 var crc = Registry.get('crcrc').crc;
 var HtmlUtil = Registry.get('htmlutil');
 var pp = Registry.get('pingpong');
+var I18N = Registry.get('i18n');
  
 var createActionsMenu = function(items) {
     var action = document.getElementById('action');
@@ -133,7 +135,7 @@ var createActionsMenu = function(items) {
                                                          i.name,
                                                          "enabled",
                                                          "enabled",
-                                                         i.enabled ? chrome.i18n.getMessage('Enabled') : chrome.i18n.getMessage('Disabled'),
+                                                         i.enabled ? I18N.getMessage('Enabled') : I18N.getMessage('Disabled'),
                                                          el,
                                                          pt);
                     g.oldvalue = i.enabled;
@@ -249,9 +251,16 @@ var modifyScriptOptions = function(name, id, value) {
         if (id && id != '') s[id] = value;
         chrome.extension.sendMessage(s,
                                      function(response) {
-                                         if (response && response.items) createActionsMenu(response.items);
+                                         if (response) { 
+                                             if (response.i18n) {
+                                                 I18N.setLocale(response.i18n);
+                                             }
+                                             if (response.items) {
+                                                 createActionsMenu(response.items);
+                                             }
+                                         }
                                      });
-        document.getElementById('action').innerHTML = chrome.i18n.getMessage("Please_ wait___");
+        document.getElementById('action').innerHTML = I18N.getMessage("Please_ wait___");
     } catch (e) {
         console.log("mSo: " + e.message);
     }
@@ -265,7 +274,7 @@ chrome.extension.onMessage.addListener(
             createActionsMenu(request.items);
             sendResponse({});
         } else {
-            if (V) console.log("a: " + chrome.i18n.getMessage("Unknown_method_0name0" , request.method));
+            if (V) console.log("a: " + I18N.getMessage("Unknown_method_0name0" , request.method));
         }
     });
 
@@ -288,7 +297,7 @@ var domListener = function() {
         _img.setAttribute('src', 'images/large-loading.gif')
         document.getElementById('action').appendChild(_img);
     };
- 
+
     var suc = function() {
         clear();
         modifyScriptOptions(null, false);
@@ -296,7 +305,7 @@ var domListener = function() {
 
     var fail = function() {
         clear();
-        if (confirm(chrome.i18n.getMessage("An_internal_error_occured_Do_you_want_to_visit_the_forum_"))) {
+        if (confirm(I18N.getMessage("An_internal_error_occured_Do_you_want_to_visit_the_forum_"))) {
             window.open('http://tampermonkey.net/bug');
         }
     };

@@ -43,6 +43,7 @@ if (window.self != window.top &&
 var _background = true;
 var _webRequest = {};
 var Converter;
+var Eventing;
 
 var D = false;
 var V = false;
@@ -82,7 +83,7 @@ Registry.require("helper");
 
 var emu = null;
 var env = null;
-var jslint = null;
+var jslint = "";
 
 var xmlhttpRequestHelper = Registry.get('xmlhttprequest');
 var xmlhttpRequest = xmlhttpRequestHelper.run;
@@ -140,7 +141,7 @@ var _handler = {
             is += "        }\n";
             is += "};\n";
             is += "JSONcheck();\n";
-            is += "var Eventing = " + Helper.serialize(Eventing) + ";\n";
+            is += "var Eventing = " + Helper.serialize(Eventing).replace('___eval___', 'eval') /* do a little trick to allow YUI compression */  + ";\n";
             is += "Eventing.init();\n";
             is += "function cleanup(evt) {\n";
             is += "    Eventing.cleanup();\n";
@@ -374,7 +375,7 @@ var tmCE = {
                 tmCE.onConnectResponse(key, 0, responseId, JSON.stringify({ onMessage: true, msg: resp }));
             };
             var oDresponse = function(resp) {
-                tmCE.onConnectResponse(key, 0, responseId, JSON.stringify({ onDisconnect: true, msg: resp }));
+                tmCE.onConnectResponse(key, 0, responseId, JSON.stringify({ onDisconnect: true }));
                 obj = null;
             };
 
@@ -486,7 +487,7 @@ var initUnsafe = function() {
             var response = function(resp) {
                 if (resp.alert) {
                     // TODO: alert on response breaks Chrome event magic, but setTimeout doesn't work because of the script blocker :(
-                    alert(chrome.i18n.getMessage("Please_reload_this_page_in_order_to_run_your_userscripts_"));
+                    alert(resp.alert);
                 }
             };
             var req = { method: "scriptBlockerDetected",
@@ -823,7 +824,8 @@ function domAttrFix() {
 
 /* ######### Eventing ###################### */
 
-var Eventing = {
+// predefined outside to allow use at environment
+Eventing = {
     contextId: null,
     rEventId: null,
     sEventId: null,
@@ -921,7 +923,7 @@ var Eventing = {
             if (ENV) Eventing.log("Event received " + Eventing.rEventId + Eventing.contextId + " " + evt.attrName);
             var j = JSON.parse(Converter.decodeR(evt.attrName));
             try {
-                eval(j);
+                ___eval___(j); /* do a little trick to allow YUI compression, window['eval'] resets the context :( */
                 if (TS) Eventing.log('it took ' + ((new Date()).getTime() - evt.timeStamp)  + ' ms to process this event ->' + j.fn);
             } catch (e) {
                 console.log("page:Error: processing event (" + j + ")! " + e.message);
@@ -953,7 +955,9 @@ var Eventing = {
     },
 
     cleanup: function() {
-        Eventing.eventSource.removeEventListener(Eventing.rEventId + Eventing.contextId, Eventing.eventHandler, false);
+        if (Eventing.eventSource) {
+            Eventing.eventSource.removeEventListener(Eventing.rEventId + Eventing.contextId, Eventing.eventHandler, false);
+        }
     }
 };
 Eventing.contextId = Eventing.generateScriptId();
@@ -988,7 +992,7 @@ var secondStage = {
             debug += "var EMV = " + (EMV ? "true" : "false")+ ";\n";
             debug += "var logLevel = " + logLevel + ";\n";
 
-            var tm = "var tmCE = " + Helper.serialize(tmCE) + ";\n";
+            var tm = "var tmCE = " + Helper.serialize(tmCE) + ";\nvar Event = function() {};\n";
             var context = "var TM_context_id = '" + Eventing.contextId + "';\n";
             var load = "";
 
@@ -1118,7 +1122,7 @@ var initW = 1;
 var init = function() {
     var Femu = "emulation.js";
     var Fenv = "environment.js";
-    var Fjslint = "jslint.js";
+    // var Fjslint = "jslint.js";
 
     var updateResponse = function(resp) {
         if (resp === undefined) {
@@ -1145,11 +1149,11 @@ var init = function() {
             if (V || D) console.log('content: start event processing for ' + Eventing.contextId + ' (' + resp.enabledScriptsCount + ' to run)');
             wannaRun = true;
 
-            if (!emu || !env || !jslint) {
+            /* if (!emu || !env || !jslint) {
                 emu = resp.raw[Femu] || emu;
                 env = resp.raw[Fenv] || env;
                 jslint = resp.raw[Fjslint] || jslint || "";
-            }
+            } */
 
             if (resp.webRequest) {
                 _webRequest = resp.webRequest;
@@ -1171,15 +1175,15 @@ var init = function() {
 
     var raw = [];
     try {
-        emu = Registry.getRaw(Femu);
-        env = Registry.getRaw(Fenv);
-        jslint = Registry.getRaw(Fjslint);
+        emu = '(' + Registry.getRaw(Femu) + ')();\n';
+        env = '(' + Registry.getRaw(Fenv) + ')();\n';;
+        // jslint = Registry.getRaw(Fjslint);
     } catch (e) {}
 
-    if (!emu || !env || !jslint) {
+    /* if (!emu || !env || !jslint) {
         if (V) console.log("content: getRaw unsupported!");
         raw = [ Femu, Fenv, Fjslint ];
-    }
+    } */
 
     var req = { method: "prepare",
                 id: Eventing.contextId,
