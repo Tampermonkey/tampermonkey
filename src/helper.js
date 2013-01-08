@@ -175,6 +175,12 @@
                             });
     };
 
+    var encodeHtml = function(str) {
+        return str.replace(/[\u00A0-\u2666]/g, function(c) {
+                                    return '&#'+c.charCodeAt(0)+';';
+                           });
+    };
+
     Registry.register('helper', {
                               createUniqueId: createUniqueId,
                               getStringBetweenTags: getStringBetweenTags,
@@ -189,6 +195,7 @@
                               toType : toType,
                               forEach : forEach,
                               decodeHtml : decodeHtml,
+                              encodeHtml : encodeHtml,
                               staticVars : {
                                   urlAllHttp: urlAllHttp,
                                   urlAllHttps: urlAllHttps,

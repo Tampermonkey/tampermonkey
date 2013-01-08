@@ -4,19 +4,7 @@
  * @licence GPL v3
  */
 
-var D = false;
-// var V = false; // exist in more than one module
-var PV = false;
-var XV = false;
-// var EV = true;
-var MV = false;
-var CV = false;
-var SV = false;
-
-// do not rename...
-var Event = function() {};
-
-(function() {
+Registry.registerRaw('environment.js', function() {
 
 var eDOMCONTENTLOADED = "DOMContentLoaded";
 var eLOAD = "load";
@@ -39,19 +27,12 @@ TMwin.adjustLogLevel = function(l) {
     D |= (logLevel >= 60);
     V |= (logLevel >= 80);
     EV |= (logLevel >= 100);
-    MV |= (logLevel >= 100);
-    CV |= (logLevel >= 100);
-    SV |= (logLevel >= 100);
     EMV |= (logLevel >= 100);
 };
 
 Clean = [];
 TMwin.adjustLogLevel();
-
-if (!chromeEmu) {
-    if (V || D) console.log("environment: replace chromeEmu var with chrome!");
-    chromeEmu = chrome;
-}
+var chromeEmu = TMwin.chromeEmu;
 
 var TM_toType = function(obj) {
     return ({}).toString.apply(obj).match(/\s([a-z|A-Z]+)/)[1];
@@ -70,12 +51,12 @@ var TM_isPartOfDOM = function(elem, cnt){
 
 var TM_mEval = function(script, src, requires, addProps) {
     var all = null;
-    
+
     try {
         var mask = addProps.context;
         var emu = '';
         var setid = '';
-        
+
         if (!mask['__TMbackref']) mask['__TMbackref'] = {};
 
         // TODO: window fake
@@ -145,14 +126,18 @@ var TM_mEval = function(script, src, requires, addProps) {
         runEm.apply(mask, []);
 
     } catch (e) {
-        var opts = { newcap: true,
+        var opts = { maxerr: 999,
+                     newcap: true,
+                     es5: true,
                      sloppy: true,
+                     browser: true,
                      white: true,
                      plusplus: true,
                      nomen: true,
                      'continue': true,
                      todo: true,
                      eqeq: true,
+                     passfail: false,
                      unparam: true,
                      devel: true };
         var JS = null;
@@ -162,7 +147,7 @@ var TM_mEval = function(script, src, requires, addProps) {
 
         var result = JS ? JS(all, opts) : true;
         var details = '';
-        
+
         if (result) {
             details = emu + src;
         } else {
@@ -181,7 +166,7 @@ var TM_mEval = function(script, src, requires, addProps) {
             details = "JSLINT output:\n" + error_message;
         }
 
-        if (D) {
+        if (D || result) {
             console.log("env: ERROR: Syntax error @ '" + script.name + "'!\n" +
                         "##########################\n" +
                         details +
@@ -191,11 +176,11 @@ var TM_mEval = function(script, src, requires, addProps) {
             console.log("env: ERROR: Syntax error @ '" + script.name + "'!\n" + e.message + "\n");
             console.log(e.stack);
         }
-        
+
         var fail = function() {
             if (D) {
                 chromeEmu.extension.sendMessage({ method: "copyToClipboard",
-                                                  data: { content: all, type: "test" },
+                                                  data: { content: src, type: "test" },
                                                   id: '42'}, function() {});
             }
 
@@ -397,7 +382,7 @@ function TM_addEventListenerFix() {
     var order = [];
 
     for (var o=0; o<arr.length; o++) {
-        var wrap = function() { 
+        var wrap = function() {
             var k = arr[o];
             if (!k.__addEventListener) {
                 k.__addEventListener = k.addEventListener;
@@ -413,13 +398,13 @@ function TM_addEventListenerFix() {
 
                     this.__removeEventListener(event, fn, arg1);
                 };
-            
+
                 k.addEventListener = function (event, fn, arg1) {
                     if (V || EV) console.log("env: addEventListener " + event);
 
                     var reallyRegister = true;
                     if (event == eLOAD || event == eDOMCONTENTLOADED || event == eDOMNODEINSERTED) {
-                    
+
                         var sid = null;
                         var that = this;
                         try {
@@ -430,14 +415,14 @@ function TM_addEventListenerFix() {
                                 console.log(e);
                             }
                         }
-                    
+
                         if (V || EV) console.log("env: sid done " + event);
 
                         var namesp = null;
-                    
+
                         if (sid) {
                             var run = null;
-                        
+
                             // hu, we're called from a userscript context
                             for (var k in TMwin.props) {
                                 if (!TMwin.props.hasOwnProperty(k)) continue;
@@ -461,7 +446,7 @@ function TM_addEventListenerFix() {
                             } else if (event == eDOMNODEINSERTED) {
                                 if (nodeInserts && !nodeInserts.done[sid]) {
                                     nodeInserts.done[sid] = true;
-                                    run = function() { 
+                                    run = function() {
                                         var onlyEventsAfterDomLoaded = sid.run_at != 'document-start' && sid.run_at != 'document-body';
 
                                         nodeInserts.running = fn;
@@ -523,15 +508,15 @@ var TM_functionIdFix_setID = function(id) {
     this.__tmid = id;
     return this;
 };
-        
+
 function TM_functionIdFix() {
     if (!Function.prototype.getID) {
-        
+
         Function.prototype.getID = TM_functionIdFix_getID;
         Function.prototype.setID = TM_functionIdFix_setID;
     }
 }
- 
+
 function TM_docEvalFix() {
     var k = 'HTMLDocument';
 
@@ -539,7 +524,7 @@ function TM_docEvalFix() {
         window[k].prototype.__evaluate = window[k].prototype.evaluate;
         window[k].prototype.evaluate = function(query, elem, arg1, arg2, arg3) {
 
-            if (V || XV) console.log("env: document.evaluate " + query);
+            if (V) console.log("env: document.evaluate " + query);
             if (!elem) elem = this;
             var res;
             if (typeof XPathResult != "undefined") {
@@ -549,7 +534,7 @@ function TM_docEvalFix() {
                 try {
                     res = this.__evaluate(querydiv, elem, arg1, arg2, arg3);
                 } catch (e) {
-                    if (V || XV) console.log("env: Error: document.evaluate " + JSON.stringify(e));
+                    if (V) console.log("env: Error: document.evaluate " + JSON.stringify(e));
                 }
                 var use_tmp_div = true;
 
@@ -561,18 +546,18 @@ function TM_docEvalFix() {
                 } catch (e) {}
 
                 if (use_tmp_div && query.charAt(0)!='.' && !TM_isPartOfDOM(elem)) {
-                    if (V || XV) console.log("env: query added elem for " + querydiv);
+                    if (V) console.log("env: query added elem for " + querydiv);
                     querydiv = (query.charAt(0) == '/' ? '.' : './') + query;
                     res = this.__evaluate(querydiv, elem, arg1, arg2, arg3);
                 } else {
-                    if (V || XV) console.log("env: queried document for " + querydiv);
+                    if (V) console.log("env: queried document for " + querydiv);
                 }
-                if (V || XV) {
+                if (V) {
                     console.log("env: query returned ");
                     console.log(res);
                 }
             } else {
-                if (V || XV) console.log("env: XPathResult == undefined, but selectNodes via " + xpathExpr);
+                if (V) console.log("env: XPathResult == undefined, but selectNodes via " + xpathExpr);
                 res = elem.selectNodes(xpathExpr);
             }
 
@@ -624,7 +609,7 @@ function TM_winEvalFix() {
     window.setInterval = function() {
         var args = arguments;
         var fn = args[0];
-        
+
         if (typeof fn === 'string') {
             args[0] = function() { TM_do(fn) };
         }
@@ -663,21 +648,21 @@ var TM_do = function(src) {
 var TM_registerMenuCommand = function(name, fn) {
     var menuId = TM_context_id + '#' + name;
     var onUnload = function() {
-        if (V || MV) console.log("env: unRegisterMenuCMD due to unload " + fn.toString());
+        if (V) console.log("env: unRegisterMenuCMD due to unload " + fn.toString());
         chromeEmu.extension.sendMessage({method: "unRegisterMenuCmd", name: name, id: menuId}, function(response) {});
     };
     var resp = function(response) {
         // response is send, command is unregisterd @ background page
         window.removeEventListener('unload', onUnload, false);
         if (response.run) {
-            if (V || MV) console.log("env: execMenuCmd " + fn.toString());
+            if (V) console.log("env: execMenuCmd " + fn.toString());
             window.setTimeout(function () { fn(); }, 1);
             // re-register for next click
             TM_registerMenuCommand(name, fn);
         }
     };
     window.addEventListener('unload', onUnload, false);
-    if (V || MV) console.log("env: registerMenuCmd " + fn.toString());
+    if (V) console.log("env: registerMenuCmd " + fn.toString());
     chromeEmu.extension.sendMessage({method: "registerMenuCmd", name: name, id: TM_context_id, menuId: menuId}, resp);
 };
 
@@ -715,7 +700,8 @@ var TM_xmlhttpRequest = function(details) {
         if (fn && !forget) window.setTimeout(run, 1);
     };
 
-    if (TMwin.use.safeContext) {
+    var xmlhttp2 = !!details.responseType;
+    if (/* TMwin.use.safeContext */ xmlhttp2) {
         var load = function(r) {
             callit(details["onload"], r);
         };
@@ -751,10 +737,10 @@ var TM_xmlhttpRequest = function(details) {
                 console.log("env: Error: TM_xmlhttpRequest - " + e.message + "\n" + JSON.stringify(details));
             }
         };
-        
+
         port.onMessage.addListener(plist);
         var omsg = function(response) { console.log("env: onDisconnect! :)")};
-        if (V || CV) port.onDisconnect.addListener(omsg);
+        if (V) port.onDisconnect.addListener(omsg);
     }
 
     return { abort: function() { forget = true; } };
@@ -783,7 +769,7 @@ var TM_getTabs = function(cb) {
 var TM_installScript = function(url, cb) {
     chromeEmu.extension.sendMessage({method: "scriptClick", url: url, id: TM_context_id}, function(response) { if (cb) cb(response); });
 };
- 
+
 /* ######### Helpers  ############ */
 
 var HTM_generateScriptId = function(){
@@ -830,7 +816,7 @@ var HTM_runMyScript = function(HTM_request) {
 
         return o;
     };
-    
+
     var HTM_initStoragePort = function() {
         var storageListener = function(response) {
             if (response.storage) {
@@ -841,7 +827,7 @@ var HTM_runMyScript = function(HTM_request) {
                         var oldval = TM_context_storage.data[k];
                         TM_context_storage.data[k] = response.storage.data[k];
                         var newval = TM_context_storage.data[k];
-                        if (SV) console.log("env: storageListener - config key " + key + ": " + oldval + " -> " + newval);
+                        if (V) console.log("env: storageListener - config key " + key + ": " + oldval + " -> " + newval);
                         TM_notifyValueChangeListeners(key, oldval, newval, true);
                     };
                     run();
@@ -858,11 +844,11 @@ var HTM_runMyScript = function(HTM_request) {
         storagePort = chromeEmu.extension.connect('storageListener_' + TM_context_id);
         storagePort.onMessage.addListener(storageListener);
         var omsg = function(response) { console.log("env: storageListener onDisconnect! :)")};
-        if (V || SV) storagePort.onDisconnect.addListener(omsg);
+        if (V) storagePort.onDisconnect.addListener(omsg);
 
         storagePort.postMessage({ method: "addStorageListener", name: TM_context_name, id: TM_context_id});
     };
-    
+
     HTM_initStoragePort();
 
     var HTM_removeStorageListener = function() {
@@ -876,7 +862,7 @@ var HTM_runMyScript = function(HTM_request) {
                                   value: TM_context_storage.data[key],
                                   id: TM_context_id,
                                   ts: TM_context_storage.ts });
-        if (SV) console.log("env: saveStorageKey - config key " + key + ": " + TM_context_storage.data[key]);
+        if (V) console.log("env: saveStorageKey - config key " + key + ": " + TM_context_storage.data[key]);
     };
 
     var TM_saveStorageKey = function(key) {
@@ -899,7 +885,7 @@ var HTM_runMyScript = function(HTM_request) {
             }
         }
     };
-    
+
     var TM_addValueChangeListener = function(name, cb) {
         var id = 0;
         for (var n in TM_storage_listeners) {
@@ -969,7 +955,7 @@ var HTM_runMyScript = function(HTM_request) {
 
     var TM_setValue = function(name, value) {
         var old = TM_context_storage.data[name];
-        
+
         var type = (typeof value)[0];
         switch (type) {
           case 'o':
@@ -1190,6 +1176,7 @@ var HTM_runMyScript = function(HTM_request) {
     TMwin.props[HTM_script['namespace']].elements.push({ name: 'TM_addValueChangeListener', value: TM_addValueChangeListener });
     TMwin.props[HTM_script['namespace']].elements.push({ name: 'TM_removeValueChangeListener', value: TM_removeValueChangeListener });
     TMwin.props[HTM_script['namespace']].elements.push({ name: 'TM_xmlhttpRequest', value: TM_xmlhttpRequest });
+    TMwin.props[HTM_script['namespace']].elements.push({ name: 'TM_setClipboard', value: TM_setClipboard });
     TMwin.props[HTM_script['namespace']].elements.push({ name: 'TM_getTab', value: TM_getTab });
     TMwin.props[HTM_script['namespace']].elements.push({ name: 'TM_saveTab', value: TM_saveTab });
     TMwin.props[HTM_script['namespace']].elements.push({ name: 'TM_getTabs', value: TM_getTabs });
@@ -1208,7 +1195,7 @@ var HTM_runMyScript = function(HTM_request) {
 
     if (HTM_script.options.compat_prototypes) {
         if (V || D) console.log("env: option: add toSource");
-        
+
         if (!Object.prototype.toSource) {
             Object.defineProperties(Object.prototype,
                 { 'toSource':
@@ -1237,12 +1224,12 @@ var HTM_runMyScript = function(HTM_request) {
                                 writable: true,
                                 configurable: true,
                             };
- 
+
                             Object.defineProperties(Array, obj);
                         }
                     });
     }
-    
+
     if (V || D) console.log("env: execute script " + HTM_script.name + " now!");
     TM_mEval(HTM_script, HTM_request.code, HTM_request.requires, TMwin.props[HTM_script['namespace']]);
 
@@ -1324,7 +1311,7 @@ chromeEmu.extension.onMessage.addListener(
                     t = document.innerHTML;
                 }
                 sendResponse({src: t});
-                
+
             } else {
                 console.log("env: unknown method " + request.method);
             }
@@ -1335,7 +1322,7 @@ chromeEmu.extension.onMessage.addListener(
 
 TM_docEvalFix();
 TM_functionIdFix.apply(window, []);
-TM_addEventListenerFix()
+TM_addEventListenerFix();
 TM_windowOpenFix();
 TM_winEvalFix();
 
@@ -1346,4 +1333,4 @@ window.addEventListener('unload', cleanup, false);
 
 if (V || D) console.log("env: initialized (content, id:" + TM_context_id + ", " + window.location.origin + window.location.pathname + ") ");
 
-})();
+});

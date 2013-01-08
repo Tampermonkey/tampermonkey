@@ -26,6 +26,7 @@
                 "tr_content" : 'tr_content',
                 "td_content" : 'td_content',
                 "td_tabs" : 'td_tabs',
+                "tv_tabs_fill" : 'tv_tabs_fill',
                 "tv_tabs_table" : 'tv_tabs_table',
                 "tv_tabs_align" : 'tv_tabs_align',
                 "tv_contents" : 'tv_contents',
@@ -49,6 +50,7 @@
 
         var ptr = crc('tr', style.tr_tabs, 'tabs' + parent.id + prefix);
         var ptd = crc('td', style.td_tabs, 'pages' + prefix);
+        var tabs_fill = crc('div', style.tv_tabs_fill, 'tv_tabs_fill' + prefix);
         var tabs_table = crc('div', style.tv_tabs_table, 'tv_tabs_table' + prefix);
         var tabs = crc('div', style.tv_tabs_align, 'tv_tabs_align' + prefix);
 
@@ -57,7 +59,8 @@
         var content = crc('table', style.tv_contents + ' noborder', 'tv_content' + prefix);
 
         tabs_table.appendChild(tabs);
-        ptd.appendChild(tabs_table);
+        tabs_fill.appendChild(tabs_table);
+        ptd.appendChild(tabs_fill);
         ptr.appendChild(ptd);
         table.appendChild(ptr);
 

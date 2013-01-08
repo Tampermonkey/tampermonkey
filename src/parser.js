@@ -48,7 +48,8 @@ var Script = function() {
     this.lastUpdated = 0;
     this.sync = { imported: false },
     this.options = {
-        compat_for_requires : true,
+        comment : null,
+        compatopts_for_requires : true,
         compat_metadata : false,
         compat_foreach : false,
         compat_arrayleft : false,
@@ -110,14 +111,18 @@ var scriptParser = {
         header = header.replace(/\n\n+/g, '\n');
         header = header.replace(/[^|\n][ \t]+\/\//g, '//')
 
-        for (var t in tags) {
-            script[tags[t]] = Helper.getStringBetweenTags(header, '@'+tags[t], '\n').trim();
-        }
-
         var s, t, i, l, c, o, lines = header.split('\n');
         for (i in lines) {
             l = lines[i].replace(/^[\t\s]*\/\//gi, '').replace(/^[\t\s]*/gi, '').replace(/\s\s+/gi, ' ');
             c = false;
+
+            for (var t in tags) {
+                var r = new RegExp('^@' + tags[t] + '[\\t\\s]');
+                if (l.search(r) != -1) {
+                    script[tags[t]] = Helper.getStringBetweenTags(l, '@'+tags[t]).trim();
+                    continue;
+                }
+            }
 
             for (t in icon64_tags) {
                 s = Helper.getStringBetweenTags(l, '@'+icon64_tags[t]).trim();
@@ -149,29 +154,29 @@ var scriptParser = {
             }
             if (c) continue;
 
-            if (l.search(/^@include/) != -1) {
+            if (l.search(/^@include[\t\s]/) != -1) {
                 c = l.replace(/^@include/gi, '').trim().replace(/ /gi, '%20').replace(/[\b\r\n]/gi, '');
                 if (V) console.log("c " + c);
                 if (c.trim() != "") script.includes.push(c);
             }
-            if (l.search(/^@match/) != -1) {
+            if (l.search(/^@match[\t\s]/) != -1) {
                 c = l.replace(/^@match/gi, '').trim().replace(/ /gi, '%20').replace(/[ \b\r\n]/gi, '');
                 if (V) console.log("c " + c);
                 if (c.trim() != "") script.matches.push(c);
                 script.options.awareOfChrome = true;
             }
-            if (l.search(/^@exclude/) != -1) {
+            if (l.search(/^@exclude[\t\s]/) != -1) {
                 c = l.replace(/^@exclude/gi, '').trim().replace(/ /gi, '%20').replace(/[ \b\r\n]/gi, '');
                 if (V) console.log("c " + c);
                 if (c.trim() != "") script.excludes.push(c);
             }
-            if (l.search(/^@require/) != -1) {
+            if (l.search(/^@require[\t\s]/) != -1) {
                 c = l.replace(/^@require/gi, '').trim().replace(/ /gi, '%20').replace(/[ \b\r\n]/gi, '');
                 if (V) console.log("c " + c);
                 o = { url: c, loaded: false, textContent: ''};
                 if (c.trim() != "") script.requires.push(o);
             }
-            if (l.search(/^@resource/) != -1) {
+            if (l.search(/^@resource[\t\s]/) != -1) {
                 c = l.replace(/^@resource/gi, '').replace(/[\r\n]/gi, '');
                 s = c.trim().split(' ');
                 if (V) console.log("c " + c);
@@ -180,28 +185,28 @@ var scriptParser = {
                     script.resources.push({name: s[0], url: s[1], loaded: false});
                 }
             }
-            if (l.search(/^@run-at/) != -1) {
+            if (l.search(/^@run-at[\t\s]/) != -1) {
                 c = l.replace(/^@run-at/gi, '').replace(/[ \b\r\n]/gi, '');
                 if (V) console.log("c " + c);
                 if (c.trim() != "") script.options.run_at = c.trim();
             }
-            if (l.search(/^@user-agent/) != -1) {
+            if (l.search(/^@user-agent[\t\s]/) != -1) {
                 c = l.replace(/^@user-agent/gi, '').trim().replace(/[\r\n]/gi, '');
                 if (V) console.log("c " + c);
                 if (c.trim() != "") script.options.user_agent = c.trim();
             }
-            if (l.search(/^@noframes/) != -1) {
+            if (l.search(/^@noframes[\t\s\r\n]?/) != -1) {
                 script.options.noframes = true;
             }
-            if (l.search(/^@nocompat/) != -1) {
+            if (l.search(/^@nocompat[\t\s\r\n]?/) != -1) {
                 script.options.awareOfChrome = true;
             }
             
-            if (l.search(/^@updateURL/) != -1) {
+            if (l.search(/^@updateURL[\t\s]/) != -1) {
                 c = l.replace(/^@updateURL/gi, '').trim().replace(/[ \b\r\n]/gi, '');
                 if (c.trim() != "") script.updateURL = c;
             }
-            if (l.search(/^@downloadURL/) != -1) {
+            if (l.search(/^@downloadURL[\t\s]/) != -1) {
                 c = l.replace(/^@downloadURL/gi, '').trim().replace(/[ \b\r\n]/gi, '');
                 if (c.trim() != "") script.downloadURL = c;
             }
@@ -211,7 +216,7 @@ var scriptParser = {
             script.id = getScriptId(script.name);
             if (D) console.log('parser: script ' + script.name + ' got id ' + script.id);
         }
-        if (script.version == '') script.version = "0.0";
+        if (!script.version) script.version = "0.0";
 
         return script;
     },

@@ -1,10 +1,10 @@
 
-function MirrorFrame(place, options) {
+function MirrorFrame(place, options, handlers) {
     this.edit = document.createElement("div");
     this.home = document.createElement("div");
     
-    this.edit.setAttribute('class', "CodeMirror-menu");
-    this.home.setAttribute('class', "CodeMirror-editor");
+    this.home.setAttribute('class', "CodeMirror-menu");
+    this.edit.setAttribute('class', "CodeMirror-editor");
     
     if (place.appendChild && place.insertBefore && place.firstChild) {
         place.insertBefore(this.home, place.firstChild);
@@ -17,23 +17,38 @@ function MirrorFrame(place, options) {
     }
 
     var self = this;
-    function makeButton(name, action) {
+    var commands = {};
+    
+    function makeButton(name, action, dont) {
+        if (dont === undefined) dont = true;
+
         var button = document.createElement("input");
         button.type = "button";
         button.value = name;
         self.home.appendChild(button);
-        button.onclick = function(){self[action].call(self);};
+        var doit = function(){self[action].call(self);};
+        button.onclick = doit;
+        if (dont) commands[action] = doit;
     }
 
     if (!options.noButtons) {
-        makeButton("Search", "search");
+        makeButton("Search", "search", false);
         makeButton("Replace", "replace");
         makeButton("Jump to line", "jump");
         makeButton("Insert constructor", "macro");
-        makeButton("Auto-Indent all", "reindent");
+        makeButton("Auto-Indent all", "reindentall");
     }
 
     this.mirror = new CodeMirror(this.edit, options);
+    for (var k in commands) {
+        this.mirror.setCommand(k, commands[k]);
+    }
+    
+    if (handlers) {
+        for (var k in handlers) {
+            this.mirror.setCommand(k, handlers[k]);
+        }
+    }
 }
 
 MirrorFrame.prototype = {
@@ -97,7 +112,7 @@ MirrorFrame.prototype = {
             this.mirror.replaceSelection("function " + name + "() {\n  \n}\n\n" + name + ".prototype = {\n  \n};\n");
     },
 
-    reindent: function() {
+    reindentall: function() {
         this.mirror.autoIndentRange({ line: 0 }, { line: this.mirror.lineCount() - 1 });
     }
 };

@@ -13,7 +13,6 @@ var UV = false;
 
 var initialized = false;
 var allItems = null;
-var gOptions = {};
 var version = '0.0.0';
 var gNoWarn = false;
 
@@ -30,12 +29,14 @@ Registry.require('compat');
 Registry.require('parser');
 Registry.require('crcrc');
 Registry.require('helper');
+Registry.require('i18n');
 Registry.require('curtain');
 Registry.require('tabview');
 
 var cr = Registry.get('crcrc').cr;
 var crc = Registry.get('crcrc').crc;
 var Converter = Registry.get('convert');
+var I18N = Registry.get('i18n');
 var Please = Registry.get('curtain');
 var Helper = Registry.get('helper');
 var TabView = Registry.get('tabview');
@@ -118,14 +119,18 @@ var main = function() {
         window.location = url + '#' + 'bypass=true';
     };
 
+    if (gArgs.i18n) {
+        I18N.setLocale(gArgs.i18n);
+    }
+
     if (gArgs.script) {
         gArgs.script = Converter.Base64.decode(gArgs.script);
-        
-        gTabName = chrome.i18n.getMessage('Install');
+
+        gTabName = I18N.getMessage('Install');
         var url = gArgs.script;
         var content;
 
-        Please.wait();
+        Please.wait(I18N.getMessage("Please_wait___"));
 
         var createSource = function(req) {
             var heading = crc('div', 'heading', 'indzsll', 'heading');
@@ -170,8 +175,8 @@ var main = function() {
                     createSource(req);
 
                     var ask = function() {
-                        if (confirm(chrome.i18n.getMessage('Do_you_want_to_install_this_userscript_in_Tampermonkey_or_Chrome'))) {
-                            Please.wait();
+                        if (confirm(I18N.getMessage('Do_you_want_to_install_this_userscript_in_Tampermonkey_or_Chrome'))) {
+                            Please.wait(I18N.getMessage("Please_wait___"));
                             chrome.extension.sendMessage({method: "scriptClick", url: url, id: 0}, function(response) { Please.hide(); });
                         } else {
                             installNatively(url);
@@ -180,7 +185,7 @@ var main = function() {
 
                     window.setTimeout(ask, 500);
                 } else {
-                    Helper.alert(chrome.i18n.getMessage('Unable_to_load_script_from_url_0url0', url));
+                    Helper.alert(I18N.getMessage('Unable_to_load_script_from_url_0url0', url));
                     installNatively();
                 }
             }
@@ -212,7 +217,7 @@ chrome.extension.onMessage.addListener(
             Helper.alert(request.msg);
             sendResponse({});
         } else {
-            if (V) console.log("a: " + chrome.i18n.getMessage("Unknown_method_0name0" , request.method));
+            if (V) console.log("a: " + I18N.getMessage("Unknown_method_0name0" , request.method));
             return false;
         }
 
@@ -224,6 +229,7 @@ if (V) console.log("Register request listener (ask)");
 var listener = function() {
     window.removeEventListener('DOMContentLoaded', listener, false);
     window.removeEventListener('load', listener, false);
+
     main();
 };
 

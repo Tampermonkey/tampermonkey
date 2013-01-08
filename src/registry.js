@@ -10,6 +10,7 @@ var RD = false;
 
 var Registry = {
     objects : {},
+    raw_objects : {},
     callbacks: [],
     loading: 0,
     init : function() {
@@ -38,6 +39,12 @@ var Registry = {
             Registry.checkLoading();
         }
     },
+    registerRaw : function(name, obj, overwrite) {
+        if (RD || RV || V) console.log("Registry.registerRaw " + name + " overwrite: " + overwrite);
+        if (!Registry.raw_objects[name] || overwrite) {
+            Registry.raw_objects[name] = obj;
+        }
+    },
     require : function(name) {
         if (RD || RV || V) console.log("Registry.require " + name);
         if (Registry.objects[name] === undefined) {
@@ -48,16 +55,21 @@ var Registry = {
     },
     getRaw : function(file) {
         if (RD || RV || V) console.log("Registry.getRaw " + file);
-        var url = chrome.extension.getURL(file);
         var content = null;
-        try {
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", url, false);
-            xhr.send(null);
-            content = xhr.responseText;
-            if (!content) console.log("WARN: content of " + file + " is null!");
-        } catch (e) {
-            console.log("getRawContent " + e);
+        
+        if (Registry.raw_objects[file] !== undefined) {
+            content = Registry.raw_objects[file];
+        } else {
+            var url = chrome.extension.getURL(file);
+            try {
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", url, false);
+                xhr.send(null);
+                content = xhr.responseText;
+                if (!content) console.log("WARN: content of " + file + " is null!");
+            } catch (e) {
+                console.log("getRawContent " + e);
+            }
         }
         return content;
     },

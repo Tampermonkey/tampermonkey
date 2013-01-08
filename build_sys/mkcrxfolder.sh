@@ -44,6 +44,11 @@ mkdir cm
 cd cm
 cp ../../src/cm/*.* .
 rm *.*~
+mkdir keymap
+cd keymap
+cp ../../../src/cm/keymap/*.* .
+rm *.*~
+cd ..
 cd ..
 
 mkdir saveas
@@ -59,20 +64,13 @@ cp ../src/*.css .
 mkdir images
 cp ../images/* images/
 mkdir _locales
-mkdir _locales/de
-mkdir _locales/en
-mkdir _locales/es
-mkdir _locales/fr
-mkdir _locales/pl
-mkdir _locales/ja
-mkdir _locales/zh_CN
-cp ../i18n/en/* _locales/en/
-cp ../i18n/es/* _locales/es/
-cp ../i18n/de/* _locales/de/
-cp ../i18n/fr/* _locales/fr/
-cp ../i18n/pl/* _locales/pl/
-cp ../i18n/ja/* _locales/ja/
-cp ../i18n/zh_CN/* _locales/zh_CN/
+tar c -C "../i18n/" --exclude "*.svn" --exclude "*.*~" --exclude "*.diff" . | tar x -C "_locales/"
+cd _locales
+cd ja
+wget https://raw.github.com/shirayuki/Tampermonkey-ja/master/messages.json
+mv -f messages.json.1 messages.json
+cd ..
+cd ..
 mkdir system
 cp ../src/system/* system/
 
@@ -96,6 +94,7 @@ rm manifest.tmp
 cd images
 mv icon_grey.png icon_grey.png.bak
 mv icon_grey_blocker.png icon_grey_blocker.png.bak
+rm yicon*.png
 
 if [ $l -eq 1 ]
 then

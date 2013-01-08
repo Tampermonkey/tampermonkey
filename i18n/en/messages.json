@@ -182,7 +182,6 @@
   "Show_fixed_source": {
     "message": "Show fixed source"
   },
-
   "Installed_userscripts": {
     "message": "Installed userscripts"
   },
@@ -208,13 +207,16 @@
     "message": "Tampermonkey"
   },
   "Position_": {
-    "message": "Position:"
+    "message": "Position"
   },
   "Close": {
     "message": "Close"
   },
   "GM_compat_options_": {
-    "message": "GM/FF compatibility options:"
+    "message": "GM/FF compatibility options"
+  },
+  "Comment": {
+    "message": "Comment"
   },
   "Apply_compatibility_options_to_required_script_too": {
     "message": "Apply compatibility options to @require scripts too"
@@ -244,7 +246,7 @@
     "message": "every ## ms"
   },
   "Run_at": {
-    "message": "Run at:"
+    "message": "Run at"
   },
   "Update_URL_": {
     "message": "Update URL"
@@ -425,6 +427,18 @@
    },
   "Editor": {
     "message": "Editor"
+  },
+  "Key_Mapping": {
+    "message": "Key Mapping"
+  },
+  "Windows": {
+    "message": "Windows"
+  },
+  "Emacs": {
+    "message": "Emacs"
+  },
+  "Vim": {
+    "message": "Vim"
   },
   "Indentation_Width": {
     "message": "Indentation Width"
@@ -678,7 +692,7 @@
     "message": "Install"
   },
   "A_reload_is_required": {
-    "message": "A reload is required: \nAll unsafed changes will be lost!"
+    "message": "A reload is required: \nAll unsaved changes will be lost!"
   },
   "Enable_Sort_Cache": {
     "message": "Enable sort cache (High memory usage)"
@@ -688,6 +702,9 @@
   },
   "Full_reset": {
     "message": "Factory reset"
+  },
+  "Run_syntax_check": {
+    "message": "Run syntax check"
   },
   "Do_you_really_want_to_factory_reset_this_script_": {
     "message": "Do you really want to factory reset this script?"
@@ -770,16 +787,16 @@
     "message": "User excludes"
   },
   "An_internal_error_occured_Do_you_want_to_visit_the_forum_": {
-    "message": "An internal error occured. If this problem persist, please press OK and report this issue at the forum.\n\nDo you want to visit the Tampermonkey forum?"
+    "message": "An internal error occured. If this problem persists even after a restart of Chrome, please press OK and report this issue at the forum.\n\nDo you want to visit the Tampermonkey forum?"
   },
-  "TESLC": {
-    "message": "TESLC"
+  "TESLA": {
+    "message": "TESLA"
   },
-  "Enable_TESLC": {
-    "message": "Enable TESLC"
+  "Enable_TESLA": {
+    "message": "Enable TESLA"
   },
-  "Tampermonkey_External_Script_List_Control": {
-    "message": "Tampermonkey External Script List Control"
+  "Tampermonkey_External_Script_List_Access": {
+    "message": "Tampermonkey External Script List Access"
   },
   "Sync_Type": {
     "message": "Type"
@@ -790,20 +807,8 @@
   "Imported": {
     "message": "Imported"
   },
-  "Import_Mode": {
-    "message": "Import Mode"
-  },
-  "Create_only": {
-    "message": "Create Only"
-  },
-  "Create_and_remove": {
-    "message": "Create and Remove"
-  },
   "Sync": {
     "message": "Sync"
-  },
-  "Export_Mode": {
-    "message": "Export Mode"
   },
   "Disable_sync": {
     "message": "Disable Sync"
@@ -811,20 +816,20 @@
   "Enable_sync": {
     "message": "Enable Sync"
   },
-  "This_options_sets_up_how_to_sync_local_changes_to_the_server_": {
-    "message": "This options sets up how to sync local changes to the server. You can a) disable the export feature, b) set it to 'create only', so that TM copies all local scripts to the server, or c) set it read-write so that a remote script is removed when it is deleted locally."
-  },
-  "This_options_sets_up_how_to_handle_changes_from_the_sync_server_": {
-    "message": "This options sets up how to handle changes from the sync server. You can a) set it to 'create only', so that TM installs all remote scripts, or b) set it 'create and remove' so that local scripts will be removed in case they are removed from the server."
-  },
   "Create_Exportable_Data": {
     "message": "Create Exportable Data"
   },
   "Copy_exportable_data_to_clipboard_Ok_": {
-    "message": "Copy exportable TESLC data to clipboard. Ok?"
+    "message": "Copy exportable TESLA data to clipboard. Ok?"
   },
   "Allow_headers_to_be_modified_by_scripts": {
     "message": "Allow HTTP headers to be modified by scripts"
+  },
+  "Allow_overwrite_javascript_settings": {
+    "message": "Allow overwrite scriptblocker settings"
+  },
+  "Tampermonkey_can_not_work_when_javascript_is_disabled": {
+    "message": "Tampermonkey can't work when javascript is disabled at a page where a script should run on. This settings allows TM to overwrite this setting that either was made by you or a script blocker. This does only affects inline scripts from the page but not remote scripts."
   },
   "Yes": {
     "message": "Yes"
@@ -886,11 +891,59 @@
   "This_will_remove_all_scripts_and_reset_all_settings_Ok_": {
     "message": "Do you really want to remove all scripts and reset all settings?"
   },
+  "Chrome_Sync_Reset": {
+    "message": "Chrome Sync Reset"
+  },
+  "This_will_remove_all_stored_data_from_google_sync_Ok_": {
+    "message": "Do you really want to remove all data from Google Sync?"
+  },
   "Enable_autoSave": {
     "message": "Save content when editor loses focus"
   },
   "Enable_easySave": {
     "message": "Dont show confirmation dialog on save"
+  },
+  "Add_TM_to_CSP": {
+    "message": "Add Tampermonkey to the site's content security policy (CSP) if there is one"
+  },
+  "Tampermonkey_might_not_be_able_to_provide_access_to_the_unsafe_context_when_this_is_disabled": {
+    "message": "Tampermonkey might not be able not provide access to the unsafe context (unsafeWindow, page's functions and variables) when this is disabled."
+  },
+  "Warning": {
+    "message": "Warning"
+  },
+  "Info": {
+    "message": "Info"
+  },
+  "Error": {
+    "message": "Error"
+  },
+  "Default": {
+    "message": "Default"
+  },
+  "English": {
+    "message": "English"
+  },
+  "German": {
+    "message": "Deutsch"
+  },
+  "French": {
+    "message": "Français"
+  },
+  "Spanish": {
+    "message": "español"
+  },
+  "Polish": {
+    "message": "polski"
+  },
+  "Chinese__Simplified_": {
+    "message": "中文 (简体)"
+  },
+  "Chinese__Traditional_": {
+    "message": "中文 (繁體)"
+  },
+  "Japanese": {
+    "message": "日本語"
   },
   "EOF": {
     "message": "EOF"

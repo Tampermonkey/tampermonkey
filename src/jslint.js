@@ -2505,7 +2505,6 @@ klass:              do {
                 if (next_token.id === '(number)' && token.id === '.') {
                     warn('leading_decimal_a', token, artifact());
                     advance();
-                    return token;
                 }
                 stop('expected_identifier_a', token, token.id);
             }
@@ -4397,7 +4396,18 @@ klass:              do {
             spaces(this, paren);
             no_space();
             if (next_token.id === 'var') {
-                stop('move_var');
+                warn('move_var');
+                advance();
+                if (typeof funct[next_token.string] === 'string') {
+                    warn('already_defined', next_token, next_token.string);
+                } else {
+                    funct[next_token.string] = "unused";
+                    scope[next_token.string] = {
+                        funct : funct,
+                        string: next_token.string,
+                        writable : true
+                    };
+                }
             }
             edge();
             if (peek(0).id === 'in') {
