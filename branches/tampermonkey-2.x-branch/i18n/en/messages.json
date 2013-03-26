@@ -31,6 +31,9 @@
   "Unable_to_get_UserScript__Sry_": {
     "message": "Unable to load the UserScript. Sry!"
   },
+  "Do_you_want_to_install_this_userscript_in_Tampermonkey_or_Chrome": {
+    "message": "Do you want to install this userscript: \nin Tampermonkey (Ok) or \nnatively in Chrome (Cancel)"
+  },
   "Name_": {
     "message": "Name:"
   },
@@ -179,7 +182,6 @@
   "Show_fixed_source": {
     "message": "Show fixed source"
   },
-
   "Installed_userscripts": {
     "message": "Installed userscripts"
   },
@@ -195,20 +197,29 @@
   "Registered_menu_cmds": {
     "message": "Registered Menu Cmds"
   },
-  "About_Tampermonkey": {
-    "message": "About Tampermonkey"
+  "About": {
+    "message": "About"
+  },
+  "Changelog": {
+    "message": "Changelog"
   },
   "Tampermonkey_Options": {
     "message": "Tampermonkey"
   },
   "Position_": {
-    "message": "Position:"
+    "message": "Position"
   },
   "Close": {
     "message": "Close"
   },
   "GM_compat_options_": {
-    "message": "GM/FF compatibility options:"
+    "message": "GM/FF compatibility options"
+  },
+  "Comment": {
+    "message": "Comment"
+  },
+  "Apply_compatibility_options_to_required_script_too": {
+    "message": "Apply compatibility options to @require scripts too"
   },
   "Convert_CDATA_sections_into_a_chrome_compatible_format": {
     "message": "Convert CDATA sections into a chrome compatible format"
@@ -218,9 +229,6 @@
   },
   "Replace_for_each_statements": {
     "message": "Replace 'for each' statements"
-  },
-  "Remove_wrappedJSObject_statements": {
-    "message": "Remove 'wrappedJSObject' statements"
   },
   "Convert_Array_Assignements": {
     "message": "Convert [blub, bla] = s.split(':') statements"
@@ -238,10 +246,10 @@
     "message": "every ## ms"
   },
   "Run_at": {
-    "message": "Run at:"
+    "message": "Run at"
   },
   "Update_URL_": {
-    "message": "Update URL:"
+    "message": "Update URL"
   },
   "Save": {
     "message": "Save"
@@ -288,7 +296,7 @@
     "message": "This script stores data to Tampermonkey."
   },
   "This_script_has_access_to_https_pages": {
-    "message": "This script has access to https pages."
+    "message": "This item has access to https pages."
   },
   "One_or_more_compatibility_options_are_set": {
     "message": "One or more compatibility options are set. You might want/should review them."
@@ -299,14 +307,31 @@
   "This_is_a_system_script": {
     "message": "This is a system script."
   },
-  "Really_delete_this_script__": {
-    "message": "Really delete this script?"
+  "This_is_a_chrome_extension": {
+    "message": "This is a chrome extension"
   },
+  "This_script_runs_in_Chrome_mode": {
+    "message": "This script runs in Chrome mode"
+  },
+  "This_only_changes_the_user_agent_string": {
+    "message": "This item only changes the User-Agent for the includes webpages"
+  },
+  "This_is_a_userscript": {
+    "message": "This is a user script written in Javascript"
+  },
+  "Really_delete_0name0__": {
+    "message": "Do you really want to delete '$name$'?",
+    "placeholders": {
+      "name": {
+         "content": "$1"
+      }
+    }
+   },
   "Edit_this_script": {
     "message": "Edit this script"
   },
   "This_script_has_access_to_webpage_scripts": {
-    "message": "This script has full access to the webpage."
+    "message": "This item has full access to the webpage."
   },
   "Utilities": {
     "message": "Utilities"
@@ -329,9 +354,6 @@
   "An_error_occured_during_import_": {
     "message": "An error occured during import. Please take a look at the console for more infos! (CTRL+SHIFT+J)"
   },
-  "Please_press_Ctrl_S_to_save_the_exported_data_": {
-    "message": "Please press Ctrl-S to save the exported data."
-  },
   "Import_from_Textarea": {
     "message": "Import from Textarea"
   },
@@ -341,8 +363,8 @@
   "Export_to_Textarea": {
     "message": "Export to Textarea"
   },
-  "Export_to_document": {
-    "message": "Export to document"
+  "Export_to_file": {
+    "message": "Export to File"
   },
   "Export_to_SandboxFS": {
     "message": "Export to SandboxFS"
@@ -358,16 +380,16 @@
   "Just_another_service_provided_by_your_friendly_script_updater_": {
     "message": "Just another service provided by your friendly script updater:"
   },
-  "Welcome_": {
-    "message": "Welcome!"
-  },
-  "Have_fun_with_Tampermonkey": {
-    "message": "Have fun with Tampermonkey $version$! :)",
+  "Updated_to__0version0": {
+    "message": "Updated to: $version$",
     "placeholders": {
       "version": {
          "content": "$1"
       }
     }
+  },
+  "Click_here_to_see_the_recent_changes": {
+    "message": "Click here to see the recent changes"
   },
   "General": {
     "message": "General"
@@ -407,6 +429,18 @@
    },
   "Editor": {
     "message": "Editor"
+  },
+  "Key_Mapping": {
+    "message": "Key Mapping"
+  },
+  "Windows": {
+    "message": "Windows"
+  },
+  "Emacs": {
+    "message": "Emacs"
+  },
+  "Vim": {
+    "message": "Vim"
   },
   "Indentation_Width": {
     "message": "Indentation Width"
@@ -465,8 +499,8 @@
   "Indent": {
     "message": "Indent"
   },
-  "Browser_Default": {
-    "message": "Browser Default"
+  "Smart": {
+    "message": "Smart"
   },
   "EnterMode": {
     "message": "EnterMode"
@@ -491,6 +525,9 @@
   },
   "Auto_reload_on_script_enabled_desc": {
     "message": "Reload affected pages if a script was turned on or off"
+  },
+  "Dont_ask_me_for_simple_script_updates": {
+    "message": "Don't ask me for simple script updates"
   },
   "Hide_notification_after": {
     "message": "Hide notification after"
@@ -525,11 +562,22 @@
   "Forbidden_Pages": {
     "message": "Forbidden Pages"
   },
+  "_require_blacklist": {
+    "message": "@require Blacklist"
+  },
   "This_page_is_blacklisted_at_the_security_settings": {
     "message": "Blacklisted by security settings"
   },
   "Update_Notification": {
     "message": "Show TM update notification"
+  },
+  "Unable_to_load_script_from_url_0url0": {
+    "message": "Unable to load script from url: \n $url$",
+    "placeholders": {
+      "url": {
+         "content": "$1"
+      }
+    }
   },
   "Click_here_to_install_it_": {
     "message": "Click here to install it."
@@ -545,6 +593,9 @@
   },
   "Restart_to_apply": {
     "message": "You need to restart TM to apply this setting."
+  },
+  "Use_top_frame_URL_only": {
+    "message": "Use top frame URL only"
   },
   "TamperFire_update_started": {
     "message": "TamperFire update started"
@@ -580,10 +631,19 @@
     "message": "Homepage"
   },
   "Last_Updated": {
-    "message": "Last Change"
+    "message": "Last Updated"
+  },
+  "Last_Changed": {
+    "message": "Last Changed"
   },
   "Name": {
     "message": "Name"
+  },
+  "Version": {
+    "message": "Version"
+  },
+  "Type": {
+    "message": "Type"
   },
   "Update_needed": {
     "message": "Update needed"
@@ -622,10 +682,13 @@
     "message": "overwritten by user setting"
   },
   "Overwrite_includes": {
-    "message": "Overwrite Includes"
+    "message": "Overwrite @include tags"
+  },
+  "Overwrite_matches": {
+    "message": "Overwrite @match tags"
   },
   "Overwrite_excludes": {
-    "message": "Overwrite Excludes"
+    "message": "Overwrite @exclude tags"
   },
   "Report_a_bug": {
     "message": "Report a bug"
@@ -634,7 +697,7 @@
     "message": "Install"
   },
   "A_reload_is_required": {
-    "message": "A reload is required: \nAll unsafed changes will be lost!"
+    "message": "A reload is required: \nAll unsaved changes will be lost!"
   },
   "Enable_Sort_Cache": {
     "message": "Enable sort cache (High memory usage)"
@@ -645,11 +708,286 @@
   "Full_reset": {
     "message": "Factory reset"
   },
+  "Run_syntax_check": {
+    "message": "Run syntax check"
+  },
   "Do_you_really_want_to_factory_reset_this_script_": {
     "message": "Do you really want to factory reset this script?"
   },
+  "Dashboard": {
+    "message": "Dashboard"
+  },
   "Options": {
     "message": "Options"
+  },
+  "Userscripts": {
+    "message": "Userscripts"
+  },
+  "New_script_template_": {
+    "message": "New userscript template"
+  },
+  "Icon_badge_info": {
+    "message": "Icon Badge Info"
+  },
+  "Off": {
+    "message": "Off"
+  },
+  "Running_scripts": {
+    "message": "Running scripts instances"
+  },
+  "Unique_running_scripts": {
+    "message": "Unique running scripts"
+  },
+  "Disabled_scripts": {
+    "message": "Disabled scripts"
+  },
+  "Config_Mode": {
+    "message": "Config mode"
+  },
+  "Novice": {
+    "message": "Novice"
+  },
+  "Beginner": {
+    "message": "Beginner"
+  },
+  "Advanced": {
+    "message": "Advanced"
+  },
+  "Changes_the_number_of_visible_config_options": {
+    "message": "Changes the number of visible config options"
+  },
+  "Enter_the_new_rule": {
+    "message": "Enter the new rule"
+  },
+  "Add_as_0clude0": {
+    "message": "Add as $clude$",
+    "placeholders": {
+      "clude": {
+         "content": "$1"
+      }
+    }
+  },
+  "Add": {
+    "message": "Add"
+  },
+  "Remove": {
+    "message": "Remove"
+  },
+  "Includes_Excludes": {
+    "message": "Includes/Excludes"
+  },
+  "Original_includes": {
+    "message": "Original includes"
+  },
+  "Original_matches": {
+    "message": "Original matches"
+  },
+  "Original_excludes": {
+    "message": "Original excludes"
+  },
+  "User_includes": {
+    "message": "User includes"
+  },
+  "User_matches": {
+    "message": "User matches"
+  },
+  "User_excludes": {
+    "message": "User excludes"
+  },
+  "An_internal_error_occured_Do_you_want_to_visit_the_forum_": {
+    "message": "An internal error occured. If this problem persists even after a restart of Chrome, please press OK and report this issue at the forum.\n\nDo you want to visit the Tampermonkey forum?"
+  },
+  "TESLA": {
+    "message": "TESLA"
+  },
+  "Enable_TESLA": {
+    "message": "Enable TESLA"
+  },
+  "Tampermonkey_External_Script_List_Access": {
+    "message": "Tampermonkey External Script List Access"
+  },
+  "Sync_Type": {
+    "message": "Type"
+  },
+  "Sync_Id": {
+    "message": "Id"
+  },
+  "Imported": {
+    "message": "Imported"
+  },
+  "Sync": {
+    "message": "Sync"
+  },
+  "Disable_sync": {
+    "message": "Disable Sync"
+  },
+  "Enable_sync": {
+    "message": "Enable Sync"
+  },
+  "Create_Exportable_Data": {
+    "message": "Create Exportable Data"
+  },
+  "Copy_exportable_data_to_clipboard_Ok_": {
+    "message": "Copy exportable TESLA data to clipboard. Ok?"
+  },
+  "Allow_headers_to_be_modified_by_scripts": {
+    "message": "Allow HTTP headers to be modified by scripts"
+  },
+  "Allow_overwrite_javascript_settings": {
+    "message": "Allow overwrite scriptblocker settings"
+  },
+  "Tampermonkey_can_not_work_when_javascript_is_disabled": {
+    "message": "Tampermonkey can't work when javascript is disabled at a page where a script should run on. This settings allows TM to overwrite this setting that either was made by you or a script blocker. This does only affects inline scripts from the page but not remote scripts."
+  },
+  "Yes": {
+    "message": "Yes"
+  },
+  "No": {
+    "message": "No"
+  },
+  "Auto": {
+    "message": "Auto"
+  },
+  "__Please_choose__": {
+    "message": "-- Please choose an option --"
+  },
+  "Enable": {
+    "message": "Enable"
+  },
+  "Disable": {
+    "message": "Disable"
+  },
+  "Trigger_Update": {
+    "message": "Trigger an update"
+  },
+  "Apply_this_action_to_the_selected_scripts": {
+    "message": "Apply this action to all selected scripts"
+  },
+  "Start": {
+    "message": "Start"
+  },
+  "Really_delete_the_selected_items_": {
+    "message": "Do you really want to delete the selected items?"
+  },
+  "A_script_blocker_was_detected_": {
+    "message": "A script blocker was detected!"
+  },
+  "Storage_permission_is_needed_": {
+    "message": "Storage permission is needed!"
+  },
+  "Click_here_to_allow_TM_to_override_the_script_blocker": {
+    "message": "In order to allow your userscripts to run you need to click here to allow Tampermonkey to override the script blocker setting!"
+  },
+  "Click_here_to_allow_TM_to_use_Google_sync": {
+    "message": "Click here to allow Tampermonkey to use Google Sync!"
+  },
+  "Please_reload_this_page_in_order_to_run_your_userscripts_": {
+    "message": "Please reload this page to run your userscripts."
+  },
+  "Reset_Section": {
+    "message": "Reset"
+  },
+  "Restart_Tampermonkey": {
+    "message": "Restart Tampermonkey"
+  },
+  "This_will_restart_Tampermonkey_Ok_": {
+    "message": "Do you really want to restart Tampermonkey?"
+  },
+  "Factory_Reset": {
+    "message": "Factory Reset"
+  },
+  "This_will_remove_all_scripts_and_reset_all_settings_Ok_": {
+    "message": "Do you really want to remove all scripts and reset all settings?"
+  },
+  "Chrome_Sync_Reset": {
+    "message": "Chrome Sync Reset"
+  },
+  "This_will_remove_all_stored_data_from_google_sync_Ok_": {
+    "message": "Do you really want to remove all data from Google Sync?"
+  },
+  "Enable_autoSave": {
+    "message": "Save content when editor loses focus"
+  },
+  "Enable_easySave": {
+    "message": "Don't show confirmation dialog on save"
+  },
+  "Add_TM_to_CSP": {
+    "message": "Add Tampermonkey to the site's content security policy (CSP) if there is one"
+  },
+  "Tampermonkey_might_not_be_able_to_provide_access_to_the_unsafe_context_when_this_is_disabled": {
+    "message": "Tampermonkey might not be able not provide access to the unsafe context (unsafeWindow, page's functions and variables) when this is disabled."
+  },
+  "At_least_one_part_of_this_page_is_listed_at_the_forbidden_pages_setting_": {
+    "message": "At least one part of this page is listed at the 'forbidden pages' setting!"
+  },
+  "Some_scripts_might_be_blocked_by_the_javascript_settings_for_this_page_or_a_script_blocker_": {
+    "message": "Some scripts might be blocked by the javascript settings for this page or a script blocker!"
+  },
+  "Show_notification": {
+    "message": "Show a notification"
+  },
+  "Open_changelog": {
+    "message": "Open the changelog"
+  },
+  "No_frames": {
+    "message": "Run only in top frame"
+  },
+  "Runtime": {
+    "message": "Runtime"
+  },
+  "UnsafeWindow_retrieval_method": {
+    "message": "UnsafeWindow retrieval method"
+  },
+  "Native": {
+    "message": "Native"
+  },
+  "Proxy": {
+    "message": "Proxy"
+  },
+  "Unsafe": {
+    "message": "Unsafe"
+  },
+  "Many_userscripts_require_the_unsafeWindow_object_to_interact_with_the_pages_javascript_": {
+    "message": "Many userscripts require the unsafeWindow object to interact with the pages javascript!"
+  },
+  "This_option_is_essential_for_many_userscripts_to_work_Do_you_want_to_visit_the_FAQ_": {
+    "message": "This option is essential for many userscripts to work! Do you want to visit the FAQ?"
+  },
+  "Warning": {
+    "message": "Warning"
+  },
+  "Info": {
+    "message": "Info"
+  },
+  "Error": {
+    "message": "Error"
+  },
+  "Default": {
+    "message": "Default"
+  },
+  "English": {
+    "message": "English"
+  },
+  "German": {
+    "message": "Deutsch"
+  },
+  "French": {
+    "message": "Français"
+  },
+  "Spanish": {
+    "message": "español"
+  },
+  "Polish": {
+    "message": "polski"
+  },
+  "Chinese__Simplified_": {
+    "message": "中文 (简体)"
+  },
+  "Chinese__Traditional_": {
+    "message": "中文 (繁體)"
+  },
+  "Japanese": {
+    "message": "日本語"
   },
   "EOF": {
     "message": "EOF"
