@@ -242,7 +242,7 @@
   "Tampermonkey_assumes_0urlAllHttp0_in_order_to_continue_" : { "message" : "Tampermonkey suppose '$urlAllHttp$' pour continuer!",
       "placeholders" : { "urlAllHttp" : { "content" : "$1" } }
     },
-  "Tampermonkey_can_not_work_when_javascript_is_disabled" : { "message" : "Tampermonkey ne peut fonctionner que le javascript est désactivé sur une page où un script doit tourner. Ce paramètre permet à TM d'écraser ce paramètre. Ceci n'affecte que les scripts interne de la page et non les scripts distants." },
+  "Tampermonkey_can_not_work_when_javascript_is_disabled" : { "message" : "Tampermonkey ne peut fonctionner que si le javascript est désactivé sur une page où un script doit tourner. Ce paramètre permet à TM d'écraser ce paramètre. Ceci n'affecte que les scripts interne de la page et non les scripts distants." },
   "Tampermonkey_might_not_be_able_to_provide_access_to_the_unsafe_context_when_this_is_disabled" : { "message" : "Tampermonkey ne peut peut-être pas donner accès au contenu non sécurisé (les fonctions/variables unsafeWindow) quand ceci est éteint." },
   "The_update_url_has_changed_from_0oldurl0_to__0newurl0" : { "message" : "Le lien de MàJ à changé de :\n '$oldurl$'\n à:\n '$newurl$'\n",
       "placeholders" : { "newurl" : { "content" : "$2" },
