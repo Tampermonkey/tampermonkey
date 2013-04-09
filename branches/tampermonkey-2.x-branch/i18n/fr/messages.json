@@ -213,6 +213,7 @@
   "Running_scripts" : { "message" : "Scripts en fonctions" },
   "Runtime" : { "message" : "Durée" },
   "Save" : { "message" : "Enregistrer" },
+  "Save_to_disk" : { "message" : "Enregistrer sur le disque" },
   "Script_Update" : { "message" : "Mise à jour des scripts" },
   "Script_modified_in_background" : { "message" : "Ce script peut-être modifié par un autre \nonglet (par ex. une réinstallation). Si vous appuyer sur \n'enregistrer' ces changements seronts écrasés." },
   "Security" : { "message" : "Sécurité" },
