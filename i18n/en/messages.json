@@ -182,6 +182,18 @@
   "Show_fixed_source": {
     "message": "Show fixed source"
   },
+  "LogLevel": {
+    "message": "Logging Level"
+  },
+  "Trace": {
+    "message": "Trace"
+  },
+  "Verbose": {
+    "message": "Verbose"
+  },
+  "Debug": {
+    "message": "Debug"
+  },
   "Installed_userscripts": {
     "message": "Installed userscripts"
   },
@@ -259,6 +271,21 @@
   },
   "Reset": {
     "message": "Reset"
+  },
+  "Search": {
+    "message": "Search"
+  },
+  "Replace": {
+    "message": "Replace"
+  },
+  "Jump_to_line": {
+    "message": "Jump to line"
+  },
+  "Insert_constructor": {
+    "message": "Insert constructor"
+  },
+  "Auto_Indent_all": {
+    "message": "Auto-Indent all"
   },
   "There_are_unsaved_changed_" : {
     "message": "There are unsaved changes.\nDo you really want to close the editor?"
@@ -368,6 +395,15 @@
   },
   "Export_to_SandboxFS": {
     "message": "Export to SandboxFS"
+  },
+  "TextArea": {
+    "message": "TextArea"
+  },
+  "SandboxFS": {
+    "message": "SandboxFS"
+  },
+  "File": {
+    "message": "File"
   },
   "There_is_an_update_for_0name0_avaiable_": {
     "message": "There is an update for '$name$' available. :)",
@@ -701,6 +737,9 @@
   },
   "Enable_Sort_Cache": {
     "message": "Enable sort cache (High memory usage)"
+  },
+  "Save_to_disk": {
+    "message": "Save to disk"
   },
   "Editor_reset": {
     "message": "Editor reset"
