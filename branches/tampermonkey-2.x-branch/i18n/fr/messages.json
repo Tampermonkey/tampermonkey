@@ -17,6 +17,7 @@
   "9" : { "message" : "9" },
   "A_reload_is_required" : { "message" : "Un rechargement est nécessaire : \nLes modifications non sauvegardées seront perdues !" },
   "A_script_blocker_was_detected_" : { "message" : "Un bloqueur de script a été détecté!" },
+  "A_script_with_that_name_already_exists_" : { "message" : "Vous avez renommer ce script mais un autre avec le même nom existe!" },
   "About" : { "message" : "À propos" },
   "Add" : { "message" : "Ajouter" },
   "Add_TM_to_CSP" : { "message" : "Ajouter Tampermonkey dans la politique de sécurité du site (CSP) si il y en a" },
@@ -45,6 +46,9 @@
   "Auto_reload_on_script_enabled_desc" : { "message" : "Rafraichir les pages affectées si un script est activé ou désactivé" },
   "Available_Userscripts" : { "message" : "Userscripts disponibles" },
   "Beginner" : { "message" : "Débutant" },
+  "CONFLICT__This_script_was_modified_0t0_seconds_ago_" : { "message" : "CONFLIT :\nCe script a été modifié par un autre onglet il y a $t$ secondes!",
+      "placeholders" : { "t" : { "content" : "$1" } }
+    },
   "Cancel" : { "message" : "Annuler" },
   "Changelog" : { "message" : "Modifications" },
   "Changes_the_number_of_visible_config_options" : { "message" : "Change le nombre d'options visibles" },
@@ -358,5 +362,6 @@
       "placeholders" : { "name" : { "content" : "$2" },
           "url" : { "content" : "$1" }
         }
-    }
+    },
+  "some_secs" : { "message" : "quelque" }
 }
