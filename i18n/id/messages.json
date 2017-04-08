@@ -1,0 +1,1314 @@
+{
+  "1": {
+    "message": "1"
+  },
+  "2": {
+    "message": "2"
+  },
+  "3": {
+    "message": "3"
+  },
+  "4": {
+    "message": "4"
+  },
+  "5": {
+    "message": "5"
+  },
+  "6": {
+    "message": "6"
+  },
+  "7": {
+    "message": "7"
+  },
+  "8": {
+    "message": "8"
+  },
+  "9": {
+    "message": "9"
+  },
+  "10": {
+    "message": "10"
+  },
+  "11": {
+    "message": "11"
+  },
+  "fatal_error": {
+    "message": "kesalahan fatal"
+  },
+  "Please_consider_a_contribution": {
+    "message": "Silahkan kirim donasi."
+  },
+  "I_contributed_already": {
+    "message": "Saya sudah berdonasi."
+  },
+  "Remind_me_later": {
+    "message": "Ingatkan saya nanti"
+  },
+  "I_dont_want_to_contribute": {
+    "message": "Saya tak ingin berdonasi."
+  },
+  "Thank_you_very_much_": {
+    "message": "Terima kasih banyak!"
+  },
+  "Invalid_UserScript__Sry_": {
+    "message": "UserScript tak valid. Maaf!"
+  },
+  "Invalid_UserScript_name__Sry_": {
+    "message": "Nama UserScript tak valid. Maaf!"
+  },
+  "Script_name_0name0": {
+    "message": "Nama Skrip: $name$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "Downloaded_from_0url0": {
+    "message": "Diunduh dari: $url$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      }
+    }
+  },
+  "Please_double_check_the_native_script_import_settings__": {
+    "message": "Tak dapat memuat UserScript!\n\nSilahkan cek kembali pengaturan tentang 'Native Script Import'."
+  },
+  "Name": {
+    "message": "Nama"
+  },
+  "Note": {
+    "message": "Catatan"
+  },
+  "Installed_Version_": {
+    "message": "Versi terpasang"
+  },
+  "Global_Settings": {
+    "message": "Pengaturan Global"
+  },
+  "Global_settings_import": {
+    "message": "Impor Pengaturan Global"
+  },
+  "This_will_overwrite_your_global_settings_": {
+    "message": "Ini akan menimpa Pengaturan Global Anda!"
+  },
+  "You_are_about_to_reinstall_a_UserScript_": {
+    "message": "Instalasi ulang UserScript"
+  },
+  "You_are_about_to_downgrade_a_UserScript": {
+    "message": "Perhatian penurunan versi Userscript atau downgrade"
+  },
+  "The_downgraded_script_might_have_problems_to_read_its_stored_data_": {
+    "message": "Penurunan atau downgraded script dapat membuat masalah pada saat memuat data yang tersimpan!"
+  },
+  "Malicious_scripts_can_violate_your_privacy_": {
+    "message": "script berbahaya dapat melanggar privasi Anda dan bertindak atas nama Anda!\nAnda hanya harus menginstal script dari sumber yang dipercaya."
+  },
+  "You_are_about_to_modify_a_UserScript_": {
+    "message": "modifikasi UserScript"
+  },
+  "You_are_about_to_update_a_UserScript_": {
+    "message": "Pembaharuan UserScript"
+  },
+  "You_are_about_to_install_a_UserScript_": {
+    "message": "Pemasangan UserScript"
+  },
+  "This_script_does_not_provide_any__include_information_": {
+    "message": "Script ini tidak memberikan informasi @include apapun."
+  },
+  "All_script_settings_will_be_reset_": {
+    "message": "Semua pengaturan script akan diatur ulang atau reset!"
+  },
+  "The_update_url_has_changed_from_0oldurl0_to__0newurl0": {
+    "message": "Pembaharuan telah berubah dari:\n    '$oldurl$'\n    ke:\n    '$newurl$'\n",
+    "placeholders": {
+      "oldurl": {
+        "content": "$1"
+      },
+      "newurl": {
+        "content": "$2"
+      }
+    }
+  },
+  "Attention_Can_not_display_all_includes_": {
+    "message": "Perhatian: Daftar include telah disingkat.\nSilahkan periksa secara manual!"
+  },
+  "Attention_Can_not_display_all_excludes_": {
+    "message": "Perhatian: Daftar exclude telah disingkat.\nSilahkan periksa secara manual!"
+  },
+  "Include_s__": {
+    "message": "Include(s)"
+  },
+  "Exclude_s__": {
+    "message": "Exclude(s)"
+  },
+  "A_recheck_of_the_GreaseMonkey_FF_compatibility_options_may_be_required_in_order_to_run_this_script_": {
+    "message": "Sebuah recheck dari opsi kompatibilitas GreaseMonkey / FF mungkin diperlukan untuk menjalankan script ini."
+  },
+  "Author": {
+    "message": "Pembuat / Author"
+  },
+  "Description": {
+    "message": "Deskripsi"
+  },
+  "Source": {
+    "message": "Sumber"
+  },
+  "Install": {
+    "message": "Pasang"
+  },
+  "Reinstall": {
+    "message": "Pasang ulang"
+  },
+  "Modify": {
+    "message": "Modifikasi"
+  },
+  "Downgrade": {
+    "message": "Downgrade"
+  },
+  "Update": {
+    "message": "Pembaharui"
+  },
+  "0name0_0version0_is_available__Please_re_start_your_browser_to_update_": {
+    "message": "$name$ $version$ tersedia.\nSilahkan re-start browser untuk memperbaharui!",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "version": {
+        "content": "$2"
+      }
+    }
+  },
+  "Process_with_Chrome": {
+    "message": "Process with the browser"
+  },
+  "Enforce": {
+    "message": "Enforce"
+  },
+  "Strict": {
+    "message": "Strict"
+  },
+  "connect_mode": {
+    "message": "@connect mode"
+  },
+  "Ask_if_unknown": {
+    "message": "Tanya jika tak diketahui"
+  },
+  "Always_ask": {
+    "message": "Selalu tanya"
+  },
+  "Casual": {
+    "message": "Kasual"
+  },
+  "Allow_once": {
+    "message": "Izinkan sekali"
+  },
+  "Temporarily_allow": {
+    "message": "Izinkan sementara"
+  },
+  "Always_allow": {
+    "message": "Selalu izinkan"
+  },
+  "Always_allow_domain": {
+    "message": "Selalu izinkan domain"
+  },
+  "Always_allow_all_domains": {
+    "message": "Izinkan selalu semua domain"
+  },
+  "Forbid_once": {
+      "message": "Tolak sekali"
+  },
+  "Always_forbid": {
+      "message": "Selalu tolak"
+  },
+  "Always_forbid_domain": {
+      "message": "Selalu tolak domain"
+  },
+  "Dont_ask_again": {
+      "message": "Jangan tanya lagi"
+  },
+  "Focus_tab": {
+    "message": "Fokus tab sumber"
+  },
+  "Skip_timeout__0seconds0_seconds_": {
+    "message": "Lewati batas waktu ($seconds$ detik)",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "A_userscript_wants_to_access_a_cross_origin_resource_": {
+    "message": "Sebuah userscript ingin mengakses sumber daya lintas asal."
+  },
+  "A_request_to_a_cross_origin_resource_is_nothing_unusual__You_just_have_to_check_whether_this_script_has_a_good_reason_to_access_this_domain__For_example_there_are_only_a_very_few_reasons_for_a_userscript_to_contact_your_bank__Please_note_that_userscript_authors_can_avoid_this_dialog_by_adding_@connect_tags_to_their_scripts__You_can_change_your_opinion_at_any_time_at_the_scripts_settings_tab_": {
+    "message": "Permintaan untuk sumber daya lintas asal ada yang luar biasa.\nAnda hanya perlu memeriksa apakah script ini memiliki alasan yang baik untuk mengakses domain ini.\nUntuk misalnya hanya ada sangat sedikit alasan untuk userscript untuk menghubungi bank Anda.\n\nMohon dicatat bahwa penulis userscript dapat menghindari dialog ini dengan menambahkan [url=$connect$]@connect tag [/url] untuk script mereka.\n\nTidak peduli bagaimana Anda akan memutuskan, Anda dapat mengubah pendapat Anda setiap saat di skrip [url=$settings$]tab pengaturan[/url].",
+    "placeholders": {
+      "connect": {
+        "content": "$1"
+      },
+      "settings": {
+        "content": "$2"
+      }
+    }
+  },
+  "Tab_URL": {
+    "message": "Tab URL"
+  },
+  "Destination_domain": {
+    "message": "Destination domain"
+  },
+  "Destination_URL": {
+    "message": "Destination URL"
+  },
+  "This_gives_this_script_the_permission_to_retrieve_and_send_data_from_and_to_every_webpage__This_is_potentially_unsafe__Are_you_sure_you_want_to_continue_": {
+    "message": "Hal ini memberikan script ini izin untuk mengambil dan mengirim data dari dan ke setiap halaman web. Hal ini berpotensi tidak aman!\n\nApakah Anda yakin ingin melanjutkan?"
+  },
+  "No_update_found__sry_": {
+    "message": "Update tak ditemukan, mf!"
+  },
+  "Unknown_method_0name0": {
+    "message": "Metode yang tidak diketahui $name$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "No_script_is_running": {
+    "message": "Tak ada script yang berjalan"
+  },
+  "Add_new_script___": {
+    "message": "Bikin sebuah script..."
+  },
+  "Get_new_scripts___": {
+    "message": "Temukan scripts baru..."
+  },
+  "Check_for_userscripts_updates": {
+    "message": "Periksa pembaruan userscript"
+  },
+  "Waiting_for_sync_to_finish": {
+    "message": "Menunggu sync untuk menyelesaikan"
+  },
+  "Settings": {
+    "message": "Pengaturan"
+  },
+  "Debug_scripts": {
+    "message": "Script Debug"
+  },
+  "Show_fixed_source": {
+    "message": "Tampilkan sumber tetap"
+  },
+  "LogLevel": {
+    "message": "Tingkat Logging"
+  },
+  "Trace": {
+    "message": "Trace"
+  },
+  "Verbose": {
+    "message": "Jejak"
+  },
+  "Debug": {
+    "message": "Debug"
+  },
+  "Installed_userscripts": {
+    "message": "Userscripts terpasang"
+  },
+  "No_script_is_installed": {
+    "message": "Tak ada script yang terpasang"
+  },
+  "Get_some_scripts___": {
+    "message": "Dapatkan script..."
+  },
+  "New_userscript": {
+    "message": "<New userscript>"
+  },
+  "Help": {
+    "message": "Bantuan"
+  },
+  "Changelog": {
+    "message": "Daftar pembaharuan"
+  },
+  "Position_": {
+    "message": "Posisi"
+  },
+  "Close": {
+    "message": "Tutup"
+  },
+  "GM_compat_options_": {
+    "message": "GM/FF kompatibilitas pengaturan"
+  },
+  "Comment": {
+    "message": "Komentar"
+  },
+  "Details": {
+    "message": "Detail"
+  },
+  "UUID": {
+    "message": "UUID"
+  },
+  "Apply_compatibility_options_to_required_script_too": {
+    "message": "Terapkan juga opsi kompatibilitas untuk @require script"
+  },
+  "Fix_wrappedJSObject_property_access": {
+    "message": "Perbaiki akses properti wrappedJSObject"
+  },
+  "Convert_CDATA_sections_into_a_chrome_compatible_format": {
+    "message": "Mengkonversi bagian CDATA ke dalam format yang kompatibel peramban"
+  },
+  "Fix_for_var_in_statements": {
+    "message": "Fix 'for (var j in x)' statements"
+  },
+  "Replace_for_each_statements": {
+    "message": "Replace 'for each' statements"
+  },
+  "Convert_Array_Assignements": {
+    "message": "Convert [blub, bla] = s.split(':') statements"
+  },
+  "Add_toSource_function_to_Object_Prototype": {
+    "message": "Tambahkan fungsi kompatibilitas ke Obyek dan Array"
+  },
+  "Run_at": {
+    "message": "Run at"
+  },
+  "Update_URL_": {
+    "message": "Update URL"
+  },
+  "Save": {
+    "message": "Simpan"
+  },
+  "Cancel": {
+    "message": "Batall"
+  },
+  "Search": {
+    "message": "Cari"
+  },
+  "Replace": {
+    "message": "Timpa"
+  },
+  "Jump_to_line": {
+    "message": "Lompat ke line"
+  },
+  "Insert_constructor": {
+    "message": "Insert constructor"
+  },
+  "Auto_Indent_all": {
+    "message": "Auto-Indent all"
+  },
+  "Search_for": {
+    "message": "Search for"
+  },
+  "Replace_all": {
+    "message": "Timpa semua"
+  },
+  "Replace_with": {
+    "message": "Timpa dengan"
+  },
+  "Replace_": {
+    "message": "Timpa?"
+  },
+  "There_are_unsaved_changed_": {
+    "message": "Ada perubahan yang belum disimpan.\nApakah Anda benar-benar ingin menutup editor?"
+  },
+  "Do_you_really_want_to_store_fixed_code_": {
+    "message": "Opsi '$option$' telah terbuka!\n\nApakah Anda benar-benar ingin menyimpan sumber tetap?",
+    "placeholders": {
+      "option": {
+        "content": "$1"
+      }
+    }
+  },
+  "Really_reset_all_changes_": {
+    "message": "Beneran ingin atur ulang semua perubahan?"
+  },
+  "Please_wait___": {
+    "message": "Silahkan tunggu..."
+  },
+  "Edit": {
+    "message": "Edit"
+  },
+  "Sites": {
+    "message": "Sites"
+  },
+  "Sort": {
+    "message": "Sort"
+  },
+  "Actions": {
+    "message": "Actions"
+  },
+  "Action": {
+    "message": "Action"
+  },
+  "Please_select_a_file": {
+    "message": "Sila pilih berkas"
+  },
+  "Cloud": {
+    "message": "Cloud"
+  },
+  "Import": {
+    "message": "Import"
+  },
+  "Show_backups": {
+    "message": "Buka backup"
+  },
+  "Delete": {
+    "message": "Hapus"
+  },
+  "Features": {
+    "message": "Fitur"
+  },
+  "This_script_stores_data": {
+    "message": "Script ini menyimpan data ke Tampermonkey."
+  },
+  "This_script_has_access_to_https_pages": {
+    "message": "Item ini memiliki akses ke laman https."
+  },
+  "One_or_more_compatibility_options_are_set": {
+    "message": "Satu atau beberapa opsi kompatibilitas ditetapkan. Anda mungkin ingin/harus tinjau mereka."
+  },
+  "This_script_has_full_web_access": {
+    "message": "Script ini memiliki akses internet penuh."
+  },
+  "This_is_a_system_script": {
+    "message": "Ini adalah script sistem."
+  },
+  "This_is_a_chrome_extension": {
+    "message": "Ini adalah ekstensi browser"
+  },
+  "This_script_runs_in_Chrome_mode": {
+    "message": "Script ini berjalan pada mode Chrome"
+  },
+  "This_is_a_userscript": {
+    "message": "Ini adalah userscript yang ditulis menggunakan Javascript"
+  },
+  "Really_import_0name0__": {
+    "message": "Apakah Anda benar-benar ingin mengimpor script asli '$name$'?",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "Really_delete_0name0__": {
+    "message": "Apa kamu benar-benar ingin hapus '$name$'?",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "This_script_has_access_to_webpage_scripts": {
+    "message": "Item ini memiliki akses penuh ke halaman web."
+  },
+  "Utilities": {
+    "message": "Utilitas"
+  },
+  "This_script_uses_uW_gm_api_": {
+    "message": "Script ini menggunakan bagian dari Greasemonkey 10 API (unsafeWindow.monkey) \nyang tidak didukung oleh Tampermonkey atau script handler alternatif lainnya."
+  },
+  "some_secs": {
+    "message": "some"
+  },
+  "CONFLICT__This_script_was_modified_0t0_seconds_ago_": {
+    "message": "KONFLIK:\nScript ini dimodifikasi oleh tab lain $t$ detik yang lalu!",
+    "placeholders": {
+      "t": {
+        "content": "$1"
+      }
+    }
+  },
+  "Enabled": {
+    "message": "Diaktifkan"
+  },
+  "Disabled": {
+    "message": "Nonaktif"
+  },
+  "Unable_to_parse_this_": {
+    "message": "Tidak dapat mengurai ini! :("
+  },
+  "No_backups_found": {
+    "message": "Tak ada backup ditemukan"
+  },
+  "An_error_occured_during_import_": {
+    "message": "Terjadi kesalahan selama impor."
+  },
+  "Export": {
+    "message": "Ekspor"
+  },
+  "TextArea": {
+    "message": "TextArea"
+  },
+  "Zip": {
+    "message": "Zip"
+  },
+  "Include_script_storage": {
+    "message": "Termasuk penyimpanan script"
+  },
+  "Include_TM_settings": {
+    "message": "Termasuk pengaturan Tampermonkey"
+  },
+  "File": {
+    "message": "File"
+  },
+  "There_is_an_update_for_0name0_avaiable_": {
+    "message": "There is an update for '$name$' available. :)",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "Just_another_service_provided_by_your_friendly_script_updater_": {
+    "message": "Hanya layanan lain yang disediakan oleh skrip updater ramah Anda"
+  },
+  "Updated_to__0version0": {
+    "message": "Diperbaharui ke: $version$",
+    "placeholders": {
+      "version": {
+        "content": "$1"
+      }
+    }
+  },
+  "Click_here_to_see_the_recent_changes": {
+    "message": "Klik di sini untuk melihat perubahan terbaru"
+  },
+  "General": {
+    "message": "Umum"
+  },
+  "Script_Update": {
+    "message": "Pembaharuan skrip"
+  },
+  "Check_interval": {
+    "message": "Interval Periksa"
+  },
+  "Always": {
+    "message": "Selalu"
+  },
+  "Never": {
+    "message": "Tak pernah"
+  },
+  "Every_Hour": {
+    "message": "Setiap jam"
+  },
+  "Every_6_Hours": {
+    "message": "Tiap 6 jam"
+  },
+  "Every_12_Hour": {
+    "message": "Tiap 12 jam"
+  },
+  "Every_Day": {
+    "message": "Setiap hari"
+  },
+  "Every_Week": {
+    "message": "Setiap minggu"
+  },
+  "Every_Month": {
+    "message": "Setiap bulan"
+  },
+  "Update_interval": {
+    "message": "Update Interval"
+  },
+  "Editor": {
+    "message": "Editor"
+  },
+  "Font_Size": {
+    "message": "Ukuran Font"
+  },
+  "Theme": {
+    "message": "Tema"
+  },
+  "Key_Mapping": {
+    "message": "Key Mapping"
+  },
+  "Windows": {
+    "message": "Windows"
+  },
+  "Sublime": {
+    "message": "Sublime Text"
+  },
+  "Emacs": {
+    "message": "Emacs"
+  },
+  "Vim": {
+    "message": "Vim"
+  },
+  "Please_check_the_0editor0_documentation_for_more_details_": {
+    "message": "Silahkan cek $editor$ documentation untuk lebih detailnya.",
+    "placeholders": {
+      "editor": {
+        "content": "$1"
+      }
+    }
+  },
+  "Indentation_Width": {
+    "message": "Indentation Width"
+  },
+  "Indent_with": {
+    "message": "Indent with"
+  },
+  "Tabs": {
+    "message": "Tabs"
+  },
+  "Spaces": {
+    "message": "Spaces"
+  },
+  "TabMode": {
+    "message": "TabMode"
+  },
+  "Classic": {
+    "message": "Classic"
+  },
+  "Indent": {
+    "message": "Indent"
+  },
+  "Smart": {
+    "message": "Smart"
+  },
+  "Line_break": {
+    "message": "Baris Jeda"
+  },
+  "Reindent_on_typing": {
+    "message": "Re-indent pada saat mengetik"
+  },
+  "Auto_reload_on_script_enabled": {
+    "message": "Auto reload pages"
+  },
+  "Auto_reload_on_script_enabled_desc": {
+    "message": "Reload affected pages if a script was turned on or off"
+  },
+  "Anonymous_statistics": {
+    "message": "Anonymous statistics"
+  },
+  "Allow_Tampermonkey_to_collect_anonymous_statistics_via_Google_Analytics": {
+    "message": "Allow Tampermonkey to collect anonymous statistics via Google Analytics. This helps me to improve Tampermonkey and to determine on what criteria I should focus my development. Just disable this if you dislike it."
+  },
+  "Dont_ask_me_for_simple_script_updates": {
+    "message": "Don't ask me for simple script updates"
+  },
+  "Hide_notification_after": {
+    "message": "Hide notification after"
+  },
+  "Today": {
+    "message": "Today"
+  },
+  "15_Seconds": {
+    "message": "15 Seconds"
+  },
+  "30_Seconds": {
+    "message": "30 Seconds"
+  },
+  "1_Minute": {
+    "message": "1 Minute"
+  },
+  "5_Minutes": {
+    "message": "5 Minutes"
+  },
+  "1_Hour": {
+    "message": "1 Hour"
+  },
+  "Enable_Editor": {
+    "message": "Enable enhanced editor"
+  },
+  "Appearance": {
+    "message": "Tampilan"
+  },
+  "Security": {
+    "message": "Keamanan"
+  },
+  "Downloads": {
+    "message": "Unduhan"
+  },
+  "Download_Mode": {
+    "message": "Mode Unduhan"
+  },
+  "Browser_API": {
+    "message": "API Browser "
+  },
+  "The_Browser_API_mode_requires_a_special_permission_": {
+    "message": "Mode Browser API memerlukan izin khusus."
+  },
+  "Whitelisted_File_Extensions": {
+    "message": "Whitelisted File Extensions"
+  },
+  "Only_files_with_these_extensions_can_be_saved_to_the_harddisk_Be_careful_to_not_allow_file_extensions_that_represent_executables_at_your_operating_system_": {
+    "message": "Hanya file dengan ekstensi ini dapat disimpan ke hard disk.\nHati-hati untuk tidak mengizinkan ekstensi file yang mewakili executable di sistem operasi Anda!"
+  },
+  "Your_whitelist_seems_to_include_executable_files_This_means_your_userscripts_may_download_malware_or_spyware_to_your_harddisk_": {
+    "message": "Daftar putih Anda tampaknya menyertakan file executable!\nIni berarti userscript Anda dapat men-download malware atau spyware ke harddisk Anda!!"
+  },
+  "Browser_API_Downloads": {
+    "message": "Unduhan API Browser"
+  },
+  "Click_here_to_allow_TM_to_start_downloads": {
+    "message": "Klik OK untuk mengizinkan Tampermonkey memulai download instan."
+  },
+  "Page_Filter_Mode": {
+    "message": "Page Filter Mode"
+  },
+  "Whitelisted_Pages": {
+    "message": "Whitelisted Pages"
+  },
+  "Blacklisted_Pages": {
+    "message": "Blacklisted Pages"
+  },
+  "Blacklist": {
+    "message": "Blacklist"
+  },
+  "Whitelist": {
+    "message": "Whitelist"
+  },
+  "Both": {
+    "message": "Both"
+  },
+  "Experimental": {
+    "message": "Experimental"
+  },
+  "strict_mode": {
+    "message": "strict mode"
+  },
+  "Inject_Mode": {
+    "message": "Inject Mode"
+  },
+  "Fast": {
+    "message": "Fast"
+  },
+  "Normal": {
+    "message": "Normal"
+  },
+  "This_page_is_blacklisted_at_the_security_settings": {
+    "message": "Blacklisted by security settings"
+  },
+  "Update_Notification": {
+    "message": "Tampilkan pembaruan TM pemberitahuan"
+  },
+  "Unable_to_load_script_from_url_0url0": {
+    "message": "Unable to load script from url: \n $url$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      }
+    }
+  },
+  "Click_here_to_install_it_": {
+    "message": "Click here to install it."
+  },
+  "Check_disabled_scripts": {
+    "message": "Nonaktifkan Update skrip"
+  },
+  "Homepage": {
+    "message": "Homepage"
+  },
+  "Last_updated": {
+    "message": "Terakhir diperbarui"
+  },
+  "Version": {
+    "message": "Version"
+  },
+  "Type": {
+    "message": "Tipe"
+  },
+  "Updates": {
+    "message": "Updates"
+  },
+  "Check_for_Updates": {
+    "message": "Check for updates"
+  },
+  "Update_check_is_disabled": {
+    "message": "The update check of this script is disabled or not possible"
+  },
+  "Click_here_to_move_this_script": {
+    "message": "Click here to move this script"
+  },
+  "overwritten_by_user": {
+    "message": "overwritten by user setting"
+  },
+  "Report_a_bug": {
+    "message": "Report a bug"
+  },
+  "A_reload_is_required": {
+    "message": "A reload is required: \nAll unsaved changes will be lost!"
+  },
+  "Save_to_disk": {
+    "message": "Save to disk"
+  },
+  "Editor_reset": {
+    "message": "Editor reset"
+  },
+  "Full_reset": {
+    "message": "Factory reset"
+  },
+  "Run_syntax_check": {
+    "message": "Run syntax check"
+  },
+  "No_syntax_errors_were_found_": {
+    "message": "No syntax errors were found."
+  },
+  "One_error_or_hint_was_found_": {
+    "message": "One error or hint was found."
+  },
+  "0count0_errors_or_hints_were_found_": {
+    "message": "$count$ errors or hints were found.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "Auto_syntax_check_on_typing": {
+    "message": "Cek otomatis syntax pada saat mengetik"
+  },
+  "Enable_this_option_to_automatically_check_the_code_on_typing_": {
+    "message": "Enable this option to automatically check the code on typing."
+  },
+  "Auto_syntax_check_max_length": {
+    "message": "Automatic syntax check max size"
+  },
+  "Check_only_scripts_up_to_this_size_automatically_": {
+    "message": "Check only scripts up to this size automatically."
+  },
+  "Highlight_trailing_whitespace": {
+    "message": "Otomatis cek ukuran maksimal syntax"
+  },
+  "Dashboard": {
+    "message": "Dashboard"
+  },
+  "Userscripts": {
+    "message": "Userscripts"
+  },
+  "Script_URL_detection": {
+    "message": "Script URL detection"
+  },
+  "Install_this_script": {
+    "message": "Install this script"
+  },
+  "New_script_template_": {
+    "message": "New userscript template"
+  },
+  "Icon_badge_info": {
+    "message": "Icon Badge Info"
+  },
+  "Icon_badge_color": {
+    "message": "Warna Icon Badge"
+  },
+  "On": {
+    "message": "On"
+  },
+  "Off": {
+    "message": "Off"
+  },
+  "Running_scripts": {
+    "message": "Running scripts instances"
+  },
+  "Unique_running_scripts": {
+    "message": "Unique running scripts"
+  },
+  "Disabled_scripts": {
+    "message": "Disabled scripts"
+  },
+  "Config_Mode": {
+    "message": "Mode Config"
+  },
+  "Novice": {
+    "message": "Basic"
+  },
+  "Beginner": {
+    "message": "Pemula"
+  },
+  "Advanced": {
+    "message": "Lanjutan"
+  },
+  "Changes_the_number_of_visible_config_options": {
+    "message": "Mengubah jumlah yang terlihat pada konfigurasi pilihan"
+  },
+  "Language": {
+    "message": "Language"
+  },
+  "Enter_the_new_rule": {
+    "message": "Masukkan aturan baru"
+  },
+  "Add_as_0clude0": {
+    "message": "Add as $clude$",
+    "placeholders": {
+      "clude": {
+        "content": "$1"
+      }
+    }
+  },
+  "Add": {
+    "message": "Add"
+  },
+  "Remove": {
+    "message": "Remove"
+  },
+  "Includes_Excludes": {
+    "message": "Includes/Excludes"
+  },
+  "Original_includes": {
+    "message": "Original includes"
+  },
+  "Original_matches": {
+    "message": "Original matches"
+  },
+  "Original_excludes": {
+    "message": "Original excludes"
+  },
+  "User_includes": {
+    "message": "User includes"
+  },
+  "User_matches": {
+    "message": "User matches"
+  },
+  "User_excludes": {
+    "message": "User excludes"
+  },
+  "Original_domain_whitelist": {
+      "message": "Original domain whitelist"
+  },
+  "User_domain_whitelist": {
+      "message": "User domain whitelist"
+  },
+  "Temporary_domain_whitelist": {
+      "message": "Temporary domain whitelist"
+  },
+  "User_domain_blacklist": {
+      "message": "User domain blacklist"
+  },
+  "XHR_Security": {
+      "message": "XHR Security"
+  },
+  "An_internal_error_occured_Do_you_want_to_visit_the_forum_": {
+    "message": "An internal error occurred. If this problem persists even after a restart of the browser, please press OK and report this issue at the forum.\n\nDo you want to visit the Tampermonkey forum?"
+  },
+  "TESLA": {
+    "message": "TESLA"
+  },
+  "Enable_TESLA": {
+    "message": "Enable TESLA"
+  },
+  "Tampermonkey_External_Script_List_Access": {
+    "message": "Script synchronization (Tampermonkey External Script List Access)"
+  },
+  "Sync_Type": {
+    "message": "Tipe"
+  },
+  "Sync_Version": {
+    "message": "Version"
+  },
+  "This_sync_version_may_multiply_each_script_that_is_present_at_more_than_one_Tampermonkey_instance__Do_you_really_want_to_continue_": {
+    "message": "Unlike the 'Legacy' sync version this one synchronizes your scripts by reference to a unique ID that is created when a script is installed!\n\nThis means if you installed a script at multiple Tampermonkey instances by either another sync method or a normal script installation then this script will appear multiple times after the next sync iteration has finished.\n\nThe only way to recover is to manually remove each doubled script entry!\n\nDo you really want to continue?"
+  },
+  "Different_sync_versions_are_not_compatible_to_each_other_": {
+    "message": "Different sync versions are not compatible to each other!"
+  },
+  "Sync_Id": {
+    "message": "Id"
+  },
+  "Imported": {
+    "message": "Imported"
+  },
+  "Create_Exportable_Data": {
+    "message": "Create Exportable Data"
+  },
+  "Copy_exportable_data_to_clipboard_Ok_": {
+    "message": "Copy exportable TESLA data to clipboard. Ok?"
+  },
+  "Allow_headers_to_be_modified_by_scripts": {
+    "message": "Allow HTTP headers to be modified by scripts"
+  },
+  "Allow_communication_with_cooperate_pages": {
+    "message": "Allow communication with cooperate pages"
+  },
+  "Tampermonkey_and_script_version": {
+    "message": "Tampermonkey + script version"
+  },
+  "Tampermonkey_version": {
+    "message": "Tampermonkey version only"
+  },
+  "This_option_allows_the_Tampermonkey_homepage_and_some_script_hosting_pages_to_determine_the_Tampermonkey_version_and_whether_a_script_is_installed_": {
+    "message": "This option allows the Tampermonkey homepage and some script hosting pages to determine the Tampermonkey version and some basic script information (installed, version, enabled)."
+  },
+  "Subresource_Integrity": {
+    "message": "Subresource Integrity"
+  },
+  "Validate_if_supported": {
+    "message": "Validate if possible"
+  },
+  "Validate_if_given": {
+    "message": "Validate if given"
+  },
+  "Script_authors_can_secure_external_resources_by_adding_a_SRI_hash_to_the_URL_": {
+    "message": "Script authors can secure external resources by adding a SRI hash to the source URL."
+  },
+  "Yes": {
+    "message": "Ya"
+  },
+  "No": {
+    "message": "Tidak"
+  },
+  "Auto": {
+    "message": "Otomatis"
+  },
+  "__Please_choose__": {
+    "message": "-- Please choose an option --"
+  },
+  "Enable": {
+    "message": "Enable"
+  },
+  "Disable": {
+    "message": "Disable"
+  },
+  "Toggle_Enable": {
+    "message": "Toggle Enable"
+  },
+  "Trigger_Update": {
+    "message": "Trigger Update"
+  },
+  "Apply_this_action_to_the_selected_scripts": {
+    "message": "Apply this to all selected scripts"
+  },
+  "Start": {
+    "message": "Start"
+  },
+  "Really_delete_the_selected_items_": {
+    "message": "Do you really want to delete the selected items?"
+  },
+  "Really_factory_reset_the_selected_items_": {
+    "message": "Do you really want to factory reset the selected items?"
+  },
+  "Filter_by": {
+    "message": "Filter by"
+  },
+  "Matching_URL": {
+    "message": "Matching URL"
+  },
+  "Really_factory_reset_this_script_": {
+    "message": "Do you really want to factory reset this script?"
+  },
+  "Reset_Section": {
+    "message": "Reset"
+  },
+  "Restart_Tampermonkey": {
+    "message": "Restart Tampermonkey"
+  },
+  "This_will_restart_Tampermonkey_Ok_": {
+    "message": "Do you really want to restart Tampermonkey?"
+  },
+  "Tampermonkey_needs_to_be_restarted_to_make_this_change_apply_Do_you_want_to_continue_": {
+    "message": "Tampermonkey needs to be restarted to make this change apply.\n\nDo you want to continue?"
+  },
+  "Factory_Reset": {
+    "message": "Factory Reset"
+  },
+  "This_will_remove_all_scripts_and_reset_all_settings_Ok_": {
+    "message": "Do you really want to remove all scripts and reset all settings?"
+  },
+  "Chrome_Sync_Reset": {
+    "message": "Chrome Sync Reset"
+  },
+  "This_will_remove_all_stored_data_from_google_sync_Ok_": {
+    "message": "Do you really want to remove all data from Google Sync?"
+  },
+  "Enable_autoSave": {
+    "message": "Menyimpan konten ketika Editor kehilangan fokus"
+  },
+  "Enable_easySave": {
+    "message": "Jangan tampilkan dialog konfirmasi saat menyimpan"
+  },
+  "Add_TM_to_CSP": {
+    "message": "Tambahkan Tampermonkey dengan kebijakan keamanan konten situs (CSP) jika ada"
+  },
+  "Tampermonkey_might_not_be_able_to_provide_access_to_the_unsafe_context_when_this_is_disabled": {
+    "message": "Tampermonkey might not be able to provide access to the unsafe context (unsafeWindow, page's functions and variables) when this is disabled."
+  },
+  "At_least_one_part_of_this_page_is_listed_at_the_forbidden_pages_setting_": {
+    "message": "At least one part of this page is listed at the 'forbidden pages' setting!"
+  },
+  "Some_scripts_might_be_blocked_by_the_javascript_settings_for_this_page_or_a_script_blocker_": {
+    "message": "Some scripts might be blocked by the JavaScript settings for this page or a script blocker!"
+  },
+  "Show_notification": {
+    "message": "Show a notification"
+  },
+  "Open_changelog": {
+    "message": "Open the changelog"
+  },
+  "No_frames": {
+    "message": "Run only in top frame"
+  },
+  "Native": {
+    "message": "Native"
+  },
+  "Tampermonkey_needs_to_know_the_absolute_path_to_your_browser_profile_folder_Visit_the_FAQ_": {
+    "message": "Tampermonkey needs to know the absolute path to your browser profile folder to make the script import function work.\n\nClick here to visit the FAQ to learn where this can be found!"
+  },
+  "Tampermonkey_needs_access_to_file_URIs__Visit_the_FAQ_": {
+    "message": "Tampermonkey needs access to file URIs to make the script import work.\n\nClick here to visit the FAQ to learn how you can grant that permission!"
+  },
+  "Tampermonkey_has_no_file_access_permission_": {
+    "message": "Tampermonkey has no permission to access local files!"
+  },
+  "Everything_is_setup_correctly_": {
+    "message": "Everything is setup correctly."
+  },
+  "TM_has_access_to_file_URIs": {
+    "message": "Tampermonkey has access to file URIs. :)"
+  },
+  "Browser_Profile_Path": {
+    "message": "Browser Profile Path"
+  },
+  "Native_Script_Import": {
+    "message": "Native Script Import"
+  },
+  "Enable_Native_Script_Import": {
+    "message": "Enable Native Script Import"
+  },
+  "Post_Import_Action": {
+    "message": "Post Import Action"
+  },
+  "None": {
+    "message": "None"
+  },
+  "Disable_Extension": {
+    "message": "Disable Extension"
+  },
+  "Uninstall_Extension": {
+    "message": "Uninstall Extension"
+  },
+  "What_action_should_be_done_after_a_native_userscript_was_imported_sucessfully_": {
+    "message": "What action should be done after a native userscript was imported successfully?"
+  },
+  "Are_you_sure_that_you_don_t_want_to_be_notified_of_updates_": {
+    "message": "When Tampermonkey is updated by your browser it is also re-started. Unfortunately this might break currently running scripts!\n\nSo are you sure that you don't want to be notified of updates?"
+  },
+  "Operation_completed_successfully": {
+    "message": "Operation completed successfully"
+  },
+  "All_modifications_are_only_kept_until_this_incognito_session_is_closed_": {
+    "message": "All modifications are only kept until this incognito session is closed!"
+  },
+  "_not_set_": {
+    "message": "<not set>"
+  },
+  "Layout": {
+    "message": "Layout"
+  },
+  "User_CSS": {
+    "message": "User CSS"
+  },
+  "You_can_add_your_custom_CSS_rules_here_": {
+    "message": "You can add your own CSS rules for the Tampermonkey UI here. In case this breaks something you can get the default layout by appending ?layout=reset to the options page URL."
+  },
+  "Store_data_in_incognito_mode": {
+    "message": "Store data in incognito mode"
+  },
+  "Temporary": {
+    "message": "Temporary"
+  },
+  "Permanent": {
+    "message": "Permanent"
+  },
+  "Warning": {
+    "message": "Warning"
+  },
+  "Info": {
+    "message": "Info"
+  },
+  "Error": {
+    "message": "Error"
+  },
+  "Externals": {
+    "message": "Eksternal"
+  },
+  "Requires": {
+    "message": "Requires"
+  },
+  "Resources": {
+    "message": "Resources"
+  },
+  "URL": {
+    "message": "URL"
+  },
+  "Size": {
+    "message": "Size"
+  },
+  "No_entry_found": {
+    "message": "No entry found"
+  },
+  "BlackCheck": {
+    "message": "BlackCheck"
+  },
+  "Script_Blacklist_Source": {
+    "message": "Script Blacklist Source"
+  },
+  "Server_And_Manual": {
+    "message": "Remote + Manual"
+  },
+  "Only_Manual": {
+    "message": "Manual Only"
+  },
+  "Manual_Script_Blacklist": {
+    "message": "Manual Userscript and @require Blacklist"
+  },
+  "This_script_is_blacklisted_": {
+    "message": "This script is blacklisted!"
+  },
+  "Report_an_issue_to_the_script_hoster_": {
+    "message": "Report an issue to the script hoster.\n(A user account may be required)"
+  },
+  "Blacklist_Severity": {
+    "message": "Block From Severity Level"
+  },
+  "Action_Menu": {
+    "message": "Menu Aksi"
+  },
+  "Hide_disabled_scripts": {
+    "message": "Hide disabled scripts"
+  },
+  "Columns": {
+    "message": "Kolom"
+  },
+  "Script_order": {
+    "message": "Urutan Script"
+  },
+  "severity_1": {
+    "message": "1 (most secure)"
+  },
+  "severity_2": {
+    "message": "2"
+  },
+  "severity_3": {
+    "message": "3"
+  },
+  "severity_4": {
+    "message": "4"
+  },
+  "severity_5": {
+    "message": "5"
+  },
+  "severity_6": {
+    "message": "6"
+  },
+  "severity_7": {
+    "message": "7"
+  },
+  "severity_8": {
+    "message": "8"
+  },
+  "severity_9": {
+    "message": "9"
+  },
+  "severity_10": {
+    "message": "10 (least secure)"
+  },
+  "Your_language_is_not_supported__Click_here_to_get_intructions_how_to_translate_TM_": {
+    "message": "Your language is not supported?\nClick here to get instructions how to translate Tampermonkey?"
+  },
+  "Default": {
+    "message": "Default"
+  },
+  "Ok": {
+    "message": "Ok"
+  }
+}
