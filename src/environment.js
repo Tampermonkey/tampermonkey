@@ -748,15 +748,19 @@ var TM_xmlhttpRequest = function(details) {
             forget = true;
         },
         getResponseHeader: function(header) {
-            var value = false;
+            var value = null;
             if (this.responseHeaders) {
-                var regex = new RegExp(header + ": (.*)", "i");
+                var regex = new RegExp(header + ": (.*)", "ig");
                 var match = regex.exec(this.responseHeaders);
-                if (match) {
-                    value = match[1];
+                var result = [];
+                while (match != null) {
+                    result.push(match[1]);
+                    match = regex.exec(this.responseHeaders);
+                }
+                if (result.length > 0) {
+                    value = result.join(", ");
                 }
             }
-            // Return the value
             return value;
         }
     };
