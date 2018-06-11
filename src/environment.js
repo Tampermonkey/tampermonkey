@@ -743,7 +743,23 @@ var TM_xmlhttpRequest = function(details) {
         if (V) port.onDisconnect.addListener(omsg);
     }
 
-    return { abort: function() { forget = true; } };
+    return {
+        abort: function() {
+            forget = true;
+        },
+        getResponseHeader: function(header) {
+            var value = false;
+            if (this.responseHeaders) {
+                var regex = new RegExp(header + ": (.*)", "i");
+                var match = regex.exec(this.responseHeaders);
+                if (match) {
+                    value = match[1];
+                }
+            }
+            // Return the value
+            return value;
+        }
+    };
 }
 
 var TM_getTab = function(cb) {
