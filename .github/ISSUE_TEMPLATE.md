@@ -8,9 +8,9 @@
 
 ## Specifications
 
-- Chromium: (i.e. 64.0.3282.140)
-- TM: (i.e. 4.5.5648)
-- OS: (i.e. MacOS 10.13.4)
+- Chromium: (e.g 64.0.3282.140)
+- TM: (e.g 4.5.5648)
+- OS: (e.g MacOS 10.13.4)
 
 ## Script
 
