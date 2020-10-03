@@ -1,4 +1,10 @@
-(Please fill out the issue template with your details)
+---
+name: Bug report
+about: Report errors or unexpected behavior.
+
+---
+
+
 
 ## Expected Behavior
 
