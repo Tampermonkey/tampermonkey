@@ -59,7 +59,7 @@ Report Bugs: http://tampermonkey.net/bug
 
 LICENSE: 
 
-GPLv3.  See COPYING for details.
+GPLv3.  See LICENSE.txt for details.
 
 ---
 
