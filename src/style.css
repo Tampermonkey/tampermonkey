@@ -61,6 +61,10 @@ textarea {
   border: 1px black solid;
 }
 
+button {
+  cursor: pointer;
+}
+
 .button {
 }
 
