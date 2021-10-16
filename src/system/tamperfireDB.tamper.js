@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name       tamperfireDB
-// @namespace  http://tampermonkey.net/
+// @namespace  https://tampermonkey.net/
 // @version    0.1.14
 // @description  creates a TamperFire DB
-// @include    http://fire.tampermonkey.net/*
-// @include    http://tampermonkey.net/fire/*
+// @include    https://fire.tampermonkey.net/*
+// @include    https://tampermonkey.net/fire/*
 // @copyright  2011+, Jan Biniok
 // ==/UserScript==
 
@@ -308,7 +308,7 @@ var getMetaData = function(id, aid) {
         }
         GM_xmlhttpRequest({
             method : 'GET',
-            url    : 'http://userscripts.org/scripts/source/' + id + '.meta.js' + '?ts=' + (new Date()).getTime(),
+            url    : 'https://userscripts.org/scripts/source/' + id + '.meta.js' + '?ts=' + (new Date()).getTime(),
             onload : onl,
             onerror : one
         });
