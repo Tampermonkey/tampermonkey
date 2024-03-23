@@ -238,7 +238,7 @@ var postLoadEvent = function(fn, that) {
         newValue : "null",
         prevValue : "null",
         eventPhase : window.Event.AT_TARGET,
-        attrChange: MutationEvent.ADDITION,
+        attrChange: 2, // MutationEvent.ADDITION,
         target: document,
         relatedNode: document,
         srcElement: document };
@@ -252,7 +252,7 @@ var postDomEventListener = function(fn, that) {
         newValue : "null",
         prevValue : "null",
         eventPhase : window.Event.AT_TARGET,
-        attrChange: MutationEvent.ADDITION,
+        attrChange: 2, // MutationEvent.ADDITION,
         target: document,
         relatedNode: document,
         srcElement: document };
