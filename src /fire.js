@@ -450,7 +450,7 @@ var createFireMenu = function(items, use_curtain) {
     var tv = crc('div', 'tv_container', 'fire', 'tv_container');
 
     var heada = cr('a', 'head_link', 'fire', 'head_link');
-    heada.href="http://tampermonkey.net";
+    heada.href="https://tampermonkey.net";
     heada.target="_blank";
 
     var head1 = crc('div', 'float margin4', 'fire', 'head1');
@@ -1123,7 +1123,7 @@ var domListener = function() {
 
     var fail = function() {
         if (confirm(I18N.getMessage("An_internal_error_occured_Do_you_want_to_visit_the_forum_"))) {
-            window.location.href = 'http://tampermonkey.net/bug'
+            window.location.href = 'https://tampermonkey.net/bug'
         }
     };
 
