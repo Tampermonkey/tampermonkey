@@ -21,7 +21,7 @@ For a full overview please take a look at the FAQ or just install TM. ;)
 This code is provided entirely free of charge by the programmer in his spare
 time so donations would be greatly appreciated. Please consider a donation.
 
-http://tampermonkey.net/donate.html
+https://tampermonkey.net/donate.html
 
 ---
 
@@ -34,10 +34,10 @@ Tampermonkey (beta): developer version, might contain bugs!
    https://chrome.google.com/webstore/detail/gcalenpjmijncebpfijmoaglllgpjagf
 
 Tampermonkey (Legacy - Manifest version 1): for browsers based on Chromimum 17.
-   http://tampermonkey.net/crx/tm_legacy.crx
+   https://tampermonkey.net/crx/tm_legacy.crx
 
 Tampermonkey (retro): very old version 1.1.2190, no support!
-   http://tampermonkey.net/crx/tampermonkey_retro.crx
+   https://tampermonkey.net/crx/tampermonkey_retro.crx
 
 ---
 
@@ -49,11 +49,11 @@ http://code.google.com/p/tampermonkey/
 
 SUPPORT:
 
-FAQ: http://tampermonkey.net/faq
-API: http://tampermonkey.net/api
-Meta Data Block: http://tampermonkey.net/metadata
+FAQ: https://tampermonkey.net/faq
+API: https://tampermonkey.net/api
+Meta Data Block: https://tampermonkey.net/metadata
 
-Report Bugs: http://tampermonkey.net/bug
+Report Bugs: https://tampermonkey.net/bug
 
 ---
 
@@ -108,4 +108,4 @@ This code is provided entirely free of charge by the programmer in his spare
 time so donations would be greatly appreciated. Please consider a donation.
 
 Jan Biniok <jan@biniok.net>
-http://tampermonkey.net/donate.html
+https://tampermonkey.net/donate.html
