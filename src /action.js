@@ -306,7 +306,7 @@ var domListener = function() {
     var fail = function() {
         clear();
         if (confirm(I18N.getMessage("An_internal_error_occured_Do_you_want_to_visit_the_forum_"))) {
-            window.open('http://tampermonkey.net/bug');
+            window.open('https://tampermonkey.net/bug');
         }
     };
 
