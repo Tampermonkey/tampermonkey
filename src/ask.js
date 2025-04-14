@@ -62,7 +62,7 @@ var createPage = function() {
     var tv = crc('div', 'tv_container', 'ask', 'tv_container');
 
     var heada = cr('a', 'head_link', 'ask', 'head_link');
-    heada.href="http://tampermonkey.net";
+    heada.href="https://tampermonkey.net";
     heada.target="_blank";
 
     var head1 = crc('div', 'float margin4', 'ask', 'head1');
