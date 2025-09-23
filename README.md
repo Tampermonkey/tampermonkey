@@ -50,8 +50,11 @@ http://code.google.com/p/tampermonkey/
 SUPPORT:
 
 FAQ: http://tampermonkey.net/faq
+
 API: http://tampermonkey.net/api
+
 Meta Data Block: http://tampermonkey.net/metadata
+
 
 Report Bugs: http://tampermonkey.net/bug
 
@@ -72,35 +75,38 @@ BASIC BUILD INSTRUCTIONS:
 - install Google Chrome or Chromium
 - install Cygwin when using Windows
 - open a konsole/terminal, and type:
-
+```
 cd
 svn checkout http://tampermonkey.googlecode.com/svn/trunk/ tampermonkey-read-only
 cd tampermonkey-read-only
 ln -s build_sys/mkcrxfolder.sh .
 ./mkcrxfolder.sh -e0
-
+```
 Depending on your installed browser and OS (I hope this makes the overall scheme clear ;)
-
+```
 chrome.exe --pack-extension=rel/
 chromium.exe --pack-extension=rel/
 
+
 coogle-chrome --pack-extension=rel/
 chromium-browser --pack-extension=rel/
+```
 
 ls -la now shows two new files:
-
+```
 -rw-r--r--  1 user user 305170 Aug 29 09:09 rel.crx
 -rw-r--r--  1 user user    916 Aug 29 09:09 rel.pem
-
+```
 rel.crx is the Chrome extension, rel.pem the key to create another Tampermonkey extension file with the same extension ID
 
 You can install rel.crx by drag'n'drop or (depending on your OS)
-
+```
 chrome.exe rel.crx
 chromium.exe rel.crx
 
 coogle-chrome rel.crx
 chromium-browser rel.crx
+```
 
 ---
 
