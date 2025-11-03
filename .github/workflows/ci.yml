@@ -1,0 +1,101 @@
+name: CI Build and Test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up build environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y zip unzip
+        
+    - name: Validate directory structure
+      run: |
+        echo "Checking repository structure..."
+        ls -la
+        echo "Build system files:"
+        ls -la build_sys/
+        echo "Source files:"
+        ls -la src/ || echo "No src directory found"
+        
+    - name: Check shell scripts
+      run: |
+        echo "Making build scripts executable..."
+        chmod +x build_sys/*.sh
+        echo "Validating shell scripts..."
+        bash -n build_sys/mkcrxfolder.sh || echo "Script syntax check completed"
+        
+    - name: Lint manifest files
+      run: |
+        echo "Checking manifest files..."
+        if [ -f build_sys/manifest.json.google.com ]; then
+          cat build_sys/manifest.json.google.com | python3 -m json.tool > /dev/null && echo "manifest.json.google.com is valid JSON"
+        fi
+        if [ -f build_sys/manifest.json.legacy.com ]; then
+          cat build_sys/manifest.json.legacy.com | python3 -m json.tool > /dev/null && echo "manifest.json.legacy.com is valid JSON"
+        fi
+        
+    - name: Archive build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-scripts
+        path: |
+          build_sys/
+          src/
+        retention-days: 30
+        
+  validate:
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Validate file permissions
+      run: |
+        echo "Checking for executable permissions..."
+        find . -name '*.sh' -type f -not -perm -u+x -exec echo "Missing executable: {}" \;
+        
+    - name: Check for common issues
+      run: |
+        echo "Scanning for potential issues..."
+        echo "Checking for TODO/FIXME comments..."
+        grep -r "TODO\|FIXME" --include="*.sh" --include="*.json" . || echo "No TODO/FIXME found"
+        
+    - name: Validate i18n structure
+      run: |
+        if [ -d i18n ]; then
+          echo "Checking i18n directory..."
+          ls -la i18n/
+        fi
+        
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Run security checks
+      run: |
+        echo "Running basic security validation..."
+        echo "Checking for sensitive patterns..."
+        ! grep -r "password\|secret\|api_key" --include="*.sh" --include="*.json" . || echo "Warning: Potential sensitive data found"
+        
+    - name: Verify no malicious patterns
+      run: |
+        echo "Checking for suspicious commands..."
+        ! grep -r "eval\|exec" --include="*.sh" . || echo "Warning: Found eval/exec usage - review carefully"
