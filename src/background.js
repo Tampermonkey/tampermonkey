@@ -5902,7 +5902,7 @@ var webRequest = {
                 wrap();
                 break;
             } else if (Config.values.webrequest_fixCSP &&
-                       (item.name == 'X-WebKit-CSP' || item.name == 'X-Content-Security-Policy')) {
+                       (item.name == 'X-WebKit-CSP' || item.name == 'X-Content-Security-Policy' || item.name == 'Content-Security-Policy')) {
 
                 var n = item.value.replace(/script-src /, 'script-src ' + 'chrome-extension://' + chrome.extension.id + '/ \'unsafe-inline\' \'unsafe-eval\' ')
                 if (D) console.log('csp: replace "' + item.value + '" with "' + n + '"');
