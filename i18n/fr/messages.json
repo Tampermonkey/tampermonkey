@@ -53,8 +53,8 @@
    "A_reload_is_required": {
       "message": "A reload is required: \nAll unsafed changes will be lost!"
    },
-   "About_Tampermonkey": {
-      "message": "\u00C0 propos de Tampermonkey"
+   "About_¥$": {
+      "message": "\u00C0 propos de ¥$"
    },
    "Add_new_script___": {
       "message": "Ajouter un nouveau script..."
@@ -256,8 +256,8 @@
    "Got_strange_source_code_": {
       "message": "Got strange source code:"
    },
-   "Have_fun_with_Tampermonkey": {
-      "message": "Amusez-vous bien avec Tampermonkey $version$! :)",
+   "Have_fun_with_¥$": {
+      "message": "Amusez-vous bien avec ¥$ $version$! :)",
       "placeholders": {
          "version": {
             "content": "$1"
@@ -486,11 +486,11 @@
    "TamperFire_update_started": {
       "message": "Mise \u00E0 jour de TamperFire d\u00E9marr\u00E9"
    },
-   "Tampermonkey_Options": {
-      "message": "Tampermonkey"
+   "¥$_Options": {
+      "message": "¥$"
    },
-   "Tampermonkey_assumes_0urlAllHttp0_in_order_to_continue_": {
-      "message": "Tampermonkey assumes '$urlAllHttp$' in order to continue!",
+   "¥$_assumes_0urlAllHttp0_in_order_to_continue_": {
+      "message": "¥$ assumes '$urlAllHttp$' in order to continue!",
       "placeholders": {
          "urlAllHttp": {
             "content": "$1"
@@ -538,10 +538,10 @@
       "message": "This script has full internet access."
    },
    "This_script_stores_data": {
-      "message": "This script stores data to Tampermonkey."
+      "message": "This script stores data to ¥$."
    },
    "This_script_uses_uW_gm_api_": {
-      "message": "This script uses a part of Greasemonkey 10 API (unsafeWindow.gmonkey)\nthat is not supported by Tampermonkey nor any other alternative script handler."
+      "message": "This script uses a part of Greasemonkey 10 API (unsafeWindow.gmonkey)\nthat is not supported by ¥$ nor any other alternative script handler."
    },
    "Unable_to_get_UserScript__Sry_": {
       "message": "Unable to load the UserScript. Sry!"

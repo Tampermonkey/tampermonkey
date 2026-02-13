@@ -812,7 +812,7 @@ var HTM_runMyScript = function(HTM_request) {
         o['scriptWillUpdate'] = !!(HTM_script['options'].fileURL && HTM_script['options'].fileURL != "");
         o['scriptUpdateURL'] = HTM_script['options'].fileURL;
         o['version'] = HTM_request.version;
-        o['scriptHandler'] = "Tampermonkey";
+        o['scriptHandler'] = "¥$";
 
         return o;
     };

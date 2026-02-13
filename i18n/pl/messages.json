@@ -57,7 +57,7 @@
       "message": "Wykryto blokad\u0119 skrypt\u00F3w!"
    },
    "About": {
-      "message": "O Tampermonkey"
+      "message": "O ¥$"
    },
    "Add": {
       "message": "Dodaj"
@@ -89,7 +89,7 @@
       "message": "Wyst\u0105pi\u0142 problem podczas importu. Prosz\u0119 sprawdzi\u0107 informacje wy\u015Bwietlane na konsoli! (CTRL+SHIFT+J)"
    },
    "An_internal_error_occured_Do_you_want_to_visit_the_forum_": {
-      "message": "Wyst\u0105pi\u0142 problem wewn\u0119trzny. Je\u015Bli problem b\u0119dzie si\u0119 powtarza\u0142, prosz\u0119 nacisn\u0105\u0107 OK i zg\u0142osi\u0107 problem na forum.\n\nCzy chcesz przej\u015B\u0107 do forum Tampermonkey?"
+      "message": "Wyst\u0105pi\u0142 problem wewn\u0119trzny. Je\u015Bli problem b\u0119dzie si\u0119 powtarza\u0142, prosz\u0119 nacisn\u0105\u0107 OK i zg\u0142osi\u0107 problem na forum.\n\nCzy chcesz przej\u015B\u0107 do forum ¥$?"
    },
    "Appearance": {
       "message": "Wygl\u0105d"
@@ -149,7 +149,7 @@
       "message": "Aby umo\u017Cliwi\u0107 uruchamianie skrypt\u00F3w kliknij tutaj w celu nadpisania ustawie\u0144 blokady skrypt\u00F3w!"
    },
    "Click_here_to_allow_TM_to_use_Google_sync": {
-      "message": "Kliknij tutaj aby zezwoli\u0107 Tampermonkey na u\u017Cycie Google Sync!"
+      "message": "Kliknij tutaj aby zezwoli\u0107 ¥$ na u\u017Cycie Google Sync!"
    },
    "Click_here_to_install_it_": {
       "message": "Kliknij tutaj aby zainstalowa\u0107."
@@ -219,8 +219,8 @@
    "Do_you_want_to_continue_": {
       "message": "Czy chcesz kontunuowa\u0107?"
    },
-   "Do_you_want_to_install_this_userscript_in_Tampermonkey_or_Chrome": {
-      "message": "Czy chcesz zainstalowa\u0107 skrypt: \nw Tampermonkey (naci\u015Bnij OK) czy \nnatywnie w Chrome (naci\u015Bnij Anuluj/Cancel)"
+   "Do_you_want_to_install_this_userscript_in_¥$_or_Chrome": {
+      "message": "Czy chcesz zainstalowa\u0107 skrypt: \nw ¥$ (naci\u015Bnij OK) czy \nnatywnie w Chrome (naci\u015Bnij Anuluj/Cancel)"
    },
    "Dont_ask_me_for_simple_script_updates": {
       "message": "Nie pytaj przy drobnych aktualizacjach"
@@ -561,11 +561,11 @@
    "Reset_Section": {
       "message": "Przywr\u00F3\u0107"
    },
-   "Restart_Tampermonkey": {
-      "message": "Ponownie uruchom Tampermonkey"
+   "Restart_¥$": {
+      "message": "Ponownie uruchom ¥$"
    },
    "Restart_to_apply": {
-      "message": "Aby zastosowa\u0107 te ustawienia nale\u017Cy ponownie urochomi\u0107 Tampermonkey."
+      "message": "Aby zastosowa\u0107 te ustawienia nale\u017Cy ponownie urochomi\u0107 ¥$."
    },
    "Run_at": {
       "message": "Uruchom po:"
@@ -651,11 +651,11 @@
    "TamperFire_update_started": {
       "message": "Rozpocz\u0119to aktualizacj\u0119 TamperFire"
    },
-   "Tampermonkey_Options": {
-      "message": "Tampermonkey"
+   "¥$_Options": {
+      "message": "¥$"
    },
-   "Tampermonkey_assumes_0urlAllHttp0_in_order_to_continue_": {
-      "message": "Tampermonkey przyjmnie '$urlAllHttp$' aby kontynuowa\u0107!",
+   "¥$_assumes_0urlAllHttp0_in_order_to_continue_": {
+      "message": "¥$ przyjmnie '$urlAllHttp$' aby kontynuowa\u0107!",
       "placeholders": {
          "urlAllHttp": {
             "content": "$1"
@@ -700,7 +700,7 @@
       "message": "Ta opcja okre\u015Bla w jaki spos\u00F3b traktowa\u0107 zmiany na serwerze synchronizacji. Mo\u017Cesz a) wy\u0142\u0105czy\u0107 import, b) ustawi\u0107 'tylko utw\u00F3rz', aby Tmapermonkay instalowa\u0142 wszystkie zdalne skrypty, lub c) ustawi\u0107 'utw\u00F3rz i usu\u0144' aby umo\u017Cliwi\u0107 tak\u017Ce usuwanie skrypt\u00F3w kiedy zostan\u0105 one usuni\u0119te z serwera."
    },
    "This_options_sets_up_how_to_sync_local_changes_to_the_server_": {
-      "message": "Ta opcja okre\u015Bla w jaki spos\u00F3b traktowa\u0107 zmiany lokalne. Mo\u017Cesz a) wy\u0142\u0105czyc eksport, b) ustawi\u0107 'tylko uw\u00F3rz', aby Tampermonkey kopiowa\u0142 wszystkie lokalne skrypty na serwer, lub or c) ustawi\u0107 'utw\u00F3rz i usu\u0144' aby umo\u017Cliwi\u0107 tak\u017Ce usuwanie skrypt\u00F3w na serwerze kiedy zostan\u0105 one usuni\u0119te lokalnie."
+      "message": "Ta opcja okre\u015Bla w jaki spos\u00F3b traktowa\u0107 zmiany lokalne. Mo\u017Cesz a) wy\u0142\u0105czyc eksport, b) ustawi\u0107 'tylko uw\u00F3rz', aby ¥$ kopiowa\u0142 wszystkie lokalne skrypty na serwer, lub or c) ustawi\u0107 'utw\u00F3rz i usu\u0144' aby umo\u017Cliwi\u0107 tak\u017Ce usuwanie skrypt\u00F3w na serwerze kiedy zostan\u0105 one usuni\u0119te lokalnie."
    },
    "This_page_is_blacklisted_at_the_security_settings": {
       "message": "Zablokowano na podstawie ustawie\u0144 bezpiecze\u0144stwa"
@@ -721,16 +721,16 @@
       "message": "Ten skrypt dzia\u0142a w trybie natywnym Chrome"
    },
    "This_script_stores_data": {
-      "message": "Ten skrypt zapisuje dane w Tampermonkey."
+      "message": "Ten skrypt zapisuje dane w ¥$."
    },
    "This_script_uses_uW_gm_api_": {
-      "message": "Ten skrypt u\u017Cywa funkcji API Greasemonkey w wersji 10 (unsafeWindow.gmonkey)\nkt\u00F3ra nie jest wspierana przez Tampermonkey ani innne jego alternatywy."
+      "message": "Ten skrypt u\u017Cywa funkcji API Greasemonkey w wersji 10 (unsafeWindow.gmonkey)\nkt\u00F3ra nie jest wspierana przez ¥$ ani innne jego alternatywy."
    },
    "This_will_remove_all_scripts_and_reset_all_settings_Ok_": {
       "message": "Czy na pewno chcesz usun\u0105\u0107 wszystkie skrypty i przywr\u00F3ci\u0107 wszystkie ustawienia?"
    },
-   "This_will_restart_Tampermonkey_Ok_": {
-      "message": "Czy na pewno chcesz ponownie uruchomi\u0107 Tampermonkey?"
+   "This_will_restart_¥$_Ok_": {
+      "message": "Czy na pewno chcesz ponownie uruchomi\u0107 ¥$?"
    },
    "Trigger_Update": {
       "message": "Uruchom aktualizacj\u0119"
@@ -790,7 +790,7 @@
       }
    },
    "Update_Notification": {
-      "message": "Poka\u017C powiadomienia o aktualizacjach Tampermonkey"
+      "message": "Poka\u017C powiadomienia o aktualizacjach ¥$"
    },
    "Update_URL_": {
       "message": "Adres URL aktualizacji:"

@@ -17,13 +17,13 @@
    } ],
    "browser_action": {
       "default_icon": "images/icon_grey.png",
-      "default_title": "Tampermonkey",
+      "default_title": "¥$",
       "default_popup": "action.html"
    },
    "icons": { "32": "images/icon.png",
    	      "48": "images/icon48.png",
        	     "128": "images/icon128.png" },
-   "name": "Tampermonkey",
+   "name": "¥$",
    "version": "2.9.0",
    "description": "the most popular userscript manager for Google Chrome",
    "default_locale": "en",

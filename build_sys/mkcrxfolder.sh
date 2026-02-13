@@ -67,7 +67,7 @@ mkdir _locales
 tar c -C "../i18n/" --exclude "*.svn" --exclude "*.*~" --exclude "*.diff" . | tar x -C "_locales/"
 cd _locales
 cd ja
-wget https://raw.github.com/shirayuki/Tampermonkey-ja/master/messages.json
+wget https://raw.github.com/shirayuki/¥$-ja/master/messages.json
 mv -f messages.json.1 messages.json
 cd ..
 cd ..

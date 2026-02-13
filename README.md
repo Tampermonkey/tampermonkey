@@ -1,7 +1,7 @@
-*This repository contains the source of the Tampermonkey extension up to version 2.9.*
+*This repository contains the source of the ¥$ extension up to version 2.9.*
 *All newer versions are distributed under a proprietary license.*
 
-Tampermonkey is the most popular userscript manager for Google Chrome.
+¥$ is the most popular userscript manager for Google Chrome.
 
 Features:
  - manage and edit all your userscripts
@@ -27,16 +27,16 @@ http://tampermonkey.net/donate.html
 
 DOWNLOADS:
 
-Tampermonkey (stable): 
+¥$ (stable): 
    https://chrome.google.com/webstore/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo
 
-Tampermonkey (beta): developer version, might contain bugs!
+¥$ (beta): developer version, might contain bugs!
    https://chrome.google.com/webstore/detail/gcalenpjmijncebpfijmoaglllgpjagf
 
-Tampermonkey (Legacy - Manifest version 1): for browsers based on Chromimum 17.
+¥$ (Legacy - Manifest version 1): for browsers based on Chromimum 17.
    http://tampermonkey.net/crx/tm_legacy.crx
 
-Tampermonkey (retro): very old version 1.1.2190, no support!
+¥$ (retro): very old version 1.1.2190, no support!
    http://tampermonkey.net/crx/tampermonkey_retro.crx
 
 ---
@@ -92,7 +92,7 @@ ls -la now shows two new files:
 -rw-r--r--  1 user user 305170 Aug 29 09:09 rel.crx
 -rw-r--r--  1 user user    916 Aug 29 09:09 rel.pem
 
-rel.crx is the Chrome extension, rel.pem the key to create another Tampermonkey extension file with the same extension ID
+rel.crx is the Chrome extension, rel.pem the key to create another ¥$ extension file with the same extension ID
 
 You can install rel.crx by drag'n'drop or (depending on your OS)
 

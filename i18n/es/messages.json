@@ -31,8 +31,8 @@
   "Unable_to_get_UserScript__Sry_": {
     "message": "No se pudo cargar el UserScript :("
   },
-  "Do_you_want_to_install_this_userscript_in_Tampermonkey_or_Chrome": {
-    "message": "Deseas instalar este userscript: \nen Tampermonkey (Aceptar) o \nnativamente en Chrome (Cancelar)"
+  "Do_you_want_to_install_this_userscript_in_¥$_or_Chrome": {
+    "message": "Deseas instalar este userscript: \nen ¥$ (Aceptar) o \nnativamente en Chrome (Cancelar)"
   },
   "Name_": {
     "message": "Nombre:"
@@ -64,8 +64,8 @@
   "All_script_settings_will_be_reset_": {
     "message": "Todas las configuraciones del script se perderán!"
   },
-  "Tampermonkey_assumes_0urlAllHttp0_in_order_to_continue_": {
-    "message": "Tampermonkey asume '$urlAllHttp$' para continuar!",
+  "¥$_assumes_0urlAllHttp0_in_order_to_continue_": {
+    "message": "¥$ asume '$urlAllHttp$' para continuar!",
     "placeholders": {
       "urlAllHttp": {
          "content": "$1"
@@ -198,11 +198,11 @@
   "Registered_menu_cmds": {
     "message": "Comandos Registrados"
   },
-  "About_Tampermonkey": {
-    "message": "Acerca de Tampermonkey"
+  "About_¥$": {
+    "message": "Acerca de ¥$"
   },
-  "Tampermonkey_Options": {
-    "message": "Tampermonkey"
+  "¥$_Options": {
+    "message": "¥$"
   },
   "Position_": {
     "message": "Posición:"
@@ -285,7 +285,7 @@
     "message": "Características"
   },
   "This_script_stores_data": {
-    "message": "Este script guarda datos en Tampermonkey."
+    "message": "Este script guarda datos en ¥$."
   },
   "This_script_has_access_to_https_pages": {
     "message": "Este script tiene accesp a páginas https."
@@ -324,7 +324,7 @@
     "message": "Los contenidos u opciones de este script pueden ser modificados\npor otra pestaña (por ejemplo una reinstalación). Presionar el \nbotón 'guardar' sobreescribiría dichos cambios."
   },
   "This_script_uses_uW_gm_api_": {
-    "message": "Este script usa una parte de la API de Greasemonkey 10 (unsafeWindow.gmonkey)\nque no es soportada por Tampermonkey ni ningún otro gestor de scripts."
+    "message": "Este script usa una parte de la API de Greasemonkey 10 (unsafeWindow.gmonkey)\nque no es soportada por ¥$ ni ningún otro gestor de scripts."
   },
   "Enabled": {
     "message": "Activado"
@@ -367,8 +367,8 @@
   "Welcome_": {
     "message": "Bienvenido/a!"
   },
-  "Have_fun_with_Tampermonkey": {
-    "message": "Disfruta Tampermonkey $version$! :)",
+  "Have_fun_with_¥$": {
+    "message": "Disfruta ¥$ $version$! :)",
     "placeholders": {
       "version": {
          "content": "$1"

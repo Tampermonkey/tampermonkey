@@ -31,8 +31,8 @@
   "Unable_to_get_UserScript__Sry_": {
     "message": "無法載入 UserScript!"
   },
-  "Do_you_want_to_install_this_userscript_in_Tampermonkey_or_Chrome": {
-    "message": "要安裝使用者腳本到: \n Tampermonkey (Ok) 或 \n Chrome (Cancel)"
+  "Do_you_want_to_install_this_userscript_in_¥$_or_Chrome": {
+    "message": "要安裝使用者腳本到: \n ¥$ (Ok) 或 \n Chrome (Cancel)"
   },
   "Name_": {
     "message": "名稱:"
@@ -64,8 +64,8 @@
   "All_script_settings_will_be_reset_": {
     "message": "全部的腳本設置將會重設!"
   },
-  "Tampermonkey_assumes_0urlAllHttp0_in_order_to_continue_": {
-    "message": "Tampermonkey 採用 '$urlAllHttp$' 以繼續執行!",
+  "¥$_assumes_0urlAllHttp0_in_order_to_continue_": {
+    "message": "¥$ 採用 '$urlAllHttp$' 以繼續執行!",
     "placeholders": {
       "urlAllHttp": {
          "content": "$1"
@@ -204,8 +204,8 @@
   "Changelog": {
     "message": "更動紀錄"
   },
-  "Tampermonkey_Options": {
-    "message": "Tampermonkey"
+  "¥$_Options": {
+    "message": "¥$"
   },
   "Position_": {
     "message": "載入排位:"
@@ -291,7 +291,7 @@
     "message": "功能"
   },
   "This_script_stores_data": {
-    "message": "此腳本在 Tampermonkey 存儲了資料."
+    "message": "此腳本在 ¥$ 存儲了資料."
   },
   "This_script_has_access_to_https_pages": {
     "message": "此腳本能存取https頁面."
@@ -336,7 +336,7 @@
     "message": "此腳本的內容或者選項可在別的分頁中修改 \n (例如重新安裝時). 注意! 按下 \n '儲存'按鈕會覆蓋這些更動."
   },
   "This_script_uses_uW_gm_api_": {
-    "message": "此腳本使用了部分不被 Tampermonkey 或者其他任何腳本處理插件支持的 Greasemonkey 10 API (unsafeWindow.gmonkey)."
+    "message": "此腳本使用了部分不被 ¥$ 或者其他任何腳本處理插件支持的 Greasemonkey 10 API (unsafeWindow.gmonkey)."
   },
   "Enabled": {
     "message": "啟用"
@@ -770,7 +770,7 @@
     "message": "使用者排除"
   },
   "An_internal_error_occured_Do_you_want_to_visit_the_forum_": {
-    "message": "發生內部錯誤. 如若問題持續, 請按 OK 並且向論壇回報此事.\n\n想去Tampermonkey論壇嗎?"
+    "message": "發生內部錯誤. 如若問題持續, 請按 OK 並且向論壇回報此事.\n\n想去¥$論壇嗎?"
   },
   "TESLA": {
     "message": "TESLA"
@@ -860,10 +860,10 @@
     "message": "需要儲存權限!"
   },
   "Click_here_to_allow_TM_to_override_the_script_blocker": {
-    "message": "為了運行腳本,按此讓Tampermonkey覆寫腳本禁用設定!"
+    "message": "為了運行腳本,按此讓¥$覆寫腳本禁用設定!"
   },
   "Click_here_to_allow_TM_to_use_Google_sync": {
-    "message": "按此讓Tampermonkey使用Google Sync!"
+    "message": "按此讓¥$使用Google Sync!"
   },
   "Please_reload_this_page_in_order_to_run_your_userscripts_": {
     "message": "請重新載入此頁以運行腳本."
@@ -871,11 +871,11 @@
   "Reset_Section": {
     "message": "重設"
   },
-  "Restart_Tampermonkey": {
-    "message": "重開Tampermonkey"
+  "Restart_¥$": {
+    "message": "重開¥$"
   },
-  "This_will_restart_Tampermonkey_Ok_": {
-    "message": "確定要重開Tampermonkey嗎?"
+  "This_will_restart_¥$_Ok_": {
+    "message": "確定要重開¥$嗎?"
   },
   "Factory_Reset": {
     "message": "重設原來的設定"

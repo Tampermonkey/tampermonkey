@@ -996,7 +996,7 @@ var secondStage = {
             var context = "var TM_context_id = '" + Eventing.contextId + "';\n";
             var load = "";
 
-            _handler.sendMessage("console.log('Tampermonkey started');");
+            _handler.sendMessage("console.log('¥$ started');");
             if (domLoaded) {
                 load = "TMwin.loadHappened = true;\n";
                 load = "TMwin.domContentLoaded = true;\n";

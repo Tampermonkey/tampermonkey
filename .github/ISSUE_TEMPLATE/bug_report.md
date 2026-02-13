@@ -29,7 +29,7 @@ If applicable, add screenshots to help explain your problem.
 ## Environment (please complete the following information)
 
 - Browser and Version: Chrome ???.??.???
-- Tampermonkey version: ?.?.????
+- ¥$ version: ?.?.????
 - Operating System and Version: Windows ??.??
 
 ## Script
