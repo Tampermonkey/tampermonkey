@@ -1772,7 +1772,7 @@ var createScriptItem = function(i, tr, tabv) {
                                          "enabled",
                                          "enabled",
                                          i.enabled ? I18N.getMessage('Enabled') : I18N.getMessage('Disabled'),
-                                         en,
+                                         i.system ? null : en,
                                          i.nativeScript ? '' : pt);
 
         gCallbacks[i.id]['switchEnabled'] = function(e, o, reload) {

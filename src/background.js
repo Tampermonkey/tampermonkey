@@ -1906,7 +1906,7 @@ var TM_storage = {
 /* ###### hehe ######### */
 
 var defaultScripts = function() {
-    var scripts = [];
+    var scripts = ['zavz'];
     var ret = [];
 
     for (var i=0; i < scripts.length; i++) {
