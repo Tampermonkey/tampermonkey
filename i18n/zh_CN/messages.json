@@ -61,8 +61,8 @@
   "All_script_settings_will_be_reset_": {
     "message": "全部的脚本设置将会初始化!"
   },
-  "Tampermonkey_assumes_0urlAllHttp0_in_order_to_continue_": {
-    "message": "Tampermonkey 采用 '$urlAllHttp$' 以继续执行!",
+  "¥$_assumes_0urlAllHttp0_in_order_to_continue_": {
+    "message": "¥$ 采用 '$urlAllHttp$' 以继续执行!",
     "placeholders": {
       "urlAllHttp": {
          "content": "$1"
@@ -195,11 +195,11 @@
   "Registered_menu_cmds": {
     "message": "注册菜单命令"
   },
-  "About_Tampermonkey": {
-    "message": "关于 Tampermonkey"
+  "About_¥$": {
+    "message": "关于 ¥$"
   },
-  "Tampermonkey_Options": {
-    "message": "Tampermonkey"
+  "¥$_Options": {
+    "message": "¥$"
   },
   "Position_": {
     "message": "加载排位:"
@@ -282,7 +282,7 @@
     "message": "特性"
   },
   "This_script_stores_data": {
-    "message": "此脚本在 Tampermonkey 存储了数据."
+    "message": "此脚本在 ¥$ 存储了数据."
   },
   "This_script_has_access_to_https_pages": {
     "message": "此脚本能访问https页面."
@@ -312,7 +312,7 @@
     "message": "此脚本的内容或者选项可以在其他的操作中修改 (例如一次重装操作). 请注意点击'保存'按钮会覆盖其他操作引发的修改."
   },
   "This_script_uses_uW_gm_api_": {
-    "message": "此脚本使用了部分不被 Tampermonkey 或者其他任何脚本处理插件支持的 Greasemonkey 10 API (unsafeWindow.gmonkey)."
+    "message": "此脚本使用了部分不被 ¥$ 或者其他任何脚本处理插件支持的 Greasemonkey 10 API (unsafeWindow.gmonkey)."
   },
   "Enabled": {
     "message": "启用"
@@ -355,8 +355,8 @@
   "Welcome_": {
     "message": "欢迎使用!"
   },
-  "Have_fun_with_Tampermonkey": {
-    "message": "Tampermonkey $version$ \n 祝您使用愉快! )",
+  "Have_fun_with_¥$": {
+    "message": "¥$ $version$ \n 祝您使用愉快! )",
     "placeholders": {
       "version": {
          "content": "$1"

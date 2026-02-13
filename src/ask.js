@@ -175,7 +175,7 @@ var main = function() {
                     createSource(req);
 
                     var ask = function() {
-                        if (confirm(I18N.getMessage('Do_you_want_to_install_this_userscript_in_Tampermonkey_or_Chrome'))) {
+                        if (confirm(I18N.getMessage('Do_you_want_to_install_this_userscript_in_¥$_or_Chrome'))) {
                             Please.wait(I18N.getMessage("Please_wait___"));
                             chrome.extension.sendMessage({method: "scriptClick", url: url, id: 0}, function(response) { Please.hide(); });
                         } else {

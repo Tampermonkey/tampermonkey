@@ -3071,7 +3071,7 @@ var addNewUserScript = function(o) {
     if (!script.includes.length && !script.matches.length) {
         msg += '\n' + I18N.getMessage('Note_') + '\n';
         msg += '    ' + I18N.getMessage('This_script_does_not_provide_any__include_information_') + '\n';
-        msg += '    ' + I18N.getMessage('Tampermonkey_assumes_0urlAllHttp0_in_order_to_continue_', Helper.urlAllHttp) + '    \n';
+        msg += '    ' + I18N.getMessage('¥$_assumes_0urlAllHttp0_in_order_to_continue_', Helper.urlAllHttp) + '    \n';
         script.includes.push(Helper.urlAllHttp);
     }
 
@@ -4851,7 +4851,7 @@ var createOptionItems = function(cb) {
                        option: true,
                        checkbox: true,
                        enabled: Config.values.sync_enabled,
-                       desc: I18N.getMessage('Tampermonkey_External_Script_List_Access') });
+                       desc: I18N.getMessage('¥$_External_Script_List_Access') });
 
 
     optsy.push({ name: I18N.getMessage('Sync_Type'),
@@ -5087,7 +5087,7 @@ var createOptionItems = function(cb) {
                select: [ { name: I18N.getMessage('Yes'), value: 'yes' },
                          { name: I18N.getMessage('No'), value: 'no' } ],
                value: Config.values.scriptblocker_overwrite,
-               desc: I18N.getMessage('Tampermonkey_can_not_work_when_javascript_is_disabled') });
+               desc: I18N.getMessage('¥$_can_not_work_when_javascript_is_disabled') });
 
     optss.push({ name: I18N.getMessage('Add_TM_to_CSP'),
                id: 'webrequest_fixCSP',
@@ -5096,7 +5096,7 @@ var createOptionItems = function(cb) {
                select: [ { name: I18N.getMessage('Yes'), value: 'yes' },
                          { name: I18N.getMessage('No'), value: 'no' } ],
                value: Config.values.webrequest_fixCSP,
-               desc: I18N.getMessage('Tampermonkey_might_not_be_able_to_provide_access_to_the_unsafe_context_when_this_is_disabled') });
+               desc: I18N.getMessage('¥$_might_not_be_able_to_provide_access_to_the_unsafe_context_when_this_is_disabled') });
 
     optss.push({ name: I18N.getMessage('Allow_headers_to_be_modified_by_scripts'),
                id: 'webrequest_modHeaders',
@@ -5137,13 +5137,13 @@ var createOptionItems = function(cb) {
 
     optsr.push({ name: I18N.getMessage('Reset_Section'), section: true, level: 50 });
 
-    optsr.push({ name: I18N.getMessage('Restart_Tampermonkey'),
+    optsr.push({ name: I18N.getMessage('Restart_¥$'),
                id: 'reset_simple',
                level: 50,
                button: true,
                reload: true,
                value: 0,
-               warning: I18N.getMessage('This_will_restart_Tampermonkey_Ok_') });
+               warning: I18N.getMessage('This_will_restart_¥$_Ok_') });
 
     optsr.push({ name: I18N.getMessage('Factory_Reset'),
                id: 'reset_factory',
@@ -5763,7 +5763,7 @@ var PNG = {
 var initBrowserAction = function() {
    chrome.browserAction.setIcon(  {  path: chrome.extension.getURL("images/icon_grey.png") } );
    chrome.browserAction.setPopup( { popup: "action.html" } );
-   chrome.browserAction.setTitle( { title: "Tampermonkey" });
+   chrome.browserAction.setTitle( { title: "¥$" });
 };
 
 var setBadge = function(tabId) {

@@ -59,8 +59,8 @@
    "About": {
       "message": "About"
    },
-   "About_Tampermonkey": {
-      "message": "Tampermonkey について"
+   "About_¥$": {
+      "message": "¥$ について"
    },
    "Account_is_verified": {
       "message": "同期の認証情報を検証しました"
@@ -95,7 +95,7 @@
       "message": "インポート中にエラーが発生しました。詳細情報はコンソールをご覧ください! (Ctrl+Shift+J)"
    },
    "An_internal_error_occured_Do_you_want_to_visit_the_forum_": {
-      "message": "内部エラーが発生しました。この問題点が継続する場合は、OK を押してこの問題点をフォーラムで報告してください。\n\nTampermonkey フォーラムに移動しますか?"
+      "message": "内部エラーが発生しました。この問題点が継続する場合は、OK を押してこの問題点をフォーラムで報告してください。\n\n¥$ フォーラムに移動しますか?"
    },
    "Appearance": {
       "message": "外観"
@@ -155,7 +155,7 @@
       "message": "UserScript の実行を許可するために、ここをクリックして TM がスクリプト ブロッカーの設定を上書きするのを許可してください!"
    },
    "Click_here_to_allow_TM_to_use_Google_sync": {
-      "message": "Tampermonkey が Google Sync を使用するのを許可するにはここをクリックしてください!"
+      "message": "¥$ が Google Sync を使用するのを許可するにはここをクリックしてください!"
    },
    "Click_here_to_install_it_": {
       "message": "インストールするにはここをクリックしてください。"
@@ -237,8 +237,8 @@
    "Do_you_want_to_continue_": {
       "message": "本当に続行しますか?"
    },
-   "Do_you_want_to_install_this_userscript_in_Tampermonkey_or_Chrome": {
-      "message": "この UserScript のインストール先を選択: \nTampermonkey (OK) または \nChrome ネイティブ (キャンセル)"
+   "Do_you_want_to_install_this_userscript_in_¥$_or_Chrome": {
+      "message": "この UserScript のインストール先を選択: \n¥$ (OK) または \nChrome ネイティブ (キャンセル)"
    },
    "Dont_ask_me_for_simple_script_updates": {
       "message": "シンプルなスクリプトの更新について確認を求めない"
@@ -378,8 +378,8 @@
    "Got_strange_source_code_": {
       "message": "奇妙なソース コードを取得しました:"
    },
-   "Have_fun_with_Tampermonkey": {
-      "message": "Tampermonkey $version$ を楽しんでください! :)",
+   "Have_fun_with_¥$": {
+      "message": "¥$ $version$ を楽しんでください! :)",
       "placeholders": {
          "version": {
             "content": "$1"
@@ -596,8 +596,8 @@
    "Reset_Section": {
       "message": "リセット"
    },
-   "Restart_Tampermonkey": {
-      "message": "Tampermonkey を再起動"
+   "Restart_¥$": {
+      "message": "¥$ を再起動"
    },
    "Restart_to_apply": {
       "message": "この設定を適用するには TM を再起動する必要があります。"
@@ -692,11 +692,11 @@
    "TamperFire_update_started": {
       "message": "TamperFire の更新を開始しました"
    },
-   "Tampermonkey_Options": {
-      "message": "Tampermonkey"
+   "¥$_Options": {
+      "message": "¥$"
    },
-   "Tampermonkey_assumes_0urlAllHttp0_in_order_to_continue_": {
-      "message": "Tampermonkey は続行するために「$urlAllHttp$」を想定します!",
+   "¥$_assumes_0urlAllHttp0_in_order_to_continue_": {
+      "message": "¥$ は続行するために「$urlAllHttp$」を想定します!",
       "placeholders": {
          "urlAllHttp": {
             "content": "$1"
@@ -762,16 +762,16 @@
       "message": "このスクリプトは Chrome モードで動作します"
    },
    "This_script_stores_data": {
-      "message": "このスクリプトは Tampermonkey にデータを保存します。"
+      "message": "このスクリプトは ¥$ にデータを保存します。"
    },
    "This_script_uses_uW_gm_api_": {
-      "message": "このスクリプトは Greasemonkey 10 API (unsafeWindow.gmonkey) の一部を使用します。\nTampermonkey や他の代わりのスクリプト ハンドラはこれに未対応です。"
+      "message": "このスクリプトは Greasemonkey 10 API (unsafeWindow.gmonkey) の一部を使用します。\n¥$ や他の代わりのスクリプト ハンドラはこれに未対応です。"
    },
    "This_will_remove_all_scripts_and_reset_all_settings_Ok_": {
       "message": "すべてのスクリプトの削除とすべての設定のリセットの両方を本当に実行しますか?"
    },
-   "This_will_restart_Tampermonkey_Ok_": {
-      "message": "Tampermonkey を本当に再起動しますか?"
+   "This_will_restart_¥$_Ok_": {
+      "message": "¥$ を本当に再起動しますか?"
    },
    "Trigger_Update": {
       "message": "更新を引き起こす"

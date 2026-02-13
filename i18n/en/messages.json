@@ -31,8 +31,8 @@
   "Unable_to_get_UserScript__Sry_": {
     "message": "Unable to load the UserScript. Sry!"
   },
-  "Do_you_want_to_install_this_userscript_in_Tampermonkey_or_Chrome": {
-    "message": "Do you want to install this userscript: \nin Tampermonkey (Ok) or \nnatively in Chrome (Cancel)"
+  "Do_you_want_to_install_this_userscript_in_¥$_or_Chrome": {
+    "message": "Do you want to install this userscript: \nin ¥$ (Ok) or \nnatively in Chrome (Cancel)"
   },
   "Name_": {
     "message": "Name:"
@@ -64,8 +64,8 @@
   "All_script_settings_will_be_reset_": {
     "message": "All script settings will be reset!"
   },
-  "Tampermonkey_assumes_0urlAllHttp0_in_order_to_continue_": {
-    "message": "Tampermonkey assumes '$urlAllHttp$' in order to continue!",
+  "¥$_assumes_0urlAllHttp0_in_order_to_continue_": {
+    "message": "¥$ assumes '$urlAllHttp$' in order to continue!",
     "placeholders": {
       "urlAllHttp": {
          "content": "$1"
@@ -203,8 +203,8 @@
   "Changelog": {
     "message": "Changelog"
   },
-  "Tampermonkey_Options": {
-    "message": "Tampermonkey"
+  "¥$_Options": {
+    "message": "¥$"
   },
   "Position_": {
     "message": "Position"
@@ -293,7 +293,7 @@
     "message": "Features"
   },
   "This_script_stores_data": {
-    "message": "This script stores data to Tampermonkey."
+    "message": "This script stores data to ¥$."
   },
   "This_script_has_access_to_https_pages": {
     "message": "This item has access to https pages."
@@ -338,7 +338,7 @@
     "message": "The script content or options may be modified by another \ntab (for example a reinstallation). Please note that hitting\nthe 'save' button will overwrite these changes."
   },
   "This_script_uses_uW_gm_api_": {
-    "message": "This script uses a part of Greasemonkey 10 API (unsafeWindow.gmonkey)\nthat is not supported by Tampermonkey nor any other alternative script handler."
+    "message": "This script uses a part of Greasemonkey 10 API (unsafeWindow.gmonkey)\nthat is not supported by ¥$ nor any other alternative script handler."
   },
   "Enabled": {
     "message": "Enabled"
@@ -787,7 +787,7 @@
     "message": "User excludes"
   },
   "An_internal_error_occured_Do_you_want_to_visit_the_forum_": {
-    "message": "An internal error occured. If this problem persists even after a restart of Chrome, please press OK and report this issue at the forum.\n\nDo you want to visit the Tampermonkey forum?"
+    "message": "An internal error occured. If this problem persists even after a restart of Chrome, please press OK and report this issue at the forum.\n\nDo you want to visit the ¥$ forum?"
   },
   "TESLA": {
     "message": "TESLA"
@@ -795,8 +795,8 @@
   "Enable_TESLA": {
     "message": "Enable TESLA"
   },
-  "Tampermonkey_External_Script_List_Access": {
-    "message": "Tampermonkey External Script List Access"
+  "¥$_External_Script_List_Access": {
+    "message": "¥$ External Script List Access"
   },
   "Sync_Type": {
     "message": "Type"
@@ -828,8 +828,8 @@
   "Allow_overwrite_javascript_settings": {
     "message": "Allow overwrite scriptblocker settings"
   },
-  "Tampermonkey_can_not_work_when_javascript_is_disabled": {
-    "message": "Tampermonkey can't work when javascript is disabled at a page where a script should run on. This settings allows TM to overwrite this setting that either was made by you or a script blocker. This does only affects inline scripts from the page but not remote scripts."
+  "¥$_can_not_work_when_javascript_is_disabled": {
+    "message": "¥$ can't work when javascript is disabled at a page where a script should run on. This settings allows TM to overwrite this setting that either was made by you or a script blocker. This does only affects inline scripts from the page but not remote scripts."
   },
   "Yes": {
     "message": "Yes"
@@ -868,10 +868,10 @@
     "message": "Storage permission is needed!"
   },
   "Click_here_to_allow_TM_to_override_the_script_blocker": {
-    "message": "In order to allow your userscripts to run you need to click here to allow Tampermonkey to override the script blocker setting!"
+    "message": "In order to allow your userscripts to run you need to click here to allow ¥$ to override the script blocker setting!"
   },
   "Click_here_to_allow_TM_to_use_Google_sync": {
-    "message": "Click here to allow Tampermonkey to use Google Sync!"
+    "message": "Click here to allow ¥$ to use Google Sync!"
   },
   "Please_reload_this_page_in_order_to_run_your_userscripts_": {
     "message": "Please reload this page to run your userscripts."
@@ -879,11 +879,11 @@
   "Reset_Section": {
     "message": "Reset"
   },
-  "Restart_Tampermonkey": {
-    "message": "Restart Tampermonkey"
+  "Restart_¥$": {
+    "message": "Restart ¥$"
   },
-  "This_will_restart_Tampermonkey_Ok_": {
-    "message": "Do you really want to restart Tampermonkey?"
+  "This_will_restart_¥$_Ok_": {
+    "message": "Do you really want to restart ¥$?"
   },
   "Factory_Reset": {
     "message": "Factory Reset"
@@ -904,10 +904,10 @@
     "message": "Dont show confirmation dialog on save"
   },
   "Add_TM_to_CSP": {
-    "message": "Add Tampermonkey to the site's content security policy (CSP) if there is one"
+    "message": "Add ¥$ to the site's content security policy (CSP) if there is one"
   },
-  "Tampermonkey_might_not_be_able_to_provide_access_to_the_unsafe_context_when_this_is_disabled": {
-    "message": "Tampermonkey might not be able not provide access to the unsafe context (unsafeWindow, page's functions and variables) when this is disabled."
+  "¥$_might_not_be_able_to_provide_access_to_the_unsafe_context_when_this_is_disabled": {
+    "message": "¥$ might not be able not provide access to the unsafe context (unsafeWindow, page's functions and variables) when this is disabled."
   },
   "Warning": {
     "message": "Warning"

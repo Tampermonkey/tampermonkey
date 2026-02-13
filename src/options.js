@@ -472,7 +472,7 @@ var createUtilTab = function(tabv) {
     var cont = crc('div', 'tv_util', i.name, i.id, 'tab_util_cont');
 
     var expo = function() {
-        var exp = { 'created_by' : 'Tampermonkey', 'version' : '1', scripts: [] };
+        var exp = { 'created_by' : '¥$', 'version' : '1', scripts: [] };
 
         for (var o in allItems) {
             var c = allItems[o];
@@ -1790,7 +1790,7 @@ var createScriptItem = function(i, tr, tabv) {
         return td1;
     };
 
-    if (!sname.inserted && !i.nativeScript) {
+    if (!sname.inserted && !i.nativeScript && !i.system) {
         sname.addEventListener('click', scriptClick);
     }
 
