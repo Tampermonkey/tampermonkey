@@ -28,10 +28,10 @@ http://tampermonkey.net/donate.html
 DOWNLOADS:
 
 Tampermonkey (stable): 
-   https://chrome.google.com/webstore/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo
+   https://chromewebstore.google.com/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo
 
 Tampermonkey (beta): developer version, might contain bugs!
-   https://chrome.google.com/webstore/detail/gcalenpjmijncebpfijmoaglllgpjagf
+   https://chromewebstore.google.com/detail/gcalenpjmijncebpfijmoaglllgpjagf
 
 Tampermonkey (Legacy - Manifest version 1): for browsers based on Chromimum 17.
    http://tampermonkey.net/crx/tm_legacy.crx
