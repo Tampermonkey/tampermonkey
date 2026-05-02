@@ -1,5 +1,4 @@
-*This repository contains the source of the Tampermonkey extension up to version 2.9.*
-*All newer versions are distributed under a proprietary license.*
+***TamperMonkey is proprietary. The reason why I chose it to be closed-source is because how popular it is. Therefore, here is version 2.9. Not sorry!***
 
 Tampermonkey is the most popular userscript manager for Google Chrome.
 
